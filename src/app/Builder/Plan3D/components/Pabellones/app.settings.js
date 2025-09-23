@@ -1,0 +1,2 @@
+export const INCREMENT_SCALE = 50,
+	WALL_THICKNESS = 7.5;
