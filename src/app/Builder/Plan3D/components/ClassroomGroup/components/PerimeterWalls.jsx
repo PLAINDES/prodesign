@@ -8,7 +8,7 @@ export default function PerimeterWalls({
 	rectangleVertices = [],
 	children,
 	onTerrainClick,
-	height = 120,
+	height = 10,
 	thickness = 1,
 	color = "#8b8b8b",
 	SCALE_FACTOR = 80,
@@ -106,7 +106,7 @@ export default function PerimeterWalls({
 			))}
 
 			{/* Área clickeable (igual a antes) */}
-			<mesh
+			{/* <mesh
 				position={[centerX + 10, 0, centerY]}
 				onClick={onTerrainClick}
 				onPointerOver={() => (document.body.style.cursor = "pointer")}
@@ -116,7 +116,7 @@ export default function PerimeterWalls({
 					args={[Math.abs(maxX - minX), Math.abs(maxY - minY)]}
 				/>
 				<meshBasicMaterial transparent opacity={0} />
-			</mesh>
+			</mesh> */}
 
 			{/* puntos del rectángulo (debug, opcional) */}
 			{debug &&

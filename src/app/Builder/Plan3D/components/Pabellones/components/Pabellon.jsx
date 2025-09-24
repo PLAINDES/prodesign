@@ -11,7 +11,6 @@ import FloorPeine from "../../FloorPeine";
 import ComplementaryEnvironment2D from "../../../../PlanFloor/components/ComplementaryEnvironment2D/ComplementaryEnvironment2D";
 import SSHH2D2 from "../../../../PlanFloor/components/SSHH2D/SSHH2D2";
 import SSHHPeine from "../../SSHH/SSHHPeine";
-import SchoolDirection from "../../Direction/SchoolDirection";
 
 export default function Pabellon({
 	position,
@@ -40,8 +39,6 @@ export default function Pabellon({
 	const _floors = [];
 
 	const _floorsPeine2 = [];
-
-	//console.log("floors pa buildPeine", floors);
 
 	const ordenarEnvironment = (environment, ambientesPorPiso) => {
 		const prioridadEntrada = [
@@ -160,7 +157,7 @@ export default function Pabellon({
 		const aulasLaterales =
 			_classrooms[0].classrooms.length +
 			_classrooms[0].ambientesExtra.length; // cambio de cantidad de aulas en top y botton
-		console.log("aulas laterales", aulasLaterales);
+
 		const posX = posicionesPorAulas[aulasLaterales];
 
 		const posY = (floor - 1) * (view.view === "3D" ? 140 : 60);
@@ -445,7 +442,7 @@ export default function Pabellon({
 				{
 					side: "top",
 					classrooms: sides.top,
-					position: [-2000, posY, posX.topZ],
+					position: [posX.top, posY, posX.topZ],
 				},
 				{
 					side: "bottom",
@@ -501,8 +498,6 @@ export default function Pabellon({
 				"Auditorio multiusos",
 			].includes(a.ambienteComplementario)
 	);
-
-	console.log("filtro de ambientes", filteredEnvironment);
 
 	const filteredEnvironmentPeine = environment?.filter(
 		(a) =>

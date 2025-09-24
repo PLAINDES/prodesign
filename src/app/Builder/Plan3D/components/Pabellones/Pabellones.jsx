@@ -23,13 +23,36 @@ export default function Pabellones({
 		length,
 		complementaryEnvironment,
 		verticesRectangle,
+		width,
 		vertices,
 	} = school;
 
 	const pabellones = [];
 
-	console.log("option", option);
-	console.log("largo de pabellon prueba", length);
+	const SCALE_FACTOR = 80;
+	const verticesClosed = [...verticesRectangle, verticesRectangle[0]];
+	const centerEasting =
+		verticesClosed.reduce((sum, [e]) => sum + e, 0) / verticesClosed.length;
+	const centerNorthing =
+		verticesClosed.reduce((sum, [, n]) => sum + n, 0) /
+		verticesClosed.length;
+
+	const rectCoords = verticesRectangle.map(([e, n]) => [
+		e - centerEasting,
+		n - centerNorthing,
+	]);
+
+	console.log("prueba coordenadas Pabellones", rectCoords);
+
+	const s = Math.floor(rectCoords[0][0] - rectCoords[0][1]);
+	const VAR_X_PRIMARIA = s * length;
+
+	const p = Math.floor(rectCoords[2][1] - rectCoords[2][0]);
+	const VAR_X_SECUNDARIA = p * length;
+
+	const t = Math.floor(rectCoords[2][0]) - rectCoords[2][1];
+	const VAR_Z = t * width;
+	console.log("varx", VAR_Z);
 
 	// Función para calcular posiciones fijas en distribución rectangular perfecta
 	const getFixedRectangularPositions = (aulasPorPiso) => {
@@ -82,7 +105,7 @@ export default function Pabellones({
 
 		const valoresPrimariaZ = {
 			A: {
-				78.38354264944792: -2180, /// se modifico por posicion en 3d--->-1880
+				78.38354264944792: -1880, /// 2180 se modifico por posicion en 3d--->-1880
 				97.28360545635223: -4150,
 				60.66778710857034: -2380,
 			},
@@ -95,7 +118,7 @@ export default function Pabellones({
 
 		const valoresSecundariaZ = {
 			A: {
-				78.38354264944792: 1970, /// se modifico por posiscion en 3d
+				78.38354264944792: 1770, ///1970 se modifico por posiscion en 3d
 				97.28360545635223: 3370,
 				60.66778710857034: 2350,
 			},
@@ -132,6 +155,7 @@ export default function Pabellones({
 		const prueba1 = valoresPorOpcion[option]?.[length] ?? 0;
 
 		const prueba2 = valoresSecundariaX[option]?.[length] ?? 0;
+		//const prueba2 = 4750.011377171613;
 
 		const prueba3 = valoresPrimariaZ[option]?.[length] ?? 0;
 
@@ -145,20 +169,24 @@ export default function Pabellones({
 			// SECUNDARIA: Lado izquierdo (vertical)
 			secundaria: {
 				//x: -(rectangleWidth / 2) + CORRIDOR_WIDTH / 2 - 312, // lenght * 8 = ??280
-				x: prueba2,
-				y: -200,
+				x: -VAR_X_SECUNDARIA,
+				//x: prueba2, //-1050//prueba2
+				y: -200, //-200
 				//z: rectangleWidth / 2 + CORRIDOR_WIDTH + VAR_SECUNDARIA, // Centro del lado izquierdo
-				z: prueba4,
+				//z: 1800, //3370
+				z: -VAR_Z,
 				r: Math.PI, // Rotación 90° para orientación vertical
 			},
 
 			// PRIMARIA: Lado derecho (vertical)
 			primaria: {
 				//x: VAR_PRIMARIA,
-				x: prueba1,
+				//x: prueba1, //prueba1
+				x: VAR_X_PRIMARIA,
 				y: -200,
 				//z: -(rectangleWidth / 2 - CORRIDOR_WIDTH) - 600, // Centro del lado derecho, mismo Z que secundaria
-				z: prueba3,
+				//z: prueba3,
+				z: VAR_Z - 100,
 				r: 0, // Rotación -90° para orientación vertical
 			},
 

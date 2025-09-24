@@ -17,9 +17,6 @@ export default function Terrain2D({
 		closedVertices.reduce((sum, [, n]) => sum + n, 0) /
 		closedVertices.length;
 
-	console.log("centerEasting", centerEasting);
-	console.log("centerNothing", centerNorthing);
-
 	// Normalize and scale coords
 	const shapeCoords = closedVertices.map(([e, n]) => [
 		(e - centerEasting) * SCALE_FACTOR,
@@ -31,7 +28,7 @@ export default function Terrain2D({
 		(n - centerNorthing) * SCALE_FACTOR,
 	]);
 
-	console.log("rectCoords", rectCoords);
+	console.log("puntos transformados del cuadrante maximo", rectCoords);
 
 	const minX = Math.min(...rectCoords.map(([x]) => x));
 	const maxX = Math.max(...rectCoords.map(([x]) => x));
@@ -49,8 +46,6 @@ export default function Terrain2D({
 		const closedRectCoords = [...rectCoords, rectCoords[0]];
 		return closedRectCoords.map(([x, y]) => new Vector3(x, y, 0));
 	}, [rectCoords]);
-
-	console.log("rectPoints", rectPoints);
 
 	const SCALE = 60;
 
