@@ -9,7 +9,22 @@ export default function Terrain2D({
 	children,
 	onTerrainClick,
 }) {
-	const closedVertices = [...vertices, vertices[0]];
+	// Debug: Verificar que llegan los vertices
+	console.log("Terrain2D received vertices:", vertices);
+	console.log("Terrain2D vertices type:", typeof vertices);
+	console.log("Terrain2D vertices is array:", Array.isArray(vertices));
+
+	// Asegurar que vertices es un array
+	const safeVertices = Array.isArray(vertices) ? vertices : [];
+
+	// Si es necesario comprobar si los vértices están vacíos
+	if (safeVertices.length === 0) {
+		console.warn("Terrain2D: No vertices provided");
+		// Retornar algo en lugar de null para debugging
+		return <group>{children}</group>;
+	}
+
+	const closedVertices = [...safeVertices, safeVertices[0]];
 	const SCALE_FACTOR = 80;
 	const centerEasting =
 		closedVertices.reduce((sum, [e]) => sum + e, 0) / closedVertices.length;
@@ -20,7 +35,7 @@ export default function Terrain2D({
 	console.log("centerEasting", centerEasting);
 	console.log("centerNothing", centerNorthing);
 
-	// Normalize and scale coords
+	// Normalizar y escalar coordenadas
 	const shapeCoords = closedVertices.map(([e, n]) => [
 		(e - centerEasting) * SCALE_FACTOR,
 		(n - centerNorthing) * SCALE_FACTOR,

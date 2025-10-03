@@ -286,7 +286,6 @@ const NewProjectForm = forwardRef(
 		};
 
 		const Select = ({ label, ...props }) => {
-			console.log("proipos", props);
 			const [field, meta] = useField(props);
 
 			return (
@@ -485,8 +484,8 @@ const NewProjectForm = forwardRef(
 						if (verticesGrafic.length > 2) {
 							verticesGrafic.splice(verticesGrafic.length - 2, 1);
 						}
-						console.log("vertices", verticesFile);
-						console.log("verticesgrafic", verticesGrafic);
+						// console.log("vertices", verticesFile);
+						// console.log("verticesgrafic", verticesGrafic);
 						setVertices(verticesFile); // Guardar los vértices en el estado
 						setVerticesGrafic(verticesGrafic);
 						setLoading(true);

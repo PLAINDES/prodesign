@@ -1,11 +1,20 @@
 const AreaMaxRectangle = (vertices) => {
-	// if (!Array.isArray(vertices) || vertices.length !== 4) {
-	// 	throw new Error("Debes proporcionar exactamente 4 vértices.");
-	// }
+	// Add safety check to ensure vertices is an array
+	const safeVertices = Array.isArray(vertices) ? vertices : [];
+
+	// If no valid vertices, return default values
+	if (safeVertices.length === 0) {
+		return {
+			width: 0,
+			length: 0,
+			areaMax: 0,
+			perimetro: 0,
+		};
+	}
 
 	// Extraer coordenadas X e Y por separado
-	const xs = vertices.map((v) => v[0]);
-	const ys = vertices.map((v) => v[1]);
+	const xs = safeVertices.map((v) => v[0]);
+	const ys = safeVertices.map((v) => v[1]);
 
 	const minX = Math.min(...xs);
 	const maxX = Math.max(...xs);
