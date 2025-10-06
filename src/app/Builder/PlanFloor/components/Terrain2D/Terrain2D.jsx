@@ -9,6 +9,8 @@ export default function Terrain2D({
 	children,
 	onTerrainClick,
 }) {
+	console.log("tipo de datos ::", typeof vertices, typeof rectangleVertices);
+
 	const closedVertices = [...vertices, vertices[0]];
 	const SCALE_FACTOR = 80;
 	const centerEasting =

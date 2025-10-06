@@ -29,7 +29,10 @@ import { RowForm } from "./RowForm";
 import * as yup from "yup";
 import { RowFormAC } from "./RowFormAC";
 import { request } from "../../../utils/arqPlataformAxios";
-import { readMatrizExcel } from "../../../services/spreadsheetService";
+import {
+	readMatrizExcel,
+	updateProjectExcelService,
+} from "../../../services/spreadsheetService";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import {
 	createProjectService,
@@ -46,6 +49,7 @@ import MaxRectangle from "../GridData/MaxRectangle";
 import { Dialog, DialogContent, DialogTitle, TextField } from "@mui/material";
 import AreaMaxRectangle from "../AreaData/AreaMaxRectangle";
 import MaxRectangleWithPriority from "../GridData/MaxRectangleWithPriority";
+import { mapFormDataToExcel } from "../../../utils/excelMapping";
 
 Chart.register(ScatterController, LinearScale, PointElement, LineElement);
 
@@ -286,7 +290,6 @@ const NewProjectForm = forwardRef(
 		};
 
 		const Select = ({ label, ...props }) => {
-			console.log("proipos", props);
 			const [field, meta] = useField(props);
 
 			return (
@@ -392,6 +395,39 @@ const NewProjectForm = forwardRef(
 				type_id: plantillas?.id,
 			};
 
+			const projectExcelData = mapFormDataToExcel({
+				dataExcel,
+				rowsAC,
+				aulaInicial,
+				aulaPrimaria,
+				aulaSecundaria,
+			});
+
+			console.log("📊 Datos a enviar al Excel:", projectExcelData);
+
+			// ========================================
+			// PASO 3: Actualizar el Excel del backend
+			// ========================================
+			try {
+				const excelUpdateResult = await updateProjectExcelService(
+					projectExcelData
+				);
+				console.log(
+					"✅ Excel actualizado correctamente:",
+					excelUpdateResult
+				);
+
+				// Opcional: Puedes guardar los resultados calculados si los necesitas
+				// setCalculatedMeters(excelUpdateResult.data.calculated_results);
+			} catch (excelError) {
+				console.error("❌ Error al actualizar Excel:", excelError);
+
+				// Decide si continuar o abortar la creación del proyecto
+				// Opción 1: Mostrar error pero continuar
+				alert(
+					"Advertencia: No se pudo actualizar el Excel, pero el proyecto se creará de todas formas."
+				);
+			}
 			const data = await createProjectService(dataComplete);
 
 			// cuando se crea un nuevo projecto y su version 1 (automaticamente)
@@ -485,8 +521,8 @@ const NewProjectForm = forwardRef(
 						if (verticesGrafic.length > 2) {
 							verticesGrafic.splice(verticesGrafic.length - 2, 1);
 						}
-						console.log("vertices", verticesFile);
-						console.log("verticesgrafic", verticesGrafic);
+						// console.log("vertices", verticesFile);
+						// console.log("verticesgrafic", verticesGrafic);
 						setVertices(verticesFile); // Guardar los vértices en el estado
 						setVerticesGrafic(verticesGrafic);
 						setLoading(true);

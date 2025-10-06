@@ -30,29 +30,6 @@ export default function Pabellones({
 	const pabellones = [];
 
 	const SCALE_FACTOR = 80;
-	const verticesClosed = [...verticesRectangle, verticesRectangle[0]];
-	const centerEasting =
-		verticesClosed.reduce((sum, [e]) => sum + e, 0) / verticesClosed.length;
-	const centerNorthing =
-		verticesClosed.reduce((sum, [, n]) => sum + n, 0) /
-		verticesClosed.length;
-
-	const rectCoords = verticesRectangle.map(([e, n]) => [
-		e - centerEasting,
-		n - centerNorthing,
-	]);
-
-	console.log("prueba coordenadas Pabellones", rectCoords);
-
-	const s = Math.floor(rectCoords[0][0] - rectCoords[0][1]);
-	const VAR_X_PRIMARIA = s * length;
-
-	const p = Math.floor(rectCoords[2][1] - rectCoords[2][0]);
-	const VAR_X_SECUNDARIA = p * length;
-
-	const t = Math.floor(rectCoords[2][0]) - rectCoords[2][1];
-	const VAR_Z = t * width;
-	console.log("varx", VAR_Z);
 
 	// Función para calcular posiciones fijas en distribución rectangular perfecta
 	const getFixedRectangularPositions = (aulasPorPiso) => {
@@ -169,24 +146,24 @@ export default function Pabellones({
 			// SECUNDARIA: Lado izquierdo (vertical)
 			secundaria: {
 				//x: -(rectangleWidth / 2) + CORRIDOR_WIDTH / 2 - 312, // lenght * 8 = ??280
-				x: -VAR_X_SECUNDARIA,
-				//x: prueba2, //-1050//prueba2
-				y: -200, //-200
+				//x: -VAR_X_SECUNDARIA,
+				x: prueba2, //-1050//prueba2
+				y: 850, //-200
 				//z: rectangleWidth / 2 + CORRIDOR_WIDTH + VAR_SECUNDARIA, // Centro del lado izquierdo
-				//z: 1800, //3370
-				z: -VAR_Z,
+				z: 1800, //3370
+				//z: -VAR_Z,
 				r: Math.PI, // Rotación 90° para orientación vertical
 			},
 
 			// PRIMARIA: Lado derecho (vertical)
 			primaria: {
 				//x: VAR_PRIMARIA,
-				//x: prueba1, //prueba1
-				x: VAR_X_PRIMARIA,
-				y: -200,
+				x: prueba1, //prueba1
+				//x: VAR_X_SECUNDARIA,
+				y: 850,
 				//z: -(rectangleWidth / 2 - CORRIDOR_WIDTH) - 600, // Centro del lado derecho, mismo Z que secundaria
-				//z: prueba3,
-				z: VAR_Z - 100,
+				z: prueba3,
+				//z: VAR_Z - 100,
 				r: 0, // Rotación -90° para orientación vertical
 			},
 
@@ -194,7 +171,7 @@ export default function Pabellones({
 			inicial: {
 				//x: -(rectangleWidth / VAR_INICIAL_X), // Centro horizontal entre secundaria y primaria
 				x: prueba5,
-				y: -200,
+				y: 850,
 				z: prueba6,
 				r: 0, // Sin rotación para orientación horizontal
 			},
@@ -267,7 +244,7 @@ export default function Pabellones({
 		espacioDeCirculacion;
 	console.log("espacio disponible en top::", espacioDisponibleTop);
 	const aulasEnBot = Math.floor(espacioDisponibleTop / anchoAula);
-	console.log("aulas en bot::", aulasEnBot);
+	console.log("aulas en bot", aulasEnBot);
 
 	Object.entries(nivelesConPosiciones).forEach(([nivel, pos]) => {
 		let aulas = aulasPorNivel[nivel] || [];

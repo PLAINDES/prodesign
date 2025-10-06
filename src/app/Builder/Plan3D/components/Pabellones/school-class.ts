@@ -129,11 +129,30 @@ export class School {
 	setLevels(levels: string[]) {
 		this.levels = levels;
 	}
-	setVertices(vertices: string[]) {
-		this.vertices = vertices;
+	setVertices(vertices: string[] | string) {
+		if (typeof vertices === "string") {
+			try {
+				this.vertices = JSON.parse(vertices);
+			} catch (error) {
+				console.error("Error al parsear vertices:", error);
+				this.vertices = [];
+			}
+		} else {
+			this.vertices = vertices;
+		}
 	}
-	setVerticesRectangle(verticesRectangle: string[]) {
-		this.verticesRectangle = verticesRectangle;
+
+	setVerticesRectangle(verticesRectangle: string[] | string) {
+		if (typeof verticesRectangle === "string") {
+			try {
+				this.verticesRectangle = JSON.parse(verticesRectangle);
+			} catch (error) {
+				console.error("Error al parsear verticesRectangle:", error);
+				this.verticesRectangle = [];
+			}
+		} else {
+			this.verticesRectangle = verticesRectangle;
+		}
 	}
 	setNumberFloors(numberFloors: string[]) {
 		this.numberFloors = numberFloors;
@@ -152,8 +171,11 @@ export class School {
 	//?Este método recibe un objeto con los datos del proyecto (como el JSON de state) y configura toda la escuela en base a ellos.
 
 	setProjectData(state: any) {
+		this.setVertices(state.vertices);
+		this.setVerticesRectangle(state.vertices_rectangle);
+
 		if (state.vertices && state.vertices.length >= 3) {
-			const { area } = AreaVertices(state.vertices);
+			const { area } = AreaVertices(this.vertices);
 			this.setTotalArea(area);
 		} else {
 			this.setTotalArea(0); // o manejarlo como desees
@@ -161,7 +183,7 @@ export class School {
 
 		if (state.vertices_rectangle && state.vertices_rectangle.length >= 3) {
 			const { areaMax, length, width } = AreaMaxRectangle(
-				state.vertices_rectangle
+				this.verticesRectangle
 			);
 			this.setPartialArea(areaMax);
 			this.setWidth(width);
@@ -183,8 +205,7 @@ export class School {
 		})();
 		this.setLevels(Array.isArray(niveles) ? niveles : []);
 		//this.setLevels(state.level);
-		this.setVertices(state.vertices);
-		this.setVerticesRectangle(state.vertices_rectangle);
+
 		this.setAngle(state.angle);
 		this.setType(state.sublevel);
 		this.setZone(state.zone);

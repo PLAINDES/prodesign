@@ -8,7 +8,7 @@ export default function PerimeterWalls({
 	rectangleVertices = [],
 	children,
 	onTerrainClick,
-	height = 10,
+	height = 80,
 	thickness = 1,
 	color = "#8b8b8b",
 	SCALE_FACTOR = 80,

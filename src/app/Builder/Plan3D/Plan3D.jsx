@@ -165,6 +165,7 @@ function SceneX({ view, school, space, spaceEntrance }) {
 	const selectedOption = useSelector(
 		(state) => state.distribution.selectedDistributionOption
 	);
+	const rotation = useSelector((state) => state.distribution.rotation);
 
 	// Estado para manejar la selección
 	const [selectedAula, setSelectedAula] = useState(null);
@@ -208,37 +209,37 @@ function SceneX({ view, school, space, spaceEntrance }) {
 
 	const posicionesPorOpcion = {
 		A: {
-			78.38354264944792: [-500, -200, -200], // ejemplo
-			97.28360545635223: [400, 0, -200],
-			60.66778710857034: [300, 0, 200],
+			78.38354264944792: [-500, 850, -200], // ejemplo
+			97.28360545635223: [400, 850, -200],
+			60.66778710857034: [300, 850, 200],
 		},
 		B: {
-			78.38354264944792: [-400, 0, 0],
-			97.28360545635223: [-300, 0, 500],
-			60.66778710857034: [300, 0, 100],
+			78.38354264944792: [-400, 850, 0],
+			97.28360545635223: [-300, 850, 500],
+			60.66778710857034: [300, 850, 100],
 		},
 		C: {
-			78.38354264944792: [0, 0, -200],
-			97.28360545635223: [-200, 0, -200],
-			60.66778710857034: [0, 0, -200],
+			78.38354264944792: [0, 850, -200],
+			97.28360545635223: [-200, 850, -200],
+			60.66778710857034: [0, 850, -200],
 		},
 	};
 
 	const posicionesPorOpcion2 = {
 		A: {
 			78.38354264944792: [350, -200, -200], // ejemplo
-			97.28360545635223: [1300, 0, -200],
-			60.66778710857034: [-500, 0, 200],
+			97.28360545635223: [1300, 850, -200],
+			60.66778710857034: [-500, 850, 200],
 		},
 		B: {
-			78.38354264944792: [450, 0, 0],
-			97.28360545635223: [600, 0, 500],
-			60.66778710857034: [-600, 0, 100],
+			78.38354264944792: [450, 850, 0],
+			97.28360545635223: [600, 850, 500],
+			60.66778710857034: [-600, 850, 100],
 		},
 		C: {
-			78.38354264944792: [0, 0, -200],
-			97.28360545635223: [-200, 0, -200],
-			60.66778710857034: [-100, 0, -200],
+			78.38354264944792: [0, 850, -200],
+			97.28360545635223: [-200, 850, -200],
+			60.66778710857034: [-100, 850, -200],
 		},
 	};
 
@@ -390,12 +391,6 @@ function SceneX({ view, school, space, spaceEntrance }) {
 			</Paper>
 		);
 	}
-	const coords = [
-		[294420.12624455034, 8938966.04248867],
-		[294403.3164189552, 8939028.777611857],
-		[294461.7171154496, 8939044.42603132],
-		[294478.5269410447, 8938981.690908132],
-	];
 
 	return (
 		<div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -435,7 +430,7 @@ function SceneX({ view, school, space, spaceEntrance }) {
 					rectangleVertices={verticesRectangle}
 					//onTerrainClick={handleTerrainClick} // Agregar esta prop
 				>
-					<group scale={[1.1, 1.1, 1.1]} rotation={[0, 0.261, 0]}>
+					<group scale={[1.1, 1.1, 1.1]} rotation={[0, rotation, 0]}>
 						<Pabellones
 							school={school}
 							view={view}
@@ -877,48 +872,53 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 			</div>
 
 			{/* Canvas principal - solo vista general */}
-			<Canvas orthographic frameloop="demand">
-				<OrthographicCamera
-					makeDefault
-					position={[1, 90, 0]}
-					zoom={0.117}
-					near={-200}
-					far={5000}
-				/>
-				<OrbitControls
-					makeDefault
-					enableRotate={false}
-					enableDamping={false}
-					enablePan={false}
-					minZoom={0.117}
-					maxZoom={1}
-				/>
-				<CameraControls dollySpeed={0.4} />
-				<InitConfig view={view} />
-				<Terrain2D
-					vertices={vertices}
-					rectangleVertices={verticesRectangle}
-					onTerrainClick={handleTerrainClick} // Agregar esta prop
-				>
-					<group
-						scale={[scaleFactor, scaleFactor, scaleFactor]}
-						rotation={[0, rotation, 0]}
+
+			<div style={{ display: "flex", width: "100%", height: "100vh" }}>
+				{/* Vista Izquierda - Solo Terreno */}
+
+				<Canvas orthographic frameloop="demand">
+					<OrthographicCamera
+						makeDefault
+						position={[1, 90, 0]}
+						zoom={0.117}
+						near={-200}
+						far={5000}
+					/>
+					<OrbitControls
+						makeDefault
+						enableRotate={false}
+						enableDamping={false}
+						enablePan={false}
+						minZoom={0.117}
+						maxZoom={1}
+					/>
+					<CameraControls dollySpeed={0.4} />
+					<InitConfig view={view} />
+
+					{/* SOLO EL TERRENO */}
+					<Terrain2D
+						vertices={vertices}
+						rectangleVertices={verticesRectangle}
+						onTerrainClick={handleTerrainClick}
 					>
-						{/* Solo mostrar vista previa del campo de fútbol */}
 						{space && spaceEntrance && (
-							<Pabellones
-								school={school}
-								view={view}
-								space={space}
-								spaceEntrance={spaceEntrance}
-								option={selectedOption}
-							/>
-						)}
-						{space && spaceEntrance && (
-							<>
+							<group
+								scale={[scaleFactor, scaleFactor, scaleFactor]}
+								rotation={[0, rotation, 0]}
+							>
+								{/* Pabellones */}
+								<Pabellones
+									school={school}
+									view={view}
+									space={space}
+									spaceEntrance={spaceEntrance}
+									option={selectedOption}
+								/>
+
+								{/* Campos de Fútbol */}
 								<SoccerField2D
-									position={positionSoccerField1}
-									rotation={rotationSoccerField}
+									position={[-1200, 0, 0]}
+									rotation={[Math.PI / 2, 0, Math.PI / 2]}
 									length={soccerField.length}
 									width={soccerField.width}
 									color={soccerField.color}
@@ -926,24 +926,27 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 								/>
 
 								<SoccerField2D
-									position={positionSoccerField2}
+									position={[-200, 0, 0]}
 									rotation={rotationSoccerField}
 									length={soccerField.length}
 									width={soccerField.width}
 									color={SoccerField.color}
 									lengthSoccer={lengthSoccer}
 								/>
-							</>
+							</group>
 						)}
-					</group>
-				</Terrain2D>
-			</Canvas>
+					</Terrain2D>
+				</Canvas>
+
+				{/* Vista Derecha - Pabellones y Campos */}
+			</div>
 		</div>
 	);
 }
 
 import { useThree, useFrame } from "@react-three/fiber";
 import { Button, ButtonGroup, Paper } from "@mui/material";
+import PabellonesSelect from "./components/Pabellones/PabellonesSelect";
 
 function UpdateCompassRotation({ rotationRef }) {
 	const { camera } = useThree();
