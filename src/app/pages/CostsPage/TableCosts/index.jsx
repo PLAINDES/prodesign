@@ -4,7 +4,6 @@ import Swal from "sweetalert2";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Slide from "@mui/material/Slide";
 import Button from "@mui/material/Button";
@@ -18,74 +17,96 @@ import "./styles.css";
 
 export default function TableCosts({
 	project,
-	categories,
+	categories, // ✅ Este es el nombre correcto del prop
 	calculatedCosts,
 	handleCosts,
 	handleToggleLoading,
 	onNewVersion,
 }) {
 	const [open, setOpen] = useState(false);
+	const [loading, setLoading] = useState(false); // ✅ Agregar estado de loading
 
-	const dispath = useDispatch();
+	const dispatch = useDispatch();
 
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
 
 	const handleSubmit = async (evt) => {
 		evt.preventDefault();
-		const data = Object.fromEntries(new FormData(evt.target));
+		setLoading(true); // ✅ Activar loading
 
-		onNewVersion();
+		console.log("🚀 Iniciando submit del formulario...");
+		console.log("📋 Project:", project);
+		console.log("📂 Categories:", categories);
+		console.log("💰 Calculated Costs:", calculatedCosts);
 
-		handleToggleLoading();
+		try {
+			const formData = new FormData(evt.target);
+			const data = Object.fromEntries(formData);
 
-		updateProjectCostsByIDService(project.id, data).then((res) => {
-			Object.assign(categories, data);
+			console.log("📝 Datos del formulario:", data);
+
+			// 1️⃣ PRIMERO: Hacer la petición y esperar la respuesta
+			console.log(`🔄 Llamando API con ID: ${project.id}`);
+			const res = await updateProjectCostsByIDService(project.id, data);
+
+			console.log("✅ Respuesta del servidor:", res.data);
+
+			// 2️⃣ SEGUNDO: Preparar los datos actualizados
+			const updatedCategories = { ...categories, ...data }; // ✅ Usar 'categories'
+			const updatedCalculatedCosts = {
+				...res.data.calculatedProjectCosts,
+			};
+
+			console.log("📊 Categories actualizadas:", updatedCategories);
+			console.log(
+				"💵 Calculated Costs actualizados:",
+				updatedCalculatedCosts
+			);
+
+			// 3️⃣ TERCERO: Actualizar referencias originales
+			Object.assign(categories, data); // ✅ Usar 'categories'
 			Object.assign(calculatedCosts, res.data.calculatedProjectCosts);
 
-			handleToggleLoading();
-		});
+			// 4️⃣ CUARTO: AHORA SÍ llamar a onNewVersion CON LOS PARÁMETROS
+			console.log("📤 Llamando a onNewVersion con:");
+			console.log("  1. updatedCategories:", updatedCategories);
+			console.log("  2. updatedCalculatedCosts:", updatedCalculatedCosts);
+			console.log("  3. project:", project);
 
-		handleClose();
+			onNewVersion(
+				updatedCategories, // ✅ Categorías completas
+				updatedCalculatedCosts, // ✅ Costos calculados del servidor
+				project // ✅ Datos del proyecto
+			);
 
-		Toast.fire({
-			icon: "success",
-			title: "Tablero actualizado correctamente!",
-			background: "#0d6efd",
-			color: "#ffffff",
-		});
+			handleClose();
 
-		// try {
-		// 	const res = await updateProjectCostsByIDService(project.id, data);
+			Toast.fire({
+				icon: "success",
+				title: "Proyecto de costos guardado correctamente!",
+				background: "#0d6efd",
+				color: "#ffffff",
+			});
+		} catch (err) {
+			console.error("❌ Error al guardar:", err);
+			console.error("Stack:", err.stack);
 
-		// 	// 👇 avisamos al Dashboard que se creó un nuevo proyecto
-		// 	onNewVersion(res.data.projectId);
-
-		// 	Object.assign(costsCategories, data);
-		// 	Object.assign(calculatedCosts, res.data.calculatedProjectCosts);
-
-		// 	Toast.fire({
-		// 		icon: "success",
-		// 		title: "Tablero actualizado correctamente!",
-		// 		background: "#0d6efd",
-		// 		color: "#ffffff",
-		// 	});
-		// } catch (err) {
-		// 	console.error(err);
-		// 	Toast.fire({
-		// 		icon: "error",
-		// 		title: "Error al guardar el proyecto",
-		// 		background: "#dc3545",
-		// 		color: "#ffffff",
-		// 	});
-		// } finally {
-		// 	handleToggleLoading();
-		// }
+			Toast.fire({
+				icon: "error",
+				title: "Error al guardar el proyecto",
+				text: err.message || "Ocurrió un error inesperado",
+				background: "#dc3545",
+				color: "#ffffff",
+			});
+		} finally {
+			setLoading(false); // ✅ Desactivar loading
+			console.log("🏁 Submit finalizado");
+		}
 	};
 
 	return (
 		<div style={{ alignSelf: "start" }}>
-			{/* alignSelf: end   por mientras */}
 			<Chip
 				color="primary"
 				size="small"
@@ -97,7 +118,6 @@ export default function TableCosts({
 				open={open}
 				TransitionComponent={Transition}
 				maxWidth="lg"
-				// keepMounted
 				onClose={handleClose}
 				PaperProps={{ sx: { margin: 1.5 } }}
 			>
@@ -115,6 +135,7 @@ export default function TableCosts({
 								top: { xs: 2, sm: 8 },
 								color: "gray",
 							}}
+							disabled={loading}
 						>
 							<CloseIcon />
 						</IconButton>
@@ -139,6 +160,7 @@ export default function TableCosts({
 							variant="text"
 							color="secondary"
 							onClick={handleClose}
+							disabled={loading}
 						>
 							Cancelar
 						</Button>
@@ -146,8 +168,9 @@ export default function TableCosts({
 							variant="contained"
 							color="primary"
 							type="submit"
+							disabled={loading}
 						>
-							Aceptar
+							{loading ? "Guardando..." : "Aceptar"}
 						</Button>
 					</DialogActions>
 				</form>
