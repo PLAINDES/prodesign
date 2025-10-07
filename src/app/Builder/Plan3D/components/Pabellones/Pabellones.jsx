@@ -56,12 +56,12 @@ export default function Pabellones({
 
 		const valoresPorOpcion = {
 			A: {
-				78.38354264944792: 1100,
+				78.38354264944792: 1200,
 				97.28360545635223: 2650,
 				60.66778710857034: 450,
 			},
 			B: {
-				78.38354264944792: 900, // ejemplo
+				78.38354264944792: 950, // ejemplo
 				97.28360545635223: 2200,
 				60.66778710857034: 950,
 			},
@@ -148,9 +148,9 @@ export default function Pabellones({
 				//x: -(rectangleWidth / 2) + CORRIDOR_WIDTH / 2 - 312, // lenght * 8 = ??280
 				//x: -VAR_X_SECUNDARIA,
 				x: prueba2, //-1050//prueba2
-				y: 850, //-200
+				y: -200, //-200
 				//z: rectangleWidth / 2 + CORRIDOR_WIDTH + VAR_SECUNDARIA, // Centro del lado izquierdo
-				z: 1800, //3370
+				z: prueba4, //3370
 				//z: -VAR_Z,
 				r: Math.PI, // Rotación 90° para orientación vertical
 			},
@@ -160,7 +160,7 @@ export default function Pabellones({
 				//x: VAR_PRIMARIA,
 				x: prueba1, //prueba1
 				//x: VAR_X_SECUNDARIA,
-				y: 850,
+				y: -200,
 				//z: -(rectangleWidth / 2 - CORRIDOR_WIDTH) - 600, // Centro del lado derecho, mismo Z que secundaria
 				z: prueba3,
 				//z: VAR_Z - 100,
@@ -171,7 +171,7 @@ export default function Pabellones({
 			inicial: {
 				//x: -(rectangleWidth / VAR_INICIAL_X), // Centro horizontal entre secundaria y primaria
 				x: prueba5,
-				y: 850,
+				y: -200,
 				z: prueba6,
 				r: 0, // Sin rotación para orientación horizontal
 			},
