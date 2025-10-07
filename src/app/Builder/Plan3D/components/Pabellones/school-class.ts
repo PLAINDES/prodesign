@@ -227,15 +227,22 @@ export class School {
 		let parsedAmbientes = [];
 
 		try {
-			parsedAmbientes =
-				typeof state.ambientes === "string"
-					? JSON.parse(state.ambientes)
-					: state.ambientes;
+			// Agregar validación para state.ambientes antes de procesarlo
+			if (state.ambientes !== undefined && state.ambientes !== null) {
+				parsedAmbientes =
+					typeof state.ambientes === "string"
+						? JSON.parse(state.ambientes)
+						: state.ambientes;
+			}
 		} catch (e) {
 			console.error("Error al parsear 'state.ambientes':", e);
 			parsedAmbientes = [];
 		}
-		this.setComplementaryEnvironment(parsedAmbientes);
+
+		// Asegurar que parsedAmbientes sea un array
+		this.setComplementaryEnvironment(
+			Array.isArray(parsedAmbientes) ? parsedAmbientes : []
+		);
 		this.setGeneralArea(4550);
 
 		const aforo =
