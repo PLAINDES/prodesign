@@ -8,11 +8,7 @@ export const readMatrizExcel = (file, data) => {
 
 	return axios.post(
 		import.meta.env.VITE_API_BASE_URL + "/api/v1/admin/readMatriz",
-<<<<<<< HEAD
-		//import.meta.env.VITE_READ_EXCEL + "/admin/readMatriz",
-=======
 		// import.meta.env.VITE_READ_EXCEL + "/admin/readMatriz",
->>>>>>> 9c2ce8b000aad3362b7ef381608a9df28aa0c5cd
 		form,
 		{
 			headers: {
