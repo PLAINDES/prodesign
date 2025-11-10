@@ -34,6 +34,7 @@
     "google-map-react": "^2.2.0",
     "install": "0.13.0",
     "leaflet": "1.8.0",
+    "lucide-react": "^0.546.0",
     "moment": "2.29.4",
     "notistack": "2.0.5",
     "npm": "8.19.2",

@@ -17,6 +17,7 @@ import Terrain from "./components/Terrain/Terrain";
 import SoccerField2D from "../PlanFloor/components/SoccerField2D/SoccerField2D";
 import SoccerField from "./components/SoccerField/SoccerField";
 import PerimeterWalls from "./components/ClassroomGroup/components/PerimeterWalls";
+import TerrainPlanner from "./TerrainPlanner";
 import { setView3DFloor } from "../../../redux/building/buildingSlice";
 import {
 	setDistributionConfig,
@@ -60,8 +61,9 @@ export default function Plan3D({ state, view, school, aspect }) {
 			spaceEntrance={spaceEntrance}
 		/>
 	) : (
-		<FloorPlanX school={school} view={view} />
+		//<FloorPlanX school={school} view={view} />
 		//<AppTest />
+		<TerrainPlanner school={school} />
 	);
 }
 function Aula({ position, name }) {
@@ -212,6 +214,7 @@ function SceneX({ view, school, space, spaceEntrance }) {
 			78.38354264944792: [-500, -200, -200], // ejemplo
 			97.28360545635223: [400, -200, -200],
 			60.66778710857034: [300, -200, 200],
+			65.6228068433702: [1000, 0, -500],
 		},
 		B: {
 			78.38354264944792: [-400, -200, 0],
@@ -230,6 +233,7 @@ function SceneX({ view, school, space, spaceEntrance }) {
 			78.38354264944792: [350, -200, -200], // ejemplo
 			97.28360545635223: [1300, -200, -200],
 			60.66778710857034: [-500, -200, 200],
+			65.6228068433702: [1000, 0, -500],
 		},
 		B: {
 			78.38354264944792: [450, -200, 0],
@@ -618,6 +622,8 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 			? 1.05
 			: length === 60.66778710857034
 			? 1.5
+			: length === 65.6228068433702 // comentar
+			? 1.2
 			: 1.3;
 
 	const handleSelectOption = (option) => {
@@ -628,11 +634,16 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 				78.38354264944792: Number(angle),
 				97.28360545635223: -0.444,
 				60.66778710857034: 0,
+				65.6228068433702: -0.6,
+				38.50779786333442: -0.25,
+				150.80931116640568: 0.18,
 			},
 			B: {
 				78.38354264944792: -1.308, // ejemplo
 				97.28360545635223: 1.1352,
 				60.66778710857034: -Math.PI / 2,
+				65.6228068433702: Number(angle),
+				150.80931116640568: Number(angle),
 			},
 		};
 
@@ -676,11 +687,16 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 			78.38354264944792: [-500, 0, -200], // ejemplo
 			97.28360545635223: [300, 0, -200],
 			60.66778710857034: [300, 0, 200],
+			65.6228068433702: [800, 0, -400],
+			38.50779786333442: [250, 0, -100],
+			150.80931116640568: [-1500, 0, -100],
 		},
 		B: {
 			78.38354264944792: [-400, 0, 0],
 			97.28360545635223: [-300, 0, 500],
 			60.66778710857034: [300, 0, 100],
+			65.6228068433702: [800, 0, 300],
+			150.80931116640568: [400, 0, -1500],
 		},
 		C: {
 			78.38354264944792: [0, 0, -200],
@@ -694,11 +710,16 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 			78.38354264944792: [350, 0, -200], // ejemplo
 			97.28360545635223: [1200, 0, -200],
 			60.66778710857034: [-500, 0, 200],
+			65.6228068433702: [800, 0, -400],
+			38.50779786333442: [250, 0, -100],
+			150.80931116640568: [0, 0, -100],
 		},
 		B: {
 			78.38354264944792: [450, 0, 0],
 			97.28360545635223: [600, 0, 500],
 			60.66778710857034: [-600, 0, 100],
+			65.6228068433702: [800, 0, 300],
+			150.80931116640568: [400, 0, 500],
 		},
 		C: {
 			78.38354264944792: [0, 0, -200],
@@ -922,7 +943,7 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 									length={soccerField.length}
 									width={soccerField.width}
 									color={soccerField.color}
-									lengthSoccer={lengthSoccer}
+									partialArea={partialArea}
 								/>
 
 								<SoccerField2D
@@ -931,7 +952,7 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 									length={soccerField.length}
 									width={soccerField.width}
 									color={SoccerField.color}
-									lengthSoccer={lengthSoccer}
+									partialArea={partialArea}
 								/>
 							</group>
 						)}
@@ -947,6 +968,7 @@ function FloorPlanX({ view, school, spaceConfig, setSpaceConfig }) {
 import { useThree, useFrame } from "@react-three/fiber";
 import { Button, ButtonGroup, Paper } from "@mui/material";
 import PabellonesSelect from "./components/Pabellones/PabellonesSelect";
+import { number } from "yup";
 
 function UpdateCompassRotation({ rotationRef }) {
 	const { camera } = useThree();

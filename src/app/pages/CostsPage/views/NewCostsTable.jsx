@@ -17,11 +17,16 @@ export default function NewCostsTables({
 	costs,
 	handleCosts,
 	numberOfClassrooms,
+	excelData,
 }) {
 	if (!project) return <></>;
 	if (project.length - 1 !== costs.calculatedCosts.length) return <></>;
 	console.log("numero de aulas", numberOfClassrooms);
 	// por el orden de obtencion de las versiones!
+
+	console.log("project::::::", project);
+	console.log("costs::::::::", costs);
+	console.log("data excel ::::::", excelData);
 	return (
 		<>
 			{project
@@ -35,6 +40,7 @@ export default function NewCostsTables({
 						i={i}
 						handleCosts={handleCosts}
 						numberOfClassrooms={numberOfClassrooms}
+						excelData={excelData}
 					/>
 				))}
 		</>
@@ -43,6 +49,7 @@ export default function NewCostsTables({
 
 function VersionTable({
 	el,
+	excelData,
 	costsCategories,
 	calculatedCosts,
 	handleCosts,
@@ -52,7 +59,8 @@ function VersionTable({
 	const VAR_PRECIO_MT2 = 60;
 	const [loading, setLoading] = useState(false);
 
-	const area_total = JSON.parse(el.build_data).result_data.area_total;
+	const area_total = 3568.72;
+	//JSON.parse(el.build_data).result_data.area_total;
 
 	// const areaMt2Inicial = VAR_PRECIO_MT2 * numberOfClassrooms.inicial;
 	// const areaMt2Primaria = VAR_PRECIO_MT2 * numberOfClassrooms.primaria;

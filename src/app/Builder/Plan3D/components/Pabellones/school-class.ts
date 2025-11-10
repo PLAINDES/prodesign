@@ -180,19 +180,21 @@ export class School {
 		} else {
 			this.setTotalArea(0); // o manejarlo como desees
 		}
-
-		if (state.vertices_rectangle && state.vertices_rectangle.length >= 3) {
-			const { areaMax, length, width } = AreaMaxRectangle(
-				this.verticesRectangle
-			);
-			this.setPartialArea(areaMax);
-			this.setWidth(width);
-			this.setLength(length);
-		} else {
-			this.setPartialArea(0);
-			this.setWidth(0);
-			this.setLength(0);
-		}
+		this.setPartialArea(state.width);
+		this.setWidth(state.width);
+		this.setLength(state.height);
+		// if (state.vertices_rectangle && state.vertices_rectangle.length >= 3) {
+		// 	const { areaMax, length, width } = AreaMaxRectangle(
+		// 		this.verticesRectangle
+		// 	);
+		// 	this.setPartialArea(areaMax);
+		// 	this.setWidth(width);
+		// 	this.setLength(length);
+		// } else {
+		// 	this.setPartialArea(0);
+		// 	this.setWidth(0);
+		// 	this.setLength(0);
+		// }
 		const niveles = (() => {
 			try {
 				return typeof state.level === "string"

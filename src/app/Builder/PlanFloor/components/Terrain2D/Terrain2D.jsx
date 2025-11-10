@@ -49,6 +49,8 @@ export default function Terrain2D({
 		return closedRectCoords.map(([x, y]) => new Vector3(x, y, 0));
 	}, [rectCoords]);
 
+	console.log("rectPointss", rectPoints);
+
 	const SCALE = 60;
 
 	return (
@@ -91,7 +93,7 @@ export default function Terrain2D({
 			))}
 			{/* Renderizar elementos dentro del rectángulo */}
 			<group
-				position={[centerX, 0, centerY]}
+				position={[centerX, 0, 0]}
 				rotation={[Math.PI / 2, -Math.PI / 2, 0]}
 			>
 				{children}

@@ -5,6 +5,7 @@ import { mainSlice } from "./main/mainSlice";
 import { planSlice } from "./planes";
 import { projectSlice } from "./projects/projectSlice";
 import { distributionSlice } from "./distribution/distributionSlice";
+import { ambienceSlice } from "./distribution/ambienceSlice";
 
 export const store = configureStore({
 	reducer: {
@@ -15,5 +16,6 @@ export const store = configureStore({
 		building: buildingSlice.reducer,
 		project: projectSlice.reducer,
 		distribution: distributionSlice.reducer,
+		ambience: ambienceSlice.reducer,
 	},
 });

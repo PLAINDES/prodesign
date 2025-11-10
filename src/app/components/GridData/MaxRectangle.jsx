@@ -1,158 +1,234 @@
-import * as turf from "@turf/turf";
+const MaxRectangle = (coordinate) => {
+	// Validación inicial
+	if (!coordinate || coordinate.length < 3) {
+		console.log("❌ No hay suficientes coordenadas");
+		return Promise.resolve([]);
+	}
 
-/**
- * Encuentra los 3 mejores rectángulos máximos dentro de un polígono con rotación optimizada
- * @param {Array} verDispo - Array de vértices UTM del polígono disponible
- * @returns {Array} - Array de 3 rectángulos con sus coordenadas
- */
-const MaxRectangle = (verDispo) => {
-	// Crear polígono desde los vértices, asegurándose de cerrar el anillo
-	const poligonoDisponible = turf.polygon([verDispo.concat([verDispo[0]])]);
+	const coordinates = coordinate.map((vertex, index) => ({
+		id: Date.now() + index,
+		east: parseFloat(vertex[0]),
+		north: parseFloat(vertex[1]),
+	}));
 
-	// Obtener los límites del polígono
-	const bbox = turf.bbox(poligonoDisponible);
-	const [minx, miny, maxx, maxy] = bbox;
-	const centroPoligono = [(minx + maxx) / 2, (miny + maxy) / 2];
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			console.log(
+				"🔍 Buscando rectángulos en",
+				coordinates.length,
+				"puntos"
+			);
+			const allRectangles = [];
 
-	// Array para guardar los 3 mejores rectángulos
-	const mejoresRectangulos = [];
+			// Buscar rectángulos en diferentes ángulos
+			for (let degrees = 0; degrees < 180; degrees += 5) {
+				const angle = (degrees * Math.PI) / 180;
+				const rect = findMaxRectangleAtAngle(coordinates, angle);
+				//	console.log("rect:::", rect);
+				if (rect) {
+					allRectangles.push(rect);
+				}
+			}
 
-	// Probar diferentes ángulos de rotación (de 0 a 180 grados)
-	// Incremento de 5 grados para un buen balance entre precisión y rendimiento
-	for (let angulo = 0; angulo < Math.PI; angulo += Math.PI / 36) {
-		// Puntos centrales de prueba (malla más fina)
-		const pasoX = Math.max(1, (maxx - minx) / 15);
-		const pasoY = Math.max(1, (maxy - miny) / 15);
+			if (allRectangles.length === 0) {
+				console.log("⚠️ No se encontraron rectángulos válidos");
+				resolve([]);
+				return;
+			}
 
-		for (let x = minx; x <= maxx; x += pasoX) {
-			for (let y = miny; y <= maxy; y += pasoY) {
-				const centro = [x, y];
+			// Refinamiento de los mejores
+			const topRectangles = allRectangles
+				.sort((a, b) => b.area - a.area)
+				.slice(0, 5);
 
-				// Búsqueda binaria para encontrar el tamaño óptimo del rectángulo
-				let minWidth = 0;
-				let maxWidth = 2 * Math.max(maxx - minx, maxy - miny);
-				let minHeight = 0;
-				let maxHeight = 2 * Math.max(maxx - minx, maxy - miny);
-
-				// Optimizar anchura
-				for (let i = 0; i < 10; i++) {
-					const width = (minWidth + maxWidth) / 2;
-					let isValid = false;
-
-					// Optimizar altura para esta anchura
-					let optimalHeight = 0;
-					let lowHeight = minHeight;
-					let highHeight = maxHeight;
-
-					for (let j = 0; j < 10; j++) {
-						const height = (lowHeight + highHeight) / 2;
-
-						const rectVertices = crearRectanguloRotado(
-							centro,
-							width,
-							height,
-							angulo
-						);
-						const rectangulo = turf.polygon([rectVertices]);
-
-						if (
-							turf.booleanContains(poligonoDisponible, rectangulo)
-						) {
-							isValid = true;
-							optimalHeight = height;
-							lowHeight = height;
-						} else {
-							highHeight = height;
-						}
+			topRectangles.forEach((rect) => {
+				const bestAngle = (rect.angle * Math.PI) / 180;
+				for (let offset = -5; offset <= 5; offset += 0.5) {
+					const angle = bestAngle + (offset * Math.PI) / 180;
+					const refinedRect = findMaxRectangleAtAngle(
+						coordinates,
+						angle
+					);
+					if (refinedRect) {
+						allRectangles.push(refinedRect);
 					}
+				}
+			});
 
-					if (isValid) {
-						minWidth = width;
-						const area = minWidth * optimalHeight;
+			// Seleccionar las mejores 3 opciones diversas
+			const sortedByArea = allRectangles.sort((a, b) => b.area - a.area);
+			const options = [];
 
-						// Insertar el rectángulo en el array de mejores rectángulos
-						insertarRectanguloEnMejores(mejoresRectangulos, {
-							vertices: crearRectanguloRotado(
-								centro,
-								minWidth,
-								optimalHeight,
-								angulo
-							),
-							area: area,
-							angulo: angulo,
-						});
-					} else {
-						maxWidth = width;
+			// Opción 1: Rectángulo con mayor área
+			if (sortedByArea[0]) {
+				options.push({ ...sortedByArea[0], reason: "Mayor área" });
+			}
+
+			// Opción 2: Buscar uno con proporciones diferentes
+			const firstRatio = sortedByArea[0]
+				? sortedByArea[0].width / sortedByArea[0].height
+				: 0;
+			for (let i = 1; i < sortedByArea.length; i++) {
+				const rect = sortedByArea[i];
+				const ratio = rect.width / rect.height;
+				const ratioDiff = Math.abs(ratio - firstRatio);
+
+				if (
+					ratioDiff > 0.2 &&
+					rect.area > sortedByArea[0].area * 0.85 &&
+					options.length < 3
+				) {
+					const isAlreadySimilar = options.some(
+						(opt) =>
+							Math.abs(opt.angle - rect.angle) < 10 &&
+							Math.abs(opt.area - rect.area) < opt.area * 0.05
+					);
+
+					if (!isAlreadySimilar) {
+						const aspectRatio = rect.width / rect.height;
+						let reason = "Proporciones diferentes";
+						if (aspectRatio > 1.5) {
+							reason = "Más alargado";
+						} else if (aspectRatio < 0.8) {
+							reason = "Más vertical";
+						} else {
+							reason = "Más equilibrado";
+						}
+						options.push({ ...rect, reason });
+					}
+				}
+
+				if (options.length >= 3) break;
+			}
+
+			// Si solo tenemos 1-2 opciones, agregar las siguientes mejores
+			for (
+				let i = 1;
+				i < sortedByArea.length && options.length < 3;
+				i++
+			) {
+				const rect = sortedByArea[i];
+				const isAlreadyAdded = options.some(
+					(opt) =>
+						Math.abs(opt.angle - rect.angle) < 5 &&
+						Math.abs(opt.area - rect.area) < opt.area * 0.02
+				);
+
+				if (!isAlreadyAdded) {
+					options.push({
+						...rect,
+						reason: `Opción ${options.length + 1}`,
+					});
+				}
+			}
+
+			const result = options.slice(0, 3).map((rectangulo) => ({
+				vertices: rectangulo.corners,
+				angulo: (rectangulo.angle * Math.PI) / 180,
+				anguloGrados: rectangulo.angle,
+				ancho: rectangulo.width,
+				alto: rectangulo.height,
+				area: rectangulo.area,
+				centro: {
+					east:
+						(rectangulo.corners[0].east +
+							rectangulo.corners[2].east) /
+						2,
+					north:
+						(rectangulo.corners[0].north +
+							rectangulo.corners[2].north) /
+						2,
+				},
+			}));
+
+			console.log("✅ Resultado final:", result.length, "opciones");
+			resolve(result);
+		}, 100);
+	});
+};
+
+const isPointInPolygon = (point, polygon) => {
+	let inside = false;
+	for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+		const xi = polygon[i].east,
+			yi = polygon[i].north;
+		const xj = polygon[j].east,
+			yj = polygon[j].north;
+		const intersect =
+			yi > point.north !== yj > point.north &&
+			point.east < ((xj - xi) * (point.north - yi)) / (yj - yi) + xi;
+		if (intersect) inside = !inside;
+	}
+	return inside;
+};
+
+const rotatePoint = (point, angle, center) => {
+	const cos = Math.cos(angle);
+	const sin = Math.sin(angle);
+	const dx = point.east - center.east;
+	const dy = point.north - center.north;
+	return {
+		east: cos * dx - sin * dy + center.east,
+		north: sin * dx + cos * dy + center.north,
+	};
+};
+
+const findMaxRectangleAtAngle = (polygon, angle) => {
+	const center = {
+		east: polygon.reduce((sum, p) => sum + p.east, 0) / polygon.length,
+		north: polygon.reduce((sum, p) => sum + p.north, 0) / polygon.length,
+	};
+
+	const rotatedPolygon = polygon.map((p) => rotatePoint(p, -angle, center));
+
+	const easts = rotatedPolygon.map((p) => p.east);
+	const norths = rotatedPolygon.map((p) => p.north);
+	const minE = Math.min(...easts);
+	const maxE = Math.max(...easts);
+	const minN = Math.min(...norths);
+	const maxN = Math.max(...norths);
+	let maxArea = 0;
+	let bestRect = null;
+	const step = (maxE - minE) / 20;
+	for (let x1 = minE; x1 < maxE; x1 += step) {
+		for (let y1 = minN; y1 < maxN; y1 += step) {
+			for (let x2 = x1 + step; x2 <= maxE; x2 += step) {
+				for (let y2 = y1 + step; y2 <= maxN; y2 += step) {
+					const corners = [
+						{ east: x1, north: y1 },
+						{ east: x2, north: y1 },
+						{ east: x2, north: y2 },
+						{ east: x1, north: y2 },
+					];
+
+					const allInside = corners.every((corner) =>
+						isPointInPolygon(corner, rotatedPolygon)
+					);
+					if (allInside) {
+						const area = (x2 - x1) * (y2 - y1);
+						if (area > maxArea) {
+							maxArea = area;
+							bestRect = { x1, y1, x2, y2 };
+						}
 					}
 				}
 			}
 		}
 	}
-
-	//Devolver los vertices de los 3 mejores rectángulos (o menos si no se encuentran 3)
-	// return mejoresRectangulos
-	// 	.slice(0, 3)
-	// 	.map((rectangulo) => rectangulo.vertices);
-	return mejoresRectangulos.slice(0, 3).map((rectangulo) => ({
-		vertices: rectangulo.vertices,
-		angulo: rectangulo.angulo,
-	}));
+	if (!bestRect) return null;
+	const rectCorners = [
+		{ east: bestRect.x1, north: bestRect.y1 },
+		{ east: bestRect.x2, north: bestRect.y1 },
+		{ east: bestRect.x2, north: bestRect.y2 },
+		{ east: bestRect.x1, north: bestRect.y2 },
+	].map((p) => rotatePoint(p, angle, center));
+	return {
+		corners: rectCorners,
+		area: maxArea,
+		width: Math.abs(bestRect.x2 - bestRect.x1),
+		height: Math.abs(bestRect.y2 - bestRect.y1),
+		angle: (angle * 180) / Math.PI,
+	};
 };
-
-/**
- * Inserta un rectángulo en el array de mejores rectángulos
- * @param {Array} mejoresRectangulos - Array de mejores rectángulos
- * @param {Object} nuevoRectangulo - Nuevo rectángulo a insertar
- */
-function insertarRectanguloEnMejores(mejoresRectangulos, nuevoRectangulo) {
-	// Si hay menos de 3 rectángulos, agregar directamente
-	if (mejoresRectangulos.length < 3) {
-		mejoresRectangulos.push(nuevoRectangulo);
-		mejoresRectangulos.sort((a, b) => b.area - a.area);
-		return;
-	}
-
-	// Si el nuevo rectángulo es más grande que el más pequeño de los 3
-	if (nuevoRectangulo.area > mejoresRectangulos[2].area) {
-		// Reemplazar el más pequeño
-		mejoresRectangulos[2] = nuevoRectangulo;
-		// Reordenar
-		mejoresRectangulos.sort((a, b) => b.area - a.area);
-	}
-}
-
-/**
- * Crea los vértices de un rectángulo rotado
- * @param {Array} centro - Coordenadas del centro del rectángulo [x, y]
- * @param {Number} width - Ancho del rectángulo
- * @param {Number} height - Alto del rectángulo
- * @param {Number} angulo - Ángulo de rotación en radianes
- * @returns {Array} - Array de vértices del rectángulo rotado
- */
-function crearRectanguloRotado(centro, width, height, angulo) {
-	const halfWidth = width / 2;
-	const halfHeight = height / 2;
-
-	// Vértices del rectángulo sin rotar (relativo al centro)
-	const vertices = [
-		[-halfWidth, -halfHeight],
-		[-halfWidth, halfHeight],
-		[halfWidth, halfHeight],
-		[halfWidth, -halfHeight],
-	];
-
-	// Rotar y trasladar los vértices
-	const verticesRotados = vertices.map(([x, y]) => {
-		const rotatedX = x * Math.cos(angulo) - y * Math.sin(angulo);
-		const rotatedY = x * Math.sin(angulo) + y * Math.cos(angulo);
-
-		return [centro[0] + rotatedX, centro[1] + rotatedY];
-	});
-
-	// Cerrar el polígono repitiendo el primer vértice
-	verticesRotados.push(verticesRotados[0]);
-
-	return verticesRotados;
-}
 
 export default MaxRectangle;

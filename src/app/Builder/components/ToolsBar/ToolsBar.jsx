@@ -47,76 +47,17 @@ export default function ToolsBar({
 
 	const handleColorWall = debounce((value) => baseFn(value));
 
-	// const ambientes = [
-	// 	{
-	// 		nombre: "Aula Completa",
-	// 		tipo: "aula",
-	// 		posicion: { x: 0, y: 0, z: 0 },
-	// 		dimensiones: { ancho: 600, profundidad: 500, alto: 300 },
-	// 		componentes: [
-	// 			{
-	// 				tipo: "piso",
-	// 				nombre: "piso",
-	// 				posicion: { x: 0, y: 0, z: 0 },
-	// 				dimensiones: { ancho: 600, profundidad: 500, alto: 10 },
-	// 			},
-	// 			{
-	// 				tipo: "techo",
-	// 				nombre: "techo",
-	// 				posicion: { x: 0, y: 0, z: 290 },
-	// 				dimensiones: { ancho: 600, profundidad: 500, alto: 10 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "pared izquierda",
-	// 				posicion: { x: 0, y: 0, z: 0 },
-	// 				dimensiones: { ancho: 10, profundidad: 500, alto: 300 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "pared derecha",
-	// 				posicion: { x: 590, y: 0, z: 0 },
-	// 				dimensiones: { ancho: 10, profundidad: 500, alto: 300 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "pared trasera",
-	// 				posicion: { x: 0, y: 490, z: 0 },
-	// 				dimensiones: { ancho: 600, profundidad: 10, alto: 300 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "pared frontal izquierda de puerta",
-	// 				posicion: { x: 0, y: 0, z: 0 },
-	// 				dimensiones: { ancho: 200, profundidad: 10, alto: 300 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "pared frontal derecha de puerta",
-	// 				posicion: { x: 350, y: 0, z: 0 },
-	// 				dimensiones: { ancho: 250, profundidad: 10, alto: 300 },
-	// 			},
-	// 			{
-	// 				tipo: "pared",
-	// 				nombre: "parte superior de puerta",
-	// 				posicion: { x: 200, y: 0, z: 200 },
-	// 				dimensiones: { ancho: 150, profundidad: 10, alto: 100 },
-	// 			},
-	// 		],
-	// 	},
-	// ];
+	// const handleExportChange = (event) => {
+	// 	const value = event.target.value;
 
-	// const exportarJSON = () => {
-	// 	const data = JSON.stringify(ambientes, null, 2);
-	// 	const blob = new Blob([data], { type: "application/json" });
-	// 	const url = URL.createObjectURL(blob);
+	// 	if (value === "EXPORTAR_JSON") {
+	// 		dispatch(triggerExport()); // ✅ Enviar señal para exportar
+	// 	} else if (value === "analyze") {
+	// 		console.log("Analizar escena");
+	// 	}
 
-	// 	const link = document.createElement("a");
-	// 	link.href = url;
-	// 	link.download = "distribucion_ambientes.json";
-	// 	document.body.appendChild(link);
-	// 	link.click();
-	// 	document.body.removeChild(link);
+	// 	// Resetear el select
+	// 	event.target.value = "EXPORTAR";
 	// };
 
 	return (
@@ -189,19 +130,12 @@ export default function ToolsBar({
 							}}
 						>
 							<option value="EXPORTAR">EXPORTAR</option>
+							<option value="EXPORTAR_JSON">
+								📄 Exportar JSON
+							</option>
 							<option value="analyze">🔍 Analizar Escena</option>
-							<option value="dxf-all">
-								🎯 DXF Completo (incluye invisibles)
-							</option>
-							<option value="dxf-robust">
-								DXF Robusto (solo visibles)
-							</option>
-							<option value="dxf-boxes">
-								DXF Cajas (Simple)
-							</option>
 							<option value="obj">OBJ (Mesh)</option>
-							<option value="stl">STL (3D Print)</option>
-							<option value="json">JSON (Debug)</option>
+
 							<option value="jpeg">JPEG (Image)</option>
 						</select>
 						{/* <button

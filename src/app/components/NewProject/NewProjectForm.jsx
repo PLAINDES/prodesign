@@ -50,6 +50,8 @@ import { Dialog, DialogContent, DialogTitle, TextField } from "@mui/material";
 import AreaMaxRectangle from "../AreaData/AreaMaxRectangle";
 import MaxRectangleWithPriority from "../GridData/MaxRectangleWithPriority";
 import { mapFormDataToExcel } from "../../../utils/excelMapping";
+import { setAmbienceData } from "../../../redux/distribution/ambienceSlice";
+import { height, width } from "@mui/system";
 
 Chart.register(ScatterController, LinearScale, PointElement, LineElement);
 
@@ -348,6 +350,7 @@ const NewProjectForm = forwardRef(
 
 			const res = await readMatrizExcel(file, data); // servicio de la hoja de calculo
 			setDataExcel(res.data);
+			console.log("datos del excel :: ", res.data);
 			setTableAforo(true);
 			handleToggleLoading();
 			return { error: false, message: "" };
@@ -361,12 +364,18 @@ const NewProjectForm = forwardRef(
 			aulaSecundaria && levels.push("Secundaria");
 
 			const verticesArray = vertices.map(({ x, y }) => [x, y]);
+			// const verticesMaximumRectangle = {
+			// 	vertices: maximumRectangle.vertices,
+			// 	ancho: maximumRectangle.ancho,
+			// 	alto: maximumRectangle.alto,
+			// 	area: maximumRectangle.area,
+			// };
 			const verticesMaximumRectangle = maximumRectangle.vertices;
-			const angleMaximumRectangle = maximumRectangle.angulo;
-			const verticesRectangleArray = verticesMaximumRectangle.slice(
-				0,
-				-1
-			);
+			const angleMaximumRectangle = maximumRectangle.anguloGrados;
+			// const verticesRectangleArray = verticesMaximumRectangle.slice(
+			// 	0,
+			// 	-1
+			// );
 
 			const dataComplete = {
 				...values,
@@ -378,7 +387,9 @@ const NewProjectForm = forwardRef(
 				toilets_per_student: JSON.stringify(
 					dataExcel.toilets_per_student
 				),
-
+				width: maximumRectangle.ancho,
+				height: maximumRectangle.alto,
+				//area: maximumRectangle.area,
 				number_floors: numberFloors,
 				stairs: JSON.stringify(dataExcel.stairs),
 				ubication: values.ubication,
@@ -388,7 +399,7 @@ const NewProjectForm = forwardRef(
 				ambientes: rowsAC,
 				sublevel: tipo,
 				vertices: verticesArray,
-				vertices_rectangle: verticesRectangleArray,
+				vertices_rectangle: verticesMaximumRectangle,
 				angle: angleMaximumRectangle,
 				coordenadas: document.getElementById("coordenadas").value,
 				user_id: id,
@@ -404,6 +415,62 @@ const NewProjectForm = forwardRef(
 			});
 
 			console.log("📊 Datos a enviar al Excel:", projectExcelData);
+			const {
+				aula_psicomotricidad,
+				aulas_inicial_ciclo1,
+				aulas_inicial_ciclo2,
+				aulas_primaria,
+				aulas_secundaria,
+				biblioteca,
+				canchas_deportivas,
+				cocina,
+				depositos,
+				direccion_admin,
+				laboratorio,
+				lactario,
+				quiosco,
+				innovacion_primaria,
+				innovacion_secundaria,
+				sala_profesores,
+				sala_reuniones,
+				sshh_admin,
+				sshh_cocina,
+				sum_inicial,
+				sum_prim_sec,
+				taller_creativo_primaria,
+				taller_creativo_secundaria,
+				taller_ept,
+				topico,
+			} = projectExcelData;
+			dispatch(
+				setAmbienceData({
+					aula_psicomotricidad,
+					aulas_inicial_ciclo1,
+					aulas_inicial_ciclo2,
+					aulas_primaria,
+					aulas_secundaria,
+					biblioteca,
+					canchas_deportivas,
+					cocina,
+					depositos,
+					direccion_admin,
+					laboratorio,
+					lactario,
+					quiosco,
+					innovacion_primaria,
+					innovacion_secundaria,
+					sala_profesores,
+					sala_reuniones,
+					sshh_admin,
+					sshh_cocina,
+					sum_inicial,
+					sum_prim_sec,
+					taller_creativo_primaria,
+					taller_creativo_secundaria,
+					taller_ept,
+					topico,
+				})
+			);
 
 			// ========================================
 			// PASO 3: Actualizar el Excel del backend
@@ -1380,7 +1447,7 @@ const ambientesComplementarios = [
 		ambienteComplementario: "Sala de Usos Múltiples (SUM)",
 	},
 	//{ capacidad: 0, ambienteComplementario: "Aula para EPT" },
-	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
+
 	//{ capacidad: 0, ambienteComplementario: "Area de ingreso" },
 	{ capacidad: 0, ambienteComplementario: "Cocina escolar" },
 	{ capacidad: 0, ambienteComplementario: "Comedor" },
@@ -1389,11 +1456,8 @@ const ambientesComplementarios = [
 	// 	ambienteComplementario:
 	// 		"Servicios higiénicos para personal administrativo y docentes",
 	// },
-	{
-		capacidad: 0,
-		ambienteComplementario: "Almacén general / Depósito de materiales",
-	},
-	{ capacidad: 0, ambienteComplementario: "Cuarto de limpieza" },
+
+	{ capacidad: 0, ambienteComplementario: "Sala de Psicomotricidad" },
 	{ capacidad: 0, ambienteComplementario: "Dirección administrativa" },
 	{ capacidad: 0, ambienteComplementario: "Sala de maestros" },
 	{ capacidad: 0, ambienteComplementario: "Patio Inicial" },
@@ -1407,7 +1471,7 @@ const ambientesComplementarios = [
 const ambientesDefault = [
 	{ capacidad: 0, ambienteComplementario: "Biblioteca escolar" },
 	//{ capacidad: 0, ambienteComplementario: "Laboratorio de Ciencias" },
-	{ capacidad: 0, ambienteComplementario: "Sala de Psicomotricidad" },
+	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
 	{ capacidad: 0, ambienteComplementario: "Taller EPT" },
 ];
 
@@ -1806,36 +1870,57 @@ const RectangleChart = ({
 	setMaximumRectangle,
 	close,
 }) => {
-	// Array de referencias para los tres gráficos
 	const chartRefs = [useRef(null), useRef(null), useRef(null)];
 	const chartInstances = [useRef(null), useRef(null), useRef(null)];
 
-	// Estado para la opción seleccionada
 	const [selectedOption, setSelectedOption] = useState(0);
+	const [rectangulosData, setRectangulosData] = useState([]);
 
 	// Filtrar vértices excluidos
 	const availableVertices = verDispo.filter(
 		([x, y]) => !verticesExcluted.some(([vx, vy]) => vx === x && vy === y)
 	);
 
-	// Obtener los 3 mejores rectángulos
+	useEffect(() => {
+		const calcularRectangulos = async () => {
+			// Convertir availableVertices de [x, y] a {east, north}
 
-	const rectangulosData = MaxRectangle(availableVertices);
-	const rectangulos = rectangulosData.map(
-		(rectangulo) => rectangulo.vertices
+			const opciones = await MaxRectangle(availableVertices);
+			console.log("Opciones recibidas:", opciones);
+			setRectangulosData(opciones);
+		};
+
+		if (availableVertices.length > 0) {
+			calcularRectangulos();
+		}
+	}, [availableVertices.length]); // Mejor dependencia
+
+	console.log("rectangulosData:::::::", rectangulosData);
+
+	// AQUÍ ESTÁ EL FIX: Convertir de {east, north} a [x, y]
+	const rectangulos = rectangulosData.map((rectangulo) =>
+		rectangulo.vertices.map((vertex) => [vertex.east, vertex.north])
 	);
+
+	//
 	const handleConfirm = () => {
-		const { vertices, angulo } = rectangulosData[selectedOption];
-		setMaximumRectangle({ vertices, angulo });
+		const { vertices, anguloGrados, alto, ancho, area } =
+			rectangulosData[selectedOption];
+		setMaximumRectangle({ vertices, anguloGrados, alto, ancho, area });
 
 		//setMaximumRectangle(rectangulos[selectedOption]);
 		close();
 	};
+
 	useEffect(() => {
+		// Solo ejecutar si hay rectángulos
+		if (rectangulos.length === 0) return;
+
 		// Destruir instancias de gráficos existentes
 		chartInstances.forEach((instance) => {
 			if (instance.current) {
 				instance.current.destroy();
+				instance.current = null;
 			}
 		});
 
@@ -1874,8 +1959,10 @@ const RectangleChart = ({
 				},
 			};
 
-			// Calcular el área del rectángulo para mostrarla
-			const area = calcularAreaRectangulo(rectanguloMax);
+			// Calcular el área del rectángulo
+			const area =
+				rectangulosData[index]?.area ||
+				calcularAreaRectangulo(rectanguloMax);
 
 			chartInstances[index].current = new Chart(ctx, {
 				type: "line",
@@ -1893,10 +1980,7 @@ const RectangleChart = ({
 							label: `Rectángulo Opción ${
 								index + 1
 							} (${area.toFixed(2)} m²)`,
-							data: rectanguloMax.map(([x, y]) => ({
-								x,
-								y,
-							})),
+							data: rectanguloMax.map(([x, y]) => ({ x, y })),
 							borderColor: "orange",
 							backgroundColor: "rgba(255, 165, 0, 0.7)",
 							borderWidth: 2,
@@ -1913,7 +1997,7 @@ const RectangleChart = ({
 							position: "bottom",
 							title: {
 								display: true,
-								text: "Coordenadas X",
+								text: "Coordenadas X (East)",
 							},
 							ticks: {
 								display: false,
@@ -1924,6 +2008,10 @@ const RectangleChart = ({
 						},
 						y: {
 							type: "linear",
+							title: {
+								display: true,
+								text: "Coordenadas Y (North)",
+							},
 							ticks: {
 								display: false,
 							},
@@ -1956,16 +2044,16 @@ const RectangleChart = ({
 			chartInstances.forEach((instance) => {
 				if (instance.current) {
 					instance.current.destroy();
+					instance.current = null;
 				}
 			});
 		};
-	}, [verDispo, rectangulos]);
+	}, [rectangulos.length, selectedOption]); // Mejor dependencia
 
-	// Calcular el área aproximada del rectángulo usando la fórmula de Shoelace
+	// Calcular el área aproximada del rectángulo
 	function calcularAreaRectangulo(vertices) {
 		if (!vertices || vertices.length < 3) return 0;
 
-		// Eliminar el último vértice si es igual al primero (polígono cerrado)
 		const points =
 			vertices[0] &&
 			vertices[vertices.length - 1] &&
@@ -1984,10 +2072,18 @@ const RectangleChart = ({
 		return Math.abs(area) / 2;
 	}
 
-	// Función para seleccionar una opción
 	const handleOptionSelect = (index) => {
 		setSelectedOption(index);
 	};
+
+	// Si no hay datos aún, mostrar loading
+	if (rectangulosData.length === 0) {
+		return (
+			<div className="text-center p-4">
+				<p>Calculando rectángulos óptimos...</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="rectangle-charts-container">
@@ -1995,7 +2091,6 @@ const RectangleChart = ({
 				Seleccione la mejor opción de rectángulo
 			</h3>
 
-			{/* Botones para seleccionar opciones */}
 			<div
 				className="option-buttons mb-4"
 				style={{
@@ -2029,7 +2124,6 @@ const RectangleChart = ({
 				))}
 			</div>
 
-			{/* Contenedor para los gráficos */}
 			<div
 				className="charts-container"
 				style={{
@@ -2067,7 +2161,6 @@ const RectangleChart = ({
 				))}
 			</div>
 
-			{/* Botón para confirmar selección */}
 			<div className="text-center mt-4">
 				<button
 					className="btn btn-success"

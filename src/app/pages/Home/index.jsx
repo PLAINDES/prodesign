@@ -7,6 +7,8 @@ import GridData from "../../components/GridData/GridData";
 export function Home({ proyecto, school }) {
 	const projects = useSelector((state) => state.project.projects);
 
+	console.log("projects:::::::", projects);
+
 	return (
 		<Card sx={{ borderRadius: "5px" }}>
 			<Grid
