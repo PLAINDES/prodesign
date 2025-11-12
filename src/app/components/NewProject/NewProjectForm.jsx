@@ -6,10 +6,16 @@ import { Formik, Form, Field, useField } from "formik";
 import {
 	Chart,
 	ScatterController,
+	LineController,
 	LinearScale,
 	PointElement,
 	LineElement,
+	Title,
+	Tooltip,
+	Legend,
+	Filler,
 } from "chart.js";
+
 import React from "react";
 import Button from "@mui/material/Button";
 import Box from "@mui/system/Box";
@@ -52,8 +58,17 @@ import MaxRectangleWithPriority from "../GridData/MaxRectangleWithPriority";
 import { mapFormDataToExcel } from "../../../utils/excelMapping";
 import { setAmbienceData } from "../../../redux/distribution/ambienceSlice";
 import { height, width } from "@mui/system";
-
-Chart.register(ScatterController, LinearScale, PointElement, LineElement);
+Chart.register(
+	ScatterController,
+	LineController,
+	LinearScale,
+	PointElement,
+	LineElement,
+	Title,
+	Tooltip,
+	Legend,
+	Filler
+);
 
 const NewProjectForm = forwardRef(
 	({ data, handleClose, handleShow, school }, ref) => {
@@ -372,10 +387,7 @@ const NewProjectForm = forwardRef(
 			// };
 			const verticesMaximumRectangle = maximumRectangle.vertices;
 			const angleMaximumRectangle = maximumRectangle.anguloGrados;
-			// const verticesRectangleArray = verticesMaximumRectangle.slice(
-			// 	0,
-			// 	-1
-			// );
+			console.log("vercies maximum", verticesMaximumRectangle);
 
 			const dataComplete = {
 				...values,
@@ -1984,7 +1996,8 @@ const RectangleChart = ({
 							borderColor: "orange",
 							backgroundColor: "rgba(255, 165, 0, 0.7)",
 							borderWidth: 2,
-							fill: true,
+							fill: false,
+							showLine: true,
 						},
 					],
 				},

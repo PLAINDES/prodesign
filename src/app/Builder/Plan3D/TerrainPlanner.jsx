@@ -29,6 +29,11 @@ export default function TerrainPlanner({ school }) {
 	//estados para el hover de ambientes complementarios
 	const [hoveredAmbiente, setHoveredAmbiente] = useState(null);
 	const [hoveredLateral, setHoveredLateral] = useState(null);
+	const [hoveredInicial, setHoveredInicial] = useState(null);
+	const [hoveredPrimaria, setHoveredPrimaria] = useState(null);
+	const [hoveredSecundaria, setHoveredSecundaria] = useState(null);
+	const [hoveredBano, setHoveredBano] = useState(null);
+	const [hoveredEscalera, setHoveredEscalera] = useState(null);
 
 	const CLASSROOM_WIDTH = 7.8;
 	const CLASSROOM_HEIGHT = 7.2;
@@ -61,7 +66,7 @@ export default function TerrainPlanner({ school }) {
 		"Biblioteca escolar": {
 			height: 7.2,
 			//ancho: 12.5,
-			width: 7.7,
+			width: 7.8,
 		},
 		"Sala de Psicomotricidad": {
 			height: 7.2,
@@ -81,7 +86,7 @@ export default function TerrainPlanner({ school }) {
 		},
 		"Taller creativo": {
 			height: 12,
-			width: 7.6,
+			width: 7.8,
 		},
 		"Cocina escolar": {
 			height: 7.5,
@@ -118,7 +123,7 @@ export default function TerrainPlanner({ school }) {
 		Laboratorio: {
 			height: 7.5,
 			//ancho: 12.5,
-			width: 7.6,
+			width: 7.8,
 		},
 		Lactario: {
 			height: 7.5,
@@ -5483,11 +5488,14 @@ EOF
 
 			// ✅ RETIRO DESDE EL BORDE DEL TERRENO
 			const RETIRO_TERRENO = 0.5;
+
 			const rectWidth = maxRectangle.width - RETIRO_TERRENO * 2;
 			const rectHeight = maxRectangle.height - RETIRO_TERRENO * 2;
+			// const rectWidth = 60.9543 - RETIRO_TERRENO * 2;
+			// const rectHeight = 74.8472 - RETIRO_TERRENO * 2;
 
 			// Calcular ángulo y direcciones
-			const angle = (maxRectangle.angle * Math.PI) / 180;
+			const angle = (maxRectangle.angle * Math.PI) / 181;
 			const dirX = { east: Math.cos(angle), north: Math.sin(angle) };
 			const dirY = { east: -Math.sin(angle), north: Math.cos(angle) };
 
@@ -5522,9 +5530,6 @@ EOF
 					realCorners: realCorners,
 				};
 			};
-
-			// ✅ RENDERIZAR SEGÚN EL MODO
-			console.log("Renderizando en modo:", layoutMode);
 
 			if (layoutMode === "horizontal") {
 				renderLayoutHorizontal(
@@ -6521,7 +6526,7 @@ EOF
 												<Upload className="w-4 h-4" />
 												Exportar DXF 2D
 											</Button> */}
-								{/* <Button
+								<Button
 									// onClick={() =>
 									// 	exportToDXF(true)
 									// }
@@ -6531,7 +6536,7 @@ EOF
 								>
 									<Upload className="w-4 h-4" />
 									Exportar 3D
-								</Button> */}
+								</Button>
 							</Grid>
 						</Grid>
 					</Grid>
@@ -6666,95 +6671,394 @@ EOF
 									</g>
 								)}
 
-								{elementos.inicial.map((aula, idx) => (
-									<polygon
-										key={`ini-${idx}`}
-										points={aula.corners
-											.map((p) => `${p.x},${p.y}`)
-											.join(" ")}
-										fill="rgba(234, 179, 8, 0.6)"
-										stroke="#ca8a04"
-										strokeWidth="1.5"
-									/>
-								))}
-								{elementos.primaria.map((aula, idx) => (
-									<polygon
-										key={`pri-${idx}`}
-										points={aula.corners
-											.map((p) => `${p.x},${p.y}`)
-											.join(" ")}
-										fill="rgba(59, 130, 246, 0.6)"
-										stroke="#2563eb"
-										strokeWidth="1.5"
-									/>
-								))}
-								{elementos.secundaria.map((aula, idx) => (
-									<polygon
-										key={`sec-${idx}`}
-										points={aula.corners
-											.map((p) => `${p.x},${p.y}`)
-											.join(" ")}
-										fill="rgba(239, 68, 68, 0.6)"
-										stroke="#dc2626"
-										strokeWidth="1.5"
-									/>
-								))}
-								{elementos.banos.map((bano, idx) => (
-									<g key={`bano-${idx}`}>
-										<polygon
-											points={bano.corners
-												.map((p) => `${p.x},${p.y}`)
-												.join(" ")}
-											fill="rgba(168, 85, 247, 0.7)"
-											stroke="#7c3aed"
-											strokeWidth="2"
-										/>
-										<text
-											x={
-												(bano.corners[0].x +
-													bano.corners[2].x) /
-												2
-											}
-											y={
-												(bano.corners[0].y +
-													bano.corners[2].y) /
-												2
-											}
-											textAnchor="middle"
-											className="text-xs font-bold fill-purple-900"
-										>
-											🚻
-										</text>
-									</g>
-								))}
-								{elementos.escaleras.map((esc, idx) => (
-									<g key={`esc-${idx}`}>
-										<polygon
-											points={esc.corners
-												.map((p) => `${p.x},${p.y}`)
-												.join(" ")}
-											fill="rgba(107, 114, 128, 0.7)"
-											stroke="#4b5563"
-											strokeWidth="2"
-										/>
-										<text
-											x={
-												(esc.corners[0].x +
-													esc.corners[2].x) /
-												2
-											}
-											y={
-												(esc.corners[0].y +
-													esc.corners[2].y) /
-												2
-											}
-											textAnchor="middle"
-											className="text-xs font-bold fill-gray-900"
-										>
-											🪜
-										</text>
-									</g>
-								))}
+								{/* ✅ INICIAL CON HOVER */}
+								{elementos.inicial.map((aula, idx) => {
+									const centerX =
+										(aula.corners[0].x +
+											aula.corners[2].x) /
+										2;
+									const centerY =
+										(aula.corners[0].y +
+											aula.corners[2].y) /
+										2;
+
+									return (
+										<g key={`ini-${idx}`}>
+											<polygon
+												points={aula.corners
+													.map((p) => `${p.x},${p.y}`)
+													.join(" ")}
+												fill={
+													hoveredInicial === idx
+														? "rgba(234, 179, 8, 0.85)"
+														: "rgba(234, 179, 8, 0.6)"
+												}
+												stroke="#ca8a04"
+												strokeWidth={
+													hoveredInicial === idx
+														? "3"
+														: "1.5"
+												}
+												onMouseEnter={() =>
+													setHoveredInicial(idx)
+												}
+												onMouseLeave={() =>
+													setHoveredInicial(null)
+												}
+												style={{
+													cursor: "pointer",
+													transition: "all 0.2s",
+												}}
+											/>
+
+											{hoveredInicial === idx && (
+												<>
+													<rect
+														x={centerX - 30}
+														y={centerY - 10}
+														width={60}
+														height={20}
+														fill="white"
+														fillOpacity="0.95"
+														rx="4"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													/>
+													<text
+														x={centerX}
+														y={centerY + 4}
+														textAnchor="middle"
+														className="text-xs font-bold fill-yellow-900"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													>
+														Inicial {idx + 1}
+													</text>
+												</>
+											)}
+										</g>
+									);
+								})}
+
+								{/* ✅ PRIMARIA CON HOVER */}
+								{elementos.primaria.map((aula, idx) => {
+									const centerX =
+										(aula.corners[0].x +
+											aula.corners[2].x) /
+										2;
+									const centerY =
+										(aula.corners[0].y +
+											aula.corners[2].y) /
+										2;
+
+									return (
+										<g key={`pri-${idx}`}>
+											<polygon
+												points={aula.corners
+													.map((p) => `${p.x},${p.y}`)
+													.join(" ")}
+												fill={
+													hoveredPrimaria === idx
+														? "rgba(59, 130, 246, 0.85)"
+														: "rgba(59, 130, 246, 0.6)"
+												}
+												stroke="#2563eb"
+												strokeWidth={
+													hoveredPrimaria === idx
+														? "3"
+														: "1.5"
+												}
+												onMouseEnter={() =>
+													setHoveredPrimaria(idx)
+												}
+												onMouseLeave={() =>
+													setHoveredPrimaria(null)
+												}
+												style={{
+													cursor: "pointer",
+													transition: "all 0.2s",
+												}}
+											/>
+
+											{hoveredPrimaria === idx && (
+												<>
+													<rect
+														x={centerX - 35}
+														y={centerY - 10}
+														width={70}
+														height={20}
+														fill="white"
+														fillOpacity="0.95"
+														rx="4"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													/>
+													<text
+														x={centerX}
+														y={centerY + 4}
+														textAnchor="middle"
+														className="text-xs font-bold fill-blue-900"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													>
+														Primaria {idx + 1}
+													</text>
+												</>
+											)}
+										</g>
+									);
+								})}
+
+								{/* ✅ SECUNDARIA CON HOVER */}
+								{elementos.secundaria.map((aula, idx) => {
+									const centerX =
+										(aula.corners[0].x +
+											aula.corners[2].x) /
+										2;
+									const centerY =
+										(aula.corners[0].y +
+											aula.corners[2].y) /
+										2;
+
+									return (
+										<g key={`sec-${idx}`}>
+											<polygon
+												points={aula.corners
+													.map((p) => `${p.x},${p.y}`)
+													.join(" ")}
+												fill={
+													hoveredSecundaria === idx
+														? "rgba(239, 68, 68, 0.85)"
+														: "rgba(239, 68, 68, 0.6)"
+												}
+												stroke="#dc2626"
+												strokeWidth={
+													hoveredSecundaria === idx
+														? "3"
+														: "1.5"
+												}
+												onMouseEnter={() =>
+													setHoveredSecundaria(idx)
+												}
+												onMouseLeave={() =>
+													setHoveredSecundaria(null)
+												}
+												style={{
+													cursor: "pointer",
+													transition: "all 0.2s",
+												}}
+											/>
+
+											{hoveredSecundaria === idx && (
+												<>
+													<rect
+														x={centerX - 42}
+														y={centerY - 10}
+														width={84}
+														height={20}
+														fill="white"
+														fillOpacity="0.95"
+														rx="4"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													/>
+													<text
+														x={centerX}
+														y={centerY + 4}
+														textAnchor="middle"
+														className="text-xs font-bold fill-red-900"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													>
+														Secundaria {idx + 1}
+													</text>
+												</>
+											)}
+										</g>
+									);
+								})}
+
+								{/* ✅ BAÑOS CON HOVER */}
+								{elementos.banos.map((bano, idx) => {
+									const centerX =
+										(bano.corners[0].x +
+											bano.corners[2].x) /
+										2;
+									const centerY =
+										(bano.corners[0].y +
+											bano.corners[2].y) /
+										2;
+
+									return (
+										<g key={`bano-${idx}`}>
+											<polygon
+												points={bano.corners
+													.map((p) => `${p.x},${p.y}`)
+													.join(" ")}
+												fill={
+													hoveredBano === idx
+														? "rgba(168, 85, 247, 0.9)"
+														: "rgba(168, 85, 247, 0.6)"
+												}
+												stroke="#7c3aed"
+												strokeWidth={
+													hoveredBano === idx
+														? "3"
+														: "1.5"
+												}
+												onMouseEnter={() =>
+													setHoveredBano(idx)
+												}
+												onMouseLeave={() =>
+													setHoveredBano(null)
+												}
+												style={{
+													cursor: "pointer",
+													transition: "all 0.2s",
+												}}
+											/>
+
+											{!hoveredBano ||
+											hoveredBano !== idx ? (
+												<text
+													x={centerX}
+													y={centerY + 4}
+													textAnchor="middle"
+													className="text-xs font-bold fill-purple-900"
+													style={{
+														pointerEvents: "none",
+													}}
+												>
+													🚻
+												</text>
+											) : (
+												<>
+													<rect
+														x={centerX - 45}
+														y={centerY - 10}
+														width={90}
+														height={20}
+														fill="white"
+														fillOpacity="0.95"
+														rx="4"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													/>
+													<text
+														x={centerX}
+														y={centerY + 4}
+														textAnchor="middle"
+														className="text-xs font-bold fill-purple-900"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													>
+														🚻 Baños {bano.nivel}
+													</text>
+												</>
+											)}
+										</g>
+									);
+								})}
+
+								{/* ✅ ESCALERAS CON HOVER */}
+								{elementos.escaleras.map((esc, idx) => {
+									const centerX =
+										(esc.corners[0].x + esc.corners[2].x) /
+										2;
+									const centerY =
+										(esc.corners[0].y + esc.corners[2].y) /
+										2;
+
+									return (
+										<g key={`esc-${idx}`}>
+											<polygon
+												points={esc.corners
+													.map((p) => `${p.x},${p.y}`)
+													.join(" ")}
+												fill={
+													hoveredEscalera === idx
+														? "rgba(107, 114, 128, 0.9)"
+														: "rgba(107, 114, 128, 0.6)"
+												}
+												stroke="#4b5563"
+												strokeWidth={
+													hoveredEscalera === idx
+														? "3"
+														: "1.5"
+												}
+												onMouseEnter={() =>
+													setHoveredEscalera(idx)
+												}
+												onMouseLeave={() =>
+													setHoveredEscalera(null)
+												}
+												style={{
+													cursor: "pointer",
+													transition: "all 0.2s",
+												}}
+											/>
+
+											{!hoveredEscalera ||
+											hoveredEscalera !== idx ? (
+												<text
+													x={centerX}
+													y={centerY + 4}
+													textAnchor="middle"
+													className="text-xs font-bold fill-gray-900"
+													style={{
+														pointerEvents: "none",
+													}}
+												>
+													🪜
+												</text>
+											) : (
+												<>
+													<rect
+														x={centerX - 50}
+														y={centerY - 10}
+														width={100}
+														height={20}
+														fill="white"
+														fillOpacity="0.95"
+														rx="4"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													/>
+													<text
+														x={centerX}
+														y={centerY + 4}
+														textAnchor="middle"
+														className="text-xs font-bold fill-gray-900"
+														style={{
+															pointerEvents:
+																"none",
+														}}
+													>
+														🪜 Escalera {esc.nivel}
+													</text>
+												</>
+											)}
+										</g>
+									);
+								})}
 								{/* AMBIENTES CON HOVER */}
 								{elementos.ambientes.map((ambiente, idx) => {
 									const centerX =
@@ -6791,7 +7095,7 @@ EOF
 												strokeWidth={
 													hoveredAmbiente === idx
 														? "3"
-														: "2"
+														: "1.5"
 												}
 												onMouseEnter={() =>
 													setHoveredAmbiente(idx)
@@ -6868,13 +7172,13 @@ EOF
 												fill={
 													hoveredLateral === idx
 														? "rgba(251, 146, 60, 0.9)"
-														: "rgba(251, 146, 60, 0.7)"
+														: "rgba(251, 146, 60, 0.6)"
 												}
 												stroke="#ea580c"
 												strokeWidth={
 													hoveredLateral === idx
 														? "3"
-														: "2"
+														: "1.5"
 												}
 												onMouseEnter={() =>
 													setHoveredLateral(idx)
