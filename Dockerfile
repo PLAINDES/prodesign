@@ -1,24 +1,23 @@
-# ---------- BUILD ----------
-FROM node:20-alpine AS build
+FROM node:20-alpine3.19
 
 WORKDIR /app
 
+# Copiamos archivos de dependencias
 COPY package*.json ./
-RUN npm install
 
+# Instalación limpia de dependencias
+RUN npm install --legacy-peer-deps
+
+# Copiamos el resto del código
 COPY . .
+
+# Construimos el proyecto (genera la carpeta dist)
 RUN npm run build
 
-# ---------- SERVE ----------
-FROM nginx:alpine
-
-# Copiar build de Vite
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Config opcional para SPA (React Router)
-RUN rm /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
+# EXPOSE es informativo, pero lo ponemos en 80 para que coincida con el Compose
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Variable de entorno para que Express/Node sepa en qué puerto escuchar
+ENV PORT_SERVER=80
+
+CMD ["npm", "run", "prod"]

@@ -29,7 +29,7 @@ export const saveDistributionToAPI = async (
 		};
 
 		const response = await fetch(
-			`http://localhost:8000/api/v1/projects/${projectId}/distribution`,
+			`http://192.168.18.200:8000/api/v1/projects/${projectId}/distribution`,
 			{
 				method: "POST",
 				headers: {
@@ -55,7 +55,7 @@ export const saveDistributionToAPI = async (
 export const getDistributionFromAPI = async (projectId: number) => {
 	try {
 		const response = await fetch(
-			`http://localhost:8000/api/v1/projects/${projectId}/distribution`
+			`http://192.168.18.200:8000/api/v1/projects/${projectId}/distribution`
 		);
 		const data = await response.json();
 

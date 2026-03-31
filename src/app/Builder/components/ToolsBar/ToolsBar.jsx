@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import axios from 'axios';
 import {
 	setPlayCamera,
 	setRoof,
@@ -28,6 +29,9 @@ import Button2D from "./Buttons/Button2D";
 import "./styles.css";
 import Settings from "../Settings/Settings";
 import { requestExport } from "../../../../redux/features/exportSlice";
+import { useParams } from "react-router-dom";
+
+const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 
 export default function ToolsBar({
 	state,
@@ -47,13 +51,70 @@ export default function ToolsBar({
 	}, []);
 
 	const handleColorWall = debounce((value) => baseFn(value));
+	const params = useParams();
+
+
+	const handleImgPlane2D = async(projectId)=>{
+		try {
+			const token = localStorage.getItem('token');
+			const response = await axios.get(`${BASE_URL_CALC}/api/v1/project/${Number(projectId - 1)}`, {
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Accept': 'text/html', // opcional, para que el servidor sepa que esperamos HTML
+				}
+			});
+
+			// 🔹 Obtener el HTML como string
+			const htmlContent = response.data;
+
+			// 🔹 Insertarlo en el iframe usando srcdoc
+			const iframe = document.getElementById("miIframe"); // tu iframe en el DOM
+			iframe.srcdoc = htmlContent;
+			
+		} catch (error) {
+			console.log(error);
+		}
+	}
+
+	const handleDownloadDXF = async (projectId) => {
+		try {
+			const token = localStorage.getItem('token');
+			const response = await axios.get(`${BASE_URL_CALC}/api/v1/project-export/${Number(projectId - 1)}`, {
+				responseType: 'blob', // <-- ESTO ES LO MÁS IMPORTANTE
+				headers: {
+					// El estándar es 'Bearer ' seguido del token
+					'Authorization': `Bearer ${token}`,
+					'Accept': 'application/dxf'
+				}
+			});
+
+			// Crear un link temporal en el DOM
+			const url = window.URL.createObjectURL(new Blob([response.data]));
+			const link = document.createElement('a');
+			link.href = url;
+			
+			// Nombre del archivo que verá el usuario
+			link.setAttribute('download', `Plano_Proyecto_${projectId}.dxf`);
+			
+			document.body.appendChild(link);
+			link.click();
+			
+			// Limpieza
+			link.parentNode.removeChild(link);
+			window.URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error("Error al descargar el DXF:", error);
+		}
+	};
 
 	const handleExportChange = (event) => {
 		const exportType = event.target.value; // 'json', 'excel', etc.
+		console.log(exportType);
+		handleDownloadDXF(params.id)
 
-		if (exportType) {
-			dispatch(requestExport(exportType));
-		}
+		// if (exportType) {
+		// 	dispatch(requestExport(exportType));
+		// }
 	};
 
 	return (
@@ -128,11 +189,11 @@ export default function ToolsBar({
 							onChange={handleExportChange}
 						>
 							<option value="EXPORTAR">EXPORTAR</option>
-							<option value="json">📄 Exportar JSON</option>
-							<option value="analyze">🔍 Analizar Escena</option>
-							<option value="obj">OBJ (Mesh)</option>
+							{/* <option value="json">📄 Exportar JSON</option> */}
+							{/* <option value="analyze">🔍 Analizar Escena</option> */}
+							{/* <option value="obj">OBJ (Mesh)</option> */}
 
-							<option value="jpeg">JPEG (Image)</option>
+							<option value="dxf">DXF (AUTOCAD)</option>
 						</select>
 						{/* <button
 							onClick={exportarJSON}

@@ -1,4 +1,4 @@
-import { request } from "../utils/arqPlataformAxios";
+import { request, requestCalc } from "../utils/arqPlataformAxios";
 
 export const getAllProjects = () => {
 	return request({
@@ -11,6 +11,14 @@ export const createProjectService = (body) => {
 	return request({
 		method: "POST",
 		url: "/api/v1/projects",
+		data: body,
+	});
+};
+
+export const generateProjectService = (body) => {
+	return request({
+		method: "POST",
+		url: "/api/v1/generate-project",
 		data: body,
 	});
 };
@@ -119,6 +127,13 @@ export const getProjectByID = (id) => {
 
 		console.log(response.data);
 		return response;
+	});
+};
+
+export const getProjectByIDCalc = (id) => {
+	return requestCalc({
+		url: `/api/v1/project/${id}`,
+		method: "GET"
 	});
 };
 

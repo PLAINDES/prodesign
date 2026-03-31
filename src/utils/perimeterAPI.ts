@@ -56,7 +56,7 @@ export const savePerimetersToAPI = async (
 		};
 
 		const response = await fetch(
-			`http://localhost:8000/api/v1/projects/${projectId}/perimeters`,
+			`http://192.168.18.200:8000/api/v1/projects/${projectId}/perimeters`,
 			{
 				method: "POST",
 				headers: {

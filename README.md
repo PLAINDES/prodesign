@@ -23,7 +23,7 @@ npm run dev
 
 ```
 
-> Por defecto en: `http://localhost:5199/`
+> Por defecto en: `http://192.168.18.200:5199/`
 
 ### ⚙️ Variables de Entorno (.env)
 

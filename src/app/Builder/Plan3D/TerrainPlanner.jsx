@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Building2, AlertCircle, Upload, X, SaveIcon } from "lucide-react";
 import {
 	Alert,
@@ -15,6 +15,12 @@ import DxfWriter from "dxf-writer";
 import { resetExport } from "../../../redux/features/exportSlice";
 import { setVista3DData } from "../../../redux/features/view3DSlice";
 import { savePerimetersToAPI } from "../../../utils/perimeterAPI";
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Edges } from '@react-three/drei';
+import * as THREE from 'three';
+import { useParams } from "react-router-dom";
+import { getProjectByIDCalc } from "../../../services/projectsService"
+
 import {
 	getDistributionFromAPI,
 	saveDistributionToAPI,
@@ -179,8 +185,8 @@ export default function TerrainPlanner({ school, state, height }) {
 
 	const arrayTransformado = complementaryEnvironment.map((item) => ({
 		nombre: item.ambienteComplementario,
-		alto: dimensiones[item.ambienteComplementario].height,
-		ancho: dimensiones[item.ambienteComplementario].width,
+		alto: 3,
+		ancho: 3,
 	}));
 
 	const handleSavePerimeters = async () => {
@@ -255,34 +261,35 @@ export default function TerrainPlanner({ school, state, height }) {
 		}
 	}, [layoutMode]);
 
-	useEffect(() => {
-		try {
-			const parsedCoords = vertices.map((vertex, index) => ({
-				id: Date.now() + index,
-				east: parseFloat(vertex[0]),
-				north: parseFloat(vertex[1]),
-			}));
+	// useEffect(() => {
+	// 	try {
+	// 		const parsedCoords = vertices.map((vertex, index) => ({
+	// 			id: Date.now() + index,
+	// 			east: parseFloat(vertex[0]),
+	// 			north: parseFloat(vertex[1]),
+	// 		}));
 
-			const parsedCoordsRectangle = {
-				angle: Math.round(angle),
-				//height: parseFloat(length.toFixed(2)),
-				height: length,
-				width: width,
-				area: parseFloat(partialArea.toFixed(2)),
-				corners: verticesRectangle,
-			};
+	// 		const parsedCoordsRectangle = {
+	// 			angle: Math.round(angle),
+	// 			//height: parseFloat(length.toFixed(2)),
+	// 			height: length,
+	// 			width: width,
+	// 			area: parseFloat(partialArea.toFixed(2)),
+	// 			corners: verticesRectangle,
+	// 		};
 
-			setCoordinates(parsedCoords);
-			setMaxRectangle(parsedCoordsRectangle);
-			//setMaxRectangle(null);
-			//setDistribution(null);
-			setShowBulkInput(false);
-			//setBulkInput("");
-			//calculateCapacity();
-		} catch (error) {
-			alert("Error al procesar las coordenadas. Verifica el formato.");
-		}
-	}, []);
+	// 		setCoordinates(parsedCoords);
+	// 		setMaxRectangle(parsedCoordsRectangle);
+	// 		//setMaxRectangle(null);
+	// 		//setDistribution(null);
+	// 		setShowBulkInput(false);
+	// 		//setBulkInput("");
+	// 		//calculateCapacity();
+	// 	} catch (error) {
+	// 		alert("Error al procesar las coordenadas. Verifica el formato.");
+	// 	}
+	// }, []);
+	
 
 	useEffect(() => {
 		const loadSavedDistribution = async () => {
@@ -5852,7 +5859,7 @@ export default function TerrainPlanner({ school, state, height }) {
 					style={{position: "absolute", top:10, right: 10, display: "flex", flexDirection: "column"}}
 				>
 					{/* Fila de botones Horizontal y Vertical */}
-					<Grid item>
+					{/* <Grid item>
 						<Grid container direction="row" spacing={0.4}>
 							<Grid item>
 								<Button
@@ -5893,7 +5900,7 @@ export default function TerrainPlanner({ school, state, height }) {
 								</Button>
 							</Grid>
 						</Grid>
-					</Grid>
+					</Grid> */}
 					{/* Botón de Generar Distribución debajo */}
 					<Grid item>
 						{/* <Button
@@ -5937,7 +5944,7 @@ export default function TerrainPlanner({ school, state, height }) {
 								{/* Snackbar para mostrar resultado */}
 							</Grid>
 						)}
-						<Snackbar
+						{/* <Snackbar
 							open={saveStatus.open}
 							autoHideDuration={4000}
 							onClose={() =>
@@ -5963,11 +5970,11 @@ export default function TerrainPlanner({ school, state, height }) {
 							>
 								{saveStatus.message}
 							</Alert>
-						</Snackbar>
+						</Snackbar> */}
 					</Grid>
 				</div>
 
-			<div className="border-2 border-slate-200 rounded-lg bg-slate-50 overflow-hidden relative">
+			{/* <div className="border-2 border-slate-200 rounded-lg bg-slate-50 overflow-hidden relative">
 				<svg
 					width="100%"
 					height={height}
@@ -5998,7 +6005,7 @@ export default function TerrainPlanner({ school, state, height }) {
 						</pattern>
 					</defs>
 
-					{/* ✅ GRUPO CON TRANSFORMACIÓN DE ZOOM Y PAN */}
+					
 					<g
 						transform={`translate(${panOffset.x / zoom}, ${
 							panOffset.y / zoom
@@ -6060,7 +6067,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									</text>
 								)}
 
-								{/* Entrada */}
+								
 								{elementos.entrada && (
 									<g>
 										<polygon
@@ -6095,7 +6102,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									</g>
 								)}
 
-								{/* ✅ INICIAL CON HOVER */}
+								
 								{elementos.inicial.map((aula, idx) => {
 									const centerX =
 										(aula.corners[0].x +
@@ -6168,7 +6175,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									);
 								})}
 
-								{/* ✅ PRIMARIA CON HOVER */}
+								
 								{elementos.primaria.map((aula, idx) => {
 									const centerX =
 										(aula.corners[0].x +
@@ -6241,7 +6248,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									);
 								})}
 
-								{/* ✅ SECUNDARIA CON HOVER */}
+								
 								{elementos.secundaria.map((aula, idx) => {
 									const centerX =
 										(aula.corners[0].x +
@@ -6314,7 +6321,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									);
 								})}
 
-								{/* ✅ BAÑOS CON HOVER */}
+								
 								{elementos.banos.map((bano, idx) => {
 									const centerX =
 										(bano.corners[0].x +
@@ -6400,7 +6407,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									);
 								})}
 
-								{/* ✅ ESCALERAS CON HOVER */}
+								
 								{elementos.escaleras.map((esc, idx) => {
 									const centerX =
 										(esc.corners[0].x + esc.corners[2].x) /
@@ -6483,7 +6490,7 @@ export default function TerrainPlanner({ school, state, height }) {
 										</g>
 									);
 								})}
-								{/* AMBIENTES CON HOVER */}
+								
 								{elementos.ambientes.map((ambiente, idx) => {
 									const centerX =
 										(ambiente.corners[0].x +
@@ -6533,10 +6540,10 @@ export default function TerrainPlanner({ school, state, height }) {
 												}}
 											/>
 
-											{/* Texto solo visible en hover */}
+											
 											{hoveredAmbiente === idx && (
 												<>
-													{/* Fondo blanco para mejor legibilidad */}
+													
 													<rect
 														x={
 															centerX -
@@ -6576,7 +6583,7 @@ export default function TerrainPlanner({ school, state, height }) {
 									);
 								})}
 
-								{/* AMBIENTES LATERALES CON HOVER */}
+								
 								{elementos.laterales.map((lateral, idx) => {
 									const centerX =
 										(lateral.corners[0].x +
@@ -6616,10 +6623,10 @@ export default function TerrainPlanner({ school, state, height }) {
 												}}
 											/>
 
-											{/* Texto solo visible en hover */}
+											
 											{hoveredLateral === idx && (
 												<>
-													{/* Fondo blanco para mejor legibilidad */}
+													
 													<rect
 														x={
 															centerX -
@@ -6683,7 +6690,7 @@ export default function TerrainPlanner({ school, state, height }) {
 											textAnchor="middle"
 											className="text-sm font-bold fill-green-700"
 										>
-											⚽ CANCHA
+											
 										</text>
 									</>
 								)}
@@ -6714,7 +6721,3547 @@ export default function TerrainPlanner({ school, state, height }) {
 						)}
 					</g>
 				</svg>
+			</div> */}
+			<div style={{display: "flex", justifyContent: "center",  width: "80vw", height: "90vh"}}>
+				<Plano2D/>
 			</div>
 		</div>
 	);
+}
+
+
+export function Plane3D(){
+
+	const vertices = [
+            {
+                "id": "022868ce",
+                "path": "SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 1,
+                "coords": [
+                    [
+                        97.5,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 5996.25,
+                "geometria_mundo": [
+                    [
+                        301784.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "bf95b501",
+                "path": "SIN_NOMBRE/PRIMARIA",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "PRIMARIA",
+                "area_m2": 492.0,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "4ab09d6a",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "PRIMARIA",
+                "area_m2": 492.0,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "80e550aa",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        4.333
+                    ],
+                    [
+                        6.5,
+                        4.333
+                    ],
+                    [
+                        6.5,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932953.264488727
+                    ],
+                    [
+                        301693.2037355159,
+                        8932953.264488727
+                    ],
+                    [
+                        301693.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "8b24cc85",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        4.333
+                    ],
+                    [
+                        0.0,
+                        8.667
+                    ],
+                    [
+                        6.5,
+                        8.667
+                    ],
+                    [
+                        6.5,
+                        4.333
+                    ],
+                    [
+                        0.0,
+                        4.333
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932953.264488727
+                    ],
+                    [
+                        301686.7037355159,
+                        8932957.598488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932957.598488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932953.264488727
+                    ],
+                    [
+                        301686.7037355159,
+                        8932953.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "8042d37e",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        8.667
+                    ],
+                    [
+                        0.0,
+                        13.0
+                    ],
+                    [
+                        6.5,
+                        13.0
+                    ],
+                    [
+                        6.5,
+                        8.667
+                    ],
+                    [
+                        0.0,
+                        8.667
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932957.598488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932961.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932961.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932957.598488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932957.598488726
+                    ]
+                ]
+            },
+            {
+                "id": "ae96b019",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        13.0
+                    ],
+                    [
+                        0.0,
+                        17.333
+                    ],
+                    [
+                        6.5,
+                        17.333
+                    ],
+                    [
+                        6.5,
+                        13.0
+                    ],
+                    [
+                        0.0,
+                        13.0
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932961.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932966.264488727
+                    ],
+                    [
+                        301693.2037355159,
+                        8932966.264488727
+                    ],
+                    [
+                        301693.2037355159,
+                        8932961.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932961.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "9217e25a",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        17.333
+                    ],
+                    [
+                        0.0,
+                        21.667
+                    ],
+                    [
+                        6.5,
+                        21.667
+                    ],
+                    [
+                        6.5,
+                        17.333
+                    ],
+                    [
+                        0.0,
+                        17.333
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932966.264488727
+                    ],
+                    [
+                        301686.7037355159,
+                        8932970.598488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932970.598488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932966.264488727
+                    ],
+                    [
+                        301686.7037355159,
+                        8932966.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "2db44ed7",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aulas Primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        21.667
+                    ],
+                    [
+                        0.0,
+                        26.0
+                    ],
+                    [
+                        6.5,
+                        26.0
+                    ],
+                    [
+                        6.5,
+                        21.667
+                    ],
+                    [
+                        0.0,
+                        21.667
+                    ]
+                ],
+                "nombre": "Aulas Primaria",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932970.598488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932974.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932974.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932970.598488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932970.598488726
+                    ]
+                ]
+            },
+            {
+                "id": "5660a1c5",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Biblioteca",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        26.0
+                    ],
+                    [
+                        0.0,
+                        37.5
+                    ],
+                    [
+                        6.5,
+                        37.5
+                    ],
+                    [
+                        6.5,
+                        26.0
+                    ],
+                    [
+                        0.0,
+                        26.0
+                    ]
+                ],
+                "nombre": "Biblioteca",
+                "area_m2": 74.75,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932974.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932986.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932986.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932974.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932974.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "499c6106",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Aula de Innovacion Prim",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        37.5
+                    ],
+                    [
+                        0.0,
+                        48.5
+                    ],
+                    [
+                        6.5,
+                        48.5
+                    ],
+                    [
+                        6.5,
+                        37.5
+                    ],
+                    [
+                        0.0,
+                        37.5
+                    ]
+                ],
+                "nombre": "Aula de Innovacion Prim",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932986.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932997.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932997.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932986.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932986.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "a46c93d5",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Taller creativo Prim",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        48.5
+                    ],
+                    [
+                        0.0,
+                        59.5
+                    ],
+                    [
+                        6.5,
+                        59.5
+                    ],
+                    [
+                        6.5,
+                        48.5
+                    ],
+                    [
+                        0.0,
+                        48.5
+                    ]
+                ],
+                "nombre": "Taller creativo Prim",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932997.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933008.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8933008.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932997.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932997.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "d2cdec26",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Escalera Prim",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        59.5
+                    ],
+                    [
+                        0.0,
+                        61.0
+                    ],
+                    [
+                        6.5,
+                        61.0
+                    ],
+                    [
+                        6.5,
+                        59.5
+                    ],
+                    [
+                        0.0,
+                        59.5
+                    ]
+                ],
+                "nombre": "Escalera Prim",
+                "area_m2": 9.75,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8933008.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933009.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8933009.931488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8933008.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933008.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "e8af5fb3",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA",
+                "piso": 2,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        0.0
+                    ],
+                    [
+                        8.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        61.5
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "PRIMARIA",
+                "area_m2": 492.0,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "461092ab",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/Escalera Prim",
+                "piso": 2,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        1.5
+                    ],
+                    [
+                        6.5,
+                        1.5
+                    ],
+                    [
+                        6.5,
+                        0.0
+                    ],
+                    [
+                        0.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "Escalera Prim",
+                "area_m2": 9.75,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932950.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932950.431488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "9ff3a44c",
+                "path": "SIN_NOMBRE/PRIMARIA/PRIMARIA/SSHH Prim",
+                "piso": 2,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        0.0,
+                        1.5
+                    ],
+                    [
+                        0.0,
+                        3.967
+                    ],
+                    [
+                        6.5,
+                        3.967
+                    ],
+                    [
+                        6.5,
+                        1.5
+                    ],
+                    [
+                        0.0,
+                        1.5
+                    ]
+                ],
+                "nombre": "SSHH Prim",
+                "area_m2": 16.033333333333335,
+                "geometria_mundo": [
+                    [
+                        301686.7037355159,
+                        8932950.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932952.898488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932952.898488726
+                    ],
+                    [
+                        301693.2037355159,
+                        8932950.431488726
+                    ],
+                    [
+                        301686.7037355159,
+                        8932950.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "992bfc92",
+                "path": "SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        8.0,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        61.5
+                    ],
+                    [
+                        8.0,
+                        61.5
+                    ],
+                    [
+                        8.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 123.0,
+                "geometria_mundo": [
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "a2ffc199",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/Pasillo primaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        8.0,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        61.0
+                    ],
+                    [
+                        8.0,
+                        61.0
+                    ],
+                    [
+                        8.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "Pasillo primaria",
+                "area_m2": 122.0,
+                "geometria_mundo": [
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933009.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8933009.931488726
+                    ],
+                    [
+                        301694.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "295fe1e4",
+                "path": "SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        61.5
+                    ],
+                    [
+                        10.0,
+                        61.5
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 4766.25,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "07639128",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 3,
+                "coords": [
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        10.0
+                    ],
+                    [
+                        10.0,
+                        10.0
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "INICIAL",
+                "area_m2": 775.0,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "949ecc59",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 3,
+                "coords": [
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        0.0
+                    ],
+                    [
+                        87.5,
+                        10.0
+                    ],
+                    [
+                        10.0,
+                        10.0
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "INICIAL",
+                "area_m2": 775.0,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "f61b68bc",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Aulas Ciclo I",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        10.0,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        6.5
+                    ],
+                    [
+                        14.333,
+                        6.5
+                    ],
+                    [
+                        14.333,
+                        0.0
+                    ],
+                    [
+                        10.0,
+                        0.0
+                    ]
+                ],
+                "nombre": "Aulas Ciclo I",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301701.03673551587,
+                        8932955.431488726
+                    ],
+                    [
+                        301701.03673551587,
+                        8932948.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "c1faebda",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Aulas Ciclo I",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        14.333,
+                        0.0
+                    ],
+                    [
+                        14.333,
+                        6.5
+                    ],
+                    [
+                        18.667,
+                        6.5
+                    ],
+                    [
+                        18.667,
+                        0.0
+                    ],
+                    [
+                        14.333,
+                        0.0
+                    ]
+                ],
+                "nombre": "Aulas Ciclo I",
+                "area_m2": 28.166666666666664,
+                "geometria_mundo": [
+                    [
+                        301701.03673551587,
+                        8932948.931488726
+                    ],
+                    [
+                        301701.03673551587,
+                        8932955.431488726
+                    ],
+                    [
+                        301705.3707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301705.3707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301701.03673551587,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "fed0ea15",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Aulas Ciclo II",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        18.667,
+                        0.0
+                    ],
+                    [
+                        18.667,
+                        6.5
+                    ],
+                    [
+                        25.667,
+                        6.5
+                    ],
+                    [
+                        25.667,
+                        0.0
+                    ],
+                    [
+                        18.667,
+                        0.0
+                    ]
+                ],
+                "nombre": "Aulas Ciclo II",
+                "area_m2": 45.5,
+                "geometria_mundo": [
+                    [
+                        301705.3707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301705.3707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301712.3707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301712.3707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301705.3707355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "e6669f66",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Topico",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        25.667,
+                        0.0
+                    ],
+                    [
+                        25.667,
+                        6.5
+                    ],
+                    [
+                        28.267,
+                        6.5
+                    ],
+                    [
+                        28.267,
+                        0.0
+                    ],
+                    [
+                        25.667,
+                        0.0
+                    ]
+                ],
+                "nombre": "Topico",
+                "area_m2": 16.900000000000002,
+                "geometria_mundo": [
+                    [
+                        301712.3707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301712.3707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301714.9707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301714.9707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301712.3707355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "20f30ce5",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Lactario",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        28.267,
+                        0.0
+                    ],
+                    [
+                        28.267,
+                        6.5
+                    ],
+                    [
+                        30.267,
+                        6.5
+                    ],
+                    [
+                        30.267,
+                        0.0
+                    ],
+                    [
+                        28.267,
+                        0.0
+                    ]
+                ],
+                "nombre": "Lactario",
+                "area_m2": 13.0,
+                "geometria_mundo": [
+                    [
+                        301714.9707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301714.9707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301716.9707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301716.9707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301714.9707355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "7147077f",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/SSHH Inicial",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        30.267,
+                        0.0
+                    ],
+                    [
+                        30.267,
+                        6.5
+                    ],
+                    [
+                        31.533,
+                        6.5
+                    ],
+                    [
+                        31.533,
+                        0.0
+                    ],
+                    [
+                        30.267,
+                        0.0
+                    ]
+                ],
+                "nombre": "SSHH Inicial",
+                "area_m2": 8.233333333333333,
+                "geometria_mundo": [
+                    [
+                        301716.9707355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301716.9707355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301718.2367355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301718.2367355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301716.9707355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "c3e76ca6",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/INICIAL/INICIAL/Cocina Inicial",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        31.533,
+                        0.0
+                    ],
+                    [
+                        31.533,
+                        6.5
+                    ],
+                    [
+                        32.96,
+                        6.5
+                    ],
+                    [
+                        32.96,
+                        0.0
+                    ],
+                    [
+                        31.533,
+                        0.0
+                    ]
+                ],
+                "nombre": "Cocina Inicial",
+                "area_m2": 9.273333333333332,
+                "geometria_mundo": [
+                    [
+                        301718.2367355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301718.2367355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301719.6637355159,
+                        8932955.431488726
+                    ],
+                    [
+                        301719.6637355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301718.2367355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "c01c8ee6",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 3,
+                "coords": [
+                    [
+                        10.0,
+                        10.0
+                    ],
+                    [
+                        87.5,
+                        10.0
+                    ],
+                    [
+                        87.5,
+                        51.5
+                    ],
+                    [
+                        10.0,
+                        51.5
+                    ],
+                    [
+                        10.0,
+                        10.0
+                    ]
+                ],
+                "nombre": "MEDIO",
+                "area_m2": 3216.25,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "b7c34479",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 4,
+                "coords": [
+                    [
+                        10.0,
+                        10.0
+                    ],
+                    [
+                        87.5,
+                        10.0
+                    ],
+                    [
+                        87.5,
+                        22.0
+                    ],
+                    [
+                        10.0,
+                        22.0
+                    ],
+                    [
+                        10.0,
+                        10.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 930.0,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932958.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932958.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "56e3e2a3",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/Patio de Inicial",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 5,
+                "coords": [
+                    [
+                        58.25,
+                        12.75
+                    ],
+                    [
+                        39.25,
+                        12.75
+                    ],
+                    [
+                        39.25,
+                        19.25
+                    ],
+                    [
+                        58.25,
+                        19.25
+                    ],
+                    [
+                        58.25,
+                        12.75
+                    ]
+                ],
+                "nombre": "Patio de Inicial",
+                "area_m2": 123.5,
+                "geometria_mundo": [
+                    [
+                        301744.9537355159,
+                        8932961.681488726
+                    ],
+                    [
+                        301725.9537355159,
+                        8932961.681488726
+                    ],
+                    [
+                        301725.9537355159,
+                        8932968.181488726
+                    ],
+                    [
+                        301744.9537355159,
+                        8932968.181488726
+                    ],
+                    [
+                        301744.9537355159,
+                        8932961.681488726
+                    ]
+                ]
+            },
+            {
+                "id": "395fc4c8",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 4,
+                "coords": [
+                    [
+                        10.0,
+                        22.0
+                    ],
+                    [
+                        87.5,
+                        22.0
+                    ],
+                    [
+                        87.5,
+                        35.719
+                    ],
+                    [
+                        10.0,
+                        35.719
+                    ],
+                    [
+                        10.0,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 1063.203125,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301696.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301696.7037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "d8894619",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 5,
+                "coords": [
+                    [
+                        10.0,
+                        22.0
+                    ],
+                    [
+                        16.0,
+                        22.0
+                    ],
+                    [
+                        16.0,
+                        35.719
+                    ],
+                    [
+                        10.0,
+                        35.719
+                    ],
+                    [
+                        10.0,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 82.3125,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301702.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301702.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301696.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301696.7037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "a1b39c7a",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 5,
+                "coords": [
+                    [
+                        16.0,
+                        22.0
+                    ],
+                    [
+                        81.5,
+                        22.0
+                    ],
+                    [
+                        81.5,
+                        35.719
+                    ],
+                    [
+                        16.0,
+                        35.719
+                    ],
+                    [
+                        16.0,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 898.578125,
+                "geometria_mundo": [
+                    [
+                        301702.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301768.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301768.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301702.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301702.7037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "f0da1160",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 6,
+                "coords": [
+                    [
+                        16.0,
+                        22.0
+                    ],
+                    [
+                        71.5,
+                        22.0
+                    ],
+                    [
+                        71.5,
+                        35.719
+                    ],
+                    [
+                        16.0,
+                        35.719
+                    ],
+                    [
+                        16.0,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 761.390625,
+                "geometria_mundo": [
+                    [
+                        301702.7037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301758.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301758.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301702.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301702.7037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "af700480",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE/SIN_NOMBRE/Losa Deportiva",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 7,
+                "coords": [
+                    [
+                        57.25,
+                        21.859
+                    ],
+                    [
+                        30.25,
+                        21.859
+                    ],
+                    [
+                        30.25,
+                        35.859
+                    ],
+                    [
+                        57.25,
+                        35.859
+                    ],
+                    [
+                        57.25,
+                        21.859
+                    ]
+                ],
+                "nombre": "Losa Deportiva",
+                "area_m2": 378.0,
+                "geometria_mundo": [
+                    [
+                        301743.9537355159,
+                        8932970.790488726
+                    ],
+                    [
+                        301716.9537355159,
+                        8932970.790488726
+                    ],
+                    [
+                        301716.9537355159,
+                        8932984.790488726
+                    ],
+                    [
+                        301743.9537355159,
+                        8932984.790488726
+                    ],
+                    [
+                        301743.9537355159,
+                        8932970.790488726
+                    ]
+                ]
+            },
+            {
+                "id": "8ad4342b",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 6,
+                "coords": [
+                    [
+                        71.5,
+                        22.0
+                    ],
+                    [
+                        81.5,
+                        22.0
+                    ],
+                    [
+                        81.5,
+                        35.719
+                    ],
+                    [
+                        71.5,
+                        35.719
+                    ],
+                    [
+                        71.5,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 137.1875,
+                "geometria_mundo": [
+                    [
+                        301758.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301768.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301768.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301758.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301758.2037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "fa15ce56",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE/SIN_NOMBRE/Taller EPT",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 7,
+                "coords": [
+                    [
+                        73.25,
+                        23.359
+                    ],
+                    [
+                        73.25,
+                        34.359
+                    ],
+                    [
+                        79.75,
+                        34.359
+                    ],
+                    [
+                        79.75,
+                        23.359
+                    ],
+                    [
+                        73.25,
+                        23.359
+                    ]
+                ],
+                "nombre": "Taller EPT",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301759.9537355159,
+                        8932972.290488726
+                    ],
+                    [
+                        301759.9537355159,
+                        8932983.290488726
+                    ],
+                    [
+                        301766.4537355159,
+                        8932983.290488726
+                    ],
+                    [
+                        301766.4537355159,
+                        8932972.290488726
+                    ],
+                    [
+                        301759.9537355159,
+                        8932972.290488726
+                    ]
+                ]
+            },
+            {
+                "id": "9a48240e",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 5,
+                "coords": [
+                    [
+                        81.5,
+                        22.0
+                    ],
+                    [
+                        87.5,
+                        22.0
+                    ],
+                    [
+                        87.5,
+                        35.719
+                    ],
+                    [
+                        81.5,
+                        35.719
+                    ],
+                    [
+                        81.5,
+                        22.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 82.3125,
+                "geometria_mundo": [
+                    [
+                        301768.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932970.931488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301768.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301768.2037355159,
+                        8932970.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "4892a3b6",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 4,
+                "coords": [
+                    [
+                        10.0,
+                        35.719
+                    ],
+                    [
+                        87.5,
+                        35.719
+                    ],
+                    [
+                        87.5,
+                        51.5
+                    ],
+                    [
+                        10.0,
+                        51.5
+                    ],
+                    [
+                        10.0,
+                        35.719
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 1223.046875,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301774.2037355159,
+                        8932984.650488727
+                    ],
+                    [
+                        301774.2037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8932984.650488727
+                    ]
+                ]
+            },
+            {
+                "id": "fb50e7d0",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/SUM",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 5,
+                "coords": [
+                    [
+                        39.682,
+                        39.151
+                    ],
+                    [
+                        39.682,
+                        48.932
+                    ],
+                    [
+                        54.682,
+                        48.932
+                    ],
+                    [
+                        54.682,
+                        39.151
+                    ],
+                    [
+                        39.682,
+                        39.151
+                    ]
+                ],
+                "nombre": "SUM",
+                "area_m2": 146.71875,
+                "geometria_mundo": [
+                    [
+                        301726.38573551585,
+                        8932988.082488727
+                    ],
+                    [
+                        301726.38573551585,
+                        8932997.863488726
+                    ],
+                    [
+                        301741.38573551585,
+                        8932997.863488726
+                    ],
+                    [
+                        301741.38573551585,
+                        8932988.082488727
+                    ],
+                    [
+                        301726.38573551585,
+                        8932988.082488727
+                    ]
+                ]
+            },
+            {
+                "id": "773ff52d",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/MEDIO/SIN_NOMBRE/Cocina Prim - Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 5,
+                "coords": [
+                    [
+                        54.682,
+                        39.151
+                    ],
+                    [
+                        54.682,
+                        43.004
+                    ],
+                    [
+                        61.182,
+                        43.004
+                    ],
+                    [
+                        61.182,
+                        39.151
+                    ],
+                    [
+                        54.682,
+                        39.151
+                    ]
+                ],
+                "nombre": "Cocina Prim - Sec",
+                "area_m2": 25.046666666666667,
+                "geometria_mundo": [
+                    [
+                        301741.38573551585,
+                        8932988.082488727
+                    ],
+                    [
+                        301741.38573551585,
+                        8932991.935488727
+                    ],
+                    [
+                        301747.88573551585,
+                        8932991.935488727
+                    ],
+                    [
+                        301747.88573551585,
+                        8932988.082488727
+                    ],
+                    [
+                        301741.38573551585,
+                        8932988.082488727
+                    ]
+                ]
+            },
+            {
+                "id": "27f47c67",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 3,
+                "coords": [
+                    [
+                        10.0,
+                        51.5
+                    ],
+                    [
+                        87.5,
+                        51.5
+                    ],
+                    [
+                        87.5,
+                        61.5
+                    ],
+                    [
+                        10.0,
+                        61.5
+                    ],
+                    [
+                        10.0,
+                        51.5
+                    ]
+                ],
+                "nombre": "ADMIN",
+                "area_m2": 775.0,
+                "geometria_mundo": [
+                    [
+                        301696.7037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8933000.431488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301696.7037355159,
+                        8933000.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "2f506900",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/Direccion Adm.",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        36.125,
+                        54.5
+                    ],
+                    [
+                        36.125,
+                        58.5
+                    ],
+                    [
+                        37.075,
+                        58.5
+                    ],
+                    [
+                        37.075,
+                        54.5
+                    ],
+                    [
+                        36.125,
+                        54.5
+                    ]
+                ],
+                "nombre": "Direccion Adm.",
+                "area_m2": 3.8,
+                "geometria_mundo": [
+                    [
+                        301722.8287355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301722.8287355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301723.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301723.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301722.8287355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "13f73c32",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/Área de espera",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        37.075,
+                        54.5
+                    ],
+                    [
+                        37.075,
+                        58.5
+                    ],
+                    [
+                        39.075,
+                        58.5
+                    ],
+                    [
+                        39.075,
+                        54.5
+                    ],
+                    [
+                        37.075,
+                        54.5
+                    ]
+                ],
+                "nombre": "Área de espera",
+                "area_m2": 8.0,
+                "geometria_mundo": [
+                    [
+                        301723.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301723.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301725.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301725.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301723.7787355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "0f1340f8",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/Sala de Reuniones",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        39.075,
+                        54.5
+                    ],
+                    [
+                        39.075,
+                        58.5
+                    ],
+                    [
+                        45.275,
+                        58.5
+                    ],
+                    [
+                        45.275,
+                        54.5
+                    ],
+                    [
+                        39.075,
+                        54.5
+                    ]
+                ],
+                "nombre": "Sala de Reuniones",
+                "area_m2": 24.8,
+                "geometria_mundo": [
+                    [
+                        301725.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301725.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301731.9787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301731.9787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301725.7787355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "ab7d5025",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/Area de ingreso",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        45.275,
+                        54.5
+                    ],
+                    [
+                        45.275,
+                        58.5
+                    ],
+                    [
+                        47.875,
+                        58.5
+                    ],
+                    [
+                        47.875,
+                        54.5
+                    ],
+                    [
+                        45.275,
+                        54.5
+                    ]
+                ],
+                "nombre": "Area de ingreso",
+                "area_m2": 10.4,
+                "geometria_mundo": [
+                    [
+                        301731.9787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301731.9787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301734.5787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301734.5787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301731.9787355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "99d0b35d",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/Sala de Profesores",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        47.875,
+                        54.5
+                    ],
+                    [
+                        47.875,
+                        58.5
+                    ],
+                    [
+                        53.075,
+                        58.5
+                    ],
+                    [
+                        53.075,
+                        54.5
+                    ],
+                    [
+                        47.875,
+                        54.5
+                    ]
+                ],
+                "nombre": "Sala de Profesores",
+                "area_m2": 20.8,
+                "geometria_mundo": [
+                    [
+                        301734.5787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301734.5787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301739.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301739.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301734.5787355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "46822321",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/ADMIN/SSHH Adm.",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 4,
+                "coords": [
+                    [
+                        53.075,
+                        54.5
+                    ],
+                    [
+                        53.075,
+                        58.5
+                    ],
+                    [
+                        61.375,
+                        58.5
+                    ],
+                    [
+                        61.375,
+                        54.5
+                    ],
+                    [
+                        53.075,
+                        54.5
+                    ]
+                ],
+                "nombre": "SSHH Adm.",
+                "area_m2": 33.2,
+                "geometria_mundo": [
+                    [
+                        301739.7787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301739.7787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301748.0787355159,
+                        8933007.431488726
+                    ],
+                    [
+                        301748.0787355159,
+                        8933003.431488726
+                    ],
+                    [
+                        301739.7787355159,
+                        8933003.431488726
+                    ]
+                ]
+            },
+            {
+                "id": "c89b94be",
+                "path": "SIN_NOMBRE/SIN_NOMBRE",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        87.5,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        61.5
+                    ],
+                    [
+                        87.5,
+                        61.5
+                    ],
+                    [
+                        87.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "SIN_NOMBRE",
+                "area_m2": 123.0,
+                "geometria_mundo": [
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "960dc611",
+                "path": "SIN_NOMBRE/SIN_NOMBRE/Pasillo secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        87.5,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        45.6
+                    ],
+                    [
+                        87.5,
+                        45.6
+                    ],
+                    [
+                        87.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "Pasillo secundaria",
+                "area_m2": 91.2,
+                "geometria_mundo": [
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932994.531488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932994.531488726
+                    ],
+                    [
+                        301774.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "70f54e93",
+                "path": "SIN_NOMBRE/SECUNDARIA",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        89.5,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        61.5
+                    ],
+                    [
+                        89.5,
+                        61.5
+                    ],
+                    [
+                        89.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "SECUNDARIA",
+                "area_m2": 492.0,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "f80ebbe8",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA",
+                "piso": 1,
+                "tipo": "",
+                "nivel": 2,
+                "coords": [
+                    [
+                        89.5,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        0.0
+                    ],
+                    [
+                        97.5,
+                        61.5
+                    ],
+                    [
+                        89.5,
+                        61.5
+                    ],
+                    [
+                        89.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "SECUNDARIA",
+                "area_m2": 492.0,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301784.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8933010.431488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "26f4ea54",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aulas Secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        1.667
+                    ],
+                    [
+                        96.0,
+                        1.667
+                    ],
+                    [
+                        96.0,
+                        0.0
+                    ],
+                    [
+                        89.5,
+                        0.0
+                    ]
+                ],
+                "nombre": "Aulas Secundaria",
+                "area_m2": 10.833333333333332,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932950.598488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932950.598488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932948.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932948.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "011c89da",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aulas Secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        1.667
+                    ],
+                    [
+                        89.5,
+                        3.333
+                    ],
+                    [
+                        96.0,
+                        3.333
+                    ],
+                    [
+                        96.0,
+                        1.667
+                    ],
+                    [
+                        89.5,
+                        1.667
+                    ]
+                ],
+                "nombre": "Aulas Secundaria",
+                "area_m2": 10.833333333333332,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932950.598488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932952.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932952.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932950.598488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932950.598488726
+                    ]
+                ]
+            },
+            {
+                "id": "b82b1159",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aulas Secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        3.333
+                    ],
+                    [
+                        89.5,
+                        5.0
+                    ],
+                    [
+                        96.0,
+                        5.0
+                    ],
+                    [
+                        96.0,
+                        3.333
+                    ],
+                    [
+                        89.5,
+                        3.333
+                    ]
+                ],
+                "nombre": "Aulas Secundaria",
+                "area_m2": 10.833333333333332,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932952.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932953.931488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932953.931488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932952.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932952.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "19b6fc50",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aulas Secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        5.0
+                    ],
+                    [
+                        89.5,
+                        6.667
+                    ],
+                    [
+                        96.0,
+                        6.667
+                    ],
+                    [
+                        96.0,
+                        5.0
+                    ],
+                    [
+                        89.5,
+                        5.0
+                    ]
+                ],
+                "nombre": "Aulas Secundaria",
+                "area_m2": 10.833333333333332,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932953.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932955.598488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932955.598488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932953.931488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932953.931488726
+                    ]
+                ]
+            },
+            {
+                "id": "784e9300",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aulas Secundaria",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        6.667
+                    ],
+                    [
+                        89.5,
+                        8.333
+                    ],
+                    [
+                        96.0,
+                        8.333
+                    ],
+                    [
+                        96.0,
+                        6.667
+                    ],
+                    [
+                        89.5,
+                        6.667
+                    ]
+                ],
+                "nombre": "Aulas Secundaria",
+                "area_m2": 10.833333333333332,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932955.598488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932957.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932957.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932955.598488726
+                    ],
+                    [
+                        301776.2037355159,
+                        8932955.598488726
+                    ]
+                ]
+            },
+            {
+                "id": "dbed2b7a",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Aula de Innovacion Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        8.333
+                    ],
+                    [
+                        89.5,
+                        19.333
+                    ],
+                    [
+                        96.0,
+                        19.333
+                    ],
+                    [
+                        96.0,
+                        8.333
+                    ],
+                    [
+                        89.5,
+                        8.333
+                    ]
+                ],
+                "nombre": "Aula de Innovacion Sec",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932957.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932968.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932968.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932957.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932957.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "8bce2158",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Taller creativo Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        19.333
+                    ],
+                    [
+                        89.5,
+                        30.333
+                    ],
+                    [
+                        96.0,
+                        30.333
+                    ],
+                    [
+                        96.0,
+                        19.333
+                    ],
+                    [
+                        89.5,
+                        19.333
+                    ]
+                ],
+                "nombre": "Taller creativo Sec",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932968.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932979.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932979.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932968.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932968.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "e2b02783",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Laboratorio",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        30.333
+                    ],
+                    [
+                        89.5,
+                        41.333
+                    ],
+                    [
+                        96.0,
+                        41.333
+                    ],
+                    [
+                        96.0,
+                        30.333
+                    ],
+                    [
+                        89.5,
+                        30.333
+                    ]
+                ],
+                "nombre": "Laboratorio",
+                "area_m2": 71.5,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932979.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932990.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932990.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932979.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932979.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "21769827",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Escalera Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        41.333
+                    ],
+                    [
+                        89.5,
+                        42.833
+                    ],
+                    [
+                        96.0,
+                        42.833
+                    ],
+                    [
+                        96.0,
+                        41.333
+                    ],
+                    [
+                        89.5,
+                        41.333
+                    ]
+                ],
+                "nombre": "Escalera Sec",
+                "area_m2": 9.75,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932990.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932991.764488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932991.764488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932990.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932990.264488727
+                    ]
+                ]
+            },
+            {
+                "id": "4c216e22",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/Escalera Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        42.833
+                    ],
+                    [
+                        89.5,
+                        44.333
+                    ],
+                    [
+                        96.0,
+                        44.333
+                    ],
+                    [
+                        96.0,
+                        42.833
+                    ],
+                    [
+                        89.5,
+                        42.833
+                    ]
+                ],
+                "nombre": "Escalera Sec",
+                "area_m2": 9.75,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932991.764488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932993.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932993.264488727
+                    ],
+                    [
+                        301782.7037355159,
+                        8932991.764488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932991.764488727
+                    ]
+                ]
+            },
+            {
+                "id": "eb41c25b",
+                "path": "SIN_NOMBRE/SECUNDARIA/SECUNDARIA/SSHH Sec",
+                "piso": 1,
+                "tipo": "ambiente",
+                "nivel": 3,
+                "coords": [
+                    [
+                        89.5,
+                        44.333
+                    ],
+                    [
+                        89.5,
+                        45.6
+                    ],
+                    [
+                        96.0,
+                        45.6
+                    ],
+                    [
+                        96.0,
+                        44.333
+                    ],
+                    [
+                        89.5,
+                        44.333
+                    ]
+                ],
+                "nombre": "SSHH Sec",
+                "area_m2": 8.233333333333333,
+                "geometria_mundo": [
+                    [
+                        301776.2037355159,
+                        8932993.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932994.531488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932994.531488726
+                    ],
+                    [
+                        301782.7037355159,
+                        8932993.264488727
+                    ],
+                    [
+                        301776.2037355159,
+                        8932993.264488727
+                    ]
+                ]
+            }
+        ]
+
+	const offset = {
+        x: vertices[0].geometria_mundo[0][0],
+        y: vertices[0].geometria_mundo[0][1]
+    };
+
+    return (
+        <div style={{ width: '100%', height: '500px', background: '#222' }}>
+            vertices
+			
+			<Canvas camera={{ position: [10, 10, 10], fov: 50 }}>
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} />
+                
+                {vertices.map((item, index) => (
+                    <Ambiente key={index} datos={item} offset={offset} />
+                ))}
+
+                <OrbitControls />
+                <gridHelper args={[50, 50]} />
+            </Canvas>
+        </div>
+    );
+}
+
+const Ambiente = ({ datos, offset }) => {
+    const shape = useMemo(() => {
+        const s = new THREE.Shape();
+        // Usamos "geometria_mundo" y restamos el offset para centrar en el origen (0,0)
+        const puntos = datos.geometria_mundo;
+        
+        s.moveTo(puntos[0][0] - offset.x, puntos[0][1] - offset.y);
+        for (let i = 1; i < puntos.length; i++) {
+            s.lineTo(puntos[i][0] - offset.x, puntos[i][1] - offset.y);
+        }
+        return s;
+    }, [datos, offset]);
+
+    return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, datos.piso * 2, 0]}>
+            {/* depth es el grosor/altura de las paredes */}
+            <extrudeGeometry args={[shape, { depth: 2, bevelEnabled: false }]} />
+            <meshStandardMaterial color={datos.nombre.includes('SSHH') ? "#4a90e2" : "#8bc34a"} />
+            <Edges color="black" /> 
+        </mesh>
+    );
+};
+
+const Plano2D = () => {
+    const params = useParams();
+
+	const url_calc = import.meta.env.VITE_API_BASE_URL_CALCULATE;
+
+    return (
+        <div style={{ borderRadius: '8px', padding: '20px', width: "70vw", background: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <h3>Plano Georeferenciado</h3>
+			<div style={{display: "flex", gap: "30px", width:"100%"}}>
+				{/* <div 
+					style={{ 
+						display: 'flex', 
+						flexDirection: 'column', 
+						gap: '15px', 
+						width: "90%",
+						overflow: "hidden" 
+					}}
+					>
+					<iframe
+						title="Project Viewer"
+						src={`${url_calc}/api/v1/project-plane2d/${Number(params.id - 1)}`}
+						style={{ border: "1px solid #fff" , height:"85vh", width:"100%" }}
+					></iframe>
+				</div> */}
+
+				<ProjectViewer params={params} url_calc={url_calc} />
+
+				{/* PANEL DE LEYENDA */}
+				{/* <div style={{ 
+					background: '#fff', 
+					padding: '20px', 
+					borderRadius: '12px', 
+					height: '80vh', 
+					width: "280px", // Un poco más ancho para nombres largos
+					boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+					display: 'flex',
+					flexDirection: 'column'
+				}}>
+					<h4 style={{ marginTop: 0, marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+						Leyenda de Ambientes
+					</h4>
+					
+					<div style={{ 
+						overflowY: 'auto', // Scroll vertical
+						overflowX: 'hidden', 
+						paddingRight: '10px',
+						flex: 1 // Toma el espacio disponible
+					}}>
+					</div>
+				</div> */}
+			</div>
+        </div>
+    );
+};
+
+function ProjectViewer({ params, url_calc }) {
+  const [pisoActivo, setPisoActivo] = useState(0); // 0 = primer piso, 1 = segundo piso
+
+  const pisos = ["Piso 1", "Piso 2"];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "15px", width: "90%", overflow: "hidden" }}>
+      
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: "10px" }}>
+        {pisos.map((piso, index) => (
+          <button
+            key={index}
+            onClick={() => setPisoActivo(index)}
+            style={{
+              padding: "8px 16px",
+              border: "1px solid #ccc",
+              backgroundColor: pisoActivo === index ? "#ddd" : "#fff",
+              cursor: "pointer",
+              borderRadius: "5px"
+            }}
+          >
+            {piso}
+          </button>
+        ))}
+      </div>
+
+      {/* Iframe del piso seleccionado */}
+      <iframe
+        title={`Project Viewer ${pisos[pisoActivo]}`}
+        src={`${url_calc}/api/v1/project-plane2d/${Number(params.id - 1)}?piso=${pisoActivo + 1}`}
+        style={{ border: "1px solid #fff", height: "85vh", width: "100%" }}
+      ></iframe>
+    </div>
+  );
 }

@@ -78,6 +78,11 @@ Chart.register(
 	Filler
 );
 
+import { useParams } from "react-router-dom";
+
+import { read, utils } from "xlsx";
+const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
+
 const NewProjectForm = forwardRef(
 	({ data, handleClose, handleShow, school }, ref) => {
 		const id = useSelector((state) => state.auth.uid);
@@ -116,6 +121,8 @@ const NewProjectForm = forwardRef(
 			toilets_per_student: data && JSON.parse(data.toilets_per_student),
 		};
 		const [dataExcel, setDataExcel] = useState(x);
+
+
 		const [inicial, setInicial] = useState(
 			data?.aforo ? !!JSON.parse(data?.aforo).aforoInicial : false
 		);
@@ -295,6 +302,8 @@ const NewProjectForm = forwardRef(
 			}
 		}, [dataExcel]);
 
+
+		
 		// Se agrega automaticamente el lado y el vertice segun se agregue nuevo campo
 		for (let index = 0; index < rows.length; index++) {
 			rows[index].vertice = `P${index + 1}`;
@@ -361,6 +370,7 @@ const NewProjectForm = forwardRef(
 			aforoSecundaria: aforoSecundaria,
 			aulaSecundaria: aulaSecundaria,
 		};
+
 		const onImportExcel = async (
 			file,
 			handleToggleLoading,
@@ -371,6 +381,7 @@ const NewProjectForm = forwardRef(
 					error: true,
 					message: "Se debe seleccionar una zona  -  test",
 				};
+
 			if (!inicial && !primaria && !secundaria)
 				return {
 					error: true,
@@ -392,16 +403,192 @@ const NewProjectForm = forwardRef(
 			handleClose();
 			handleToggleLoading();
 
-			const res = await readMatrizExcel(file, data); // servicio de la hoja de calculo
-			setDataExcel(res.data);
-			console.log("datos del excel :: ", res.data);
+			// 🔥 NUEVO: leer excel y sumar A1 + B1
+			const SumarInicial = (file) => {
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+
+					reader.onload = (event) => {
+						try {
+							const data = new Uint8Array(event.target.result);
+							const workbook = read(data, { type: "array" });
+							const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+							// 🔥 Celdas que representan aulas
+							const valores = [
+								Number(sheet["B5"]?.v || 0),
+								Number(sheet["B6"]?.v || 0)
+							];
+
+							// Aforo total
+							const aforo = valores.reduce((acc, v) => acc + v, 0);
+
+							// Aulas solo si valor > 0
+							const aulas = valores.filter(v => v > 0).length;
+
+							resolve({
+								aforo,
+								aulas,
+								aforo_por_aula: aulas > 0 ? Math.ceil(aforo / aulas) : 0
+							});
+
+						} catch (err) {
+							reject(err);
+						}
+					};
+
+					reader.readAsArrayBuffer(file);
+				});
+			};
+
+			const sumaInicial = await SumarInicial(file);
+			console.log("Inicial:", sumaInicial);
+
+			const SumarPrimaria = (file) => {
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+
+					reader.onload = (event) => {
+						try {
+							const data = new Uint8Array(event.target.result);
+							const workbook = read(data, { type: "array" });
+							const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+							const valores = [
+								Number(sheet["B8"]?.v || 0),
+								Number(sheet["B9"]?.v || 0),
+								Number(sheet["B10"]?.v || 0),
+								Number(sheet["B11"]?.v || 0),
+								Number(sheet["B12"]?.v || 0),
+								Number(sheet["B13"]?.v || 0),
+							];
+
+							const aforo = valores.reduce((acc, v) => acc + v, 0);
+							const aulas = valores.filter(v => v > 0).length;
+
+							resolve({
+								aforo,
+								aulas,
+								aforo_por_aula: aulas > 0 ? Math.ceil(aforo / aulas) : 0
+							});
+
+						} catch (err) {
+							reject(err);
+						}
+					};
+
+					reader.readAsArrayBuffer(file);
+				});
+			};
+
+			const SumarSec = (file) => {
+				return new Promise((resolve, reject) => {
+					const reader = new FileReader();
+
+					reader.onload = (event) => {
+						try {
+							const data = new Uint8Array(event.target.result);
+							const workbook = read(data, { type: "array" });
+							const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+							const valores = [
+								Number(sheet["B15"]?.v || 0),
+								Number(sheet["B16"]?.v || 0),
+								Number(sheet["B17"]?.v || 0),
+								Number(sheet["B18"]?.v || 0),
+								Number(sheet["B19"]?.v || 0),
+							];
+
+							const aforo = valores.reduce((acc, v) => acc + v, 0);
+							const aulas = valores.filter(v => v > 0).length;
+
+							resolve({
+								aforo,
+								aulas,
+								aforo_por_aula: aulas > 0 ? Math.ceil(aforo / aulas) : 0
+							});
+
+						} catch (err) {
+							reject(err);
+						}
+					};
+
+					reader.readAsArrayBuffer(file);
+				});
+			};
+
+			const sumaPrimaria = await SumarPrimaria(file);
+			const sumaSec = await SumarSec(file);
+
+			// 🔹 tu servicio original
+			const res = await readMatrizExcel(file, data);
+
+			const data_response = res.data;
+			data_response.levels = {
+					"inicial": {
+						"aforo": sumaInicial.aforo_por_aula,
+						"aulas": sumaInicial.aulas
+					},
+					"primaria": {
+						"aforo": sumaPrimaria.aforo_por_aula,
+						"aulas": sumaPrimaria.aulas
+					},
+					"secundaria": {
+						"aforo": sumaSec.aforo_por_aula,
+						"aulas": sumaSec.aulas
+					}
+				}
+			setDataExcel(data_response);
+			console.log(data_response)
+			console.log("datos del excel :: ", data_response);
 			setTableAforo(true);
+
 			handleToggleLoading();
+
 			return { error: false, message: "" };
+		};
+
+		const handlePostProjectData = async (dataToSend) => {
+			try {
+				const token = localStorage.getItem('token');
+				
+				// Usamos axios.post
+				const response = await axios.post(
+					`${BASE_URL_CALC}/api/v1/generate-project`,
+					dataToSend, // El JSON que mencionas va aquí directamente como segundo argumento
+					{
+						headers: {
+							'Authorization': `Bearer ${token}`,
+							'Content-Type': 'application/json', // Indicamos que enviamos un JSON
+							'Accept': 'application/json'
+						}
+					}
+				);
+
+				if (response.status === 200 || response.status === 201) {
+					console.log("Datos enviados con éxito:", response.data);
+					return response.data;
+				}
+
+			} catch (error) {
+				// Manejo de errores detallado para FastAPI
+				if (error.response) {
+					// El servidor respondió con un código fuera del rango 2xx (ej. 401, 422)
+					console.error("Error del servidor:", error.response.data);
+				} else {
+					console.error("Error en la petición:", error.message);
+				}
+				throw error;
+			}
 		};
 
 		const onSubmit = async (values) => {
 			let levels = [];
+			console.log("Guardando...");
+
+			console.log(dataExcel);
+			console.log(dataExcel.vertices);
+			console.log(dataExcel.aforo);
 
 			aulaInicial && levels.push("Inicial");
 			aulaPrimaria && levels.push("Primaria");
@@ -540,11 +727,36 @@ const NewProjectForm = forwardRef(
 
 				// Decide si continuar o abortar la creación del proyecto
 				// Opción 1: Mostrar error pero continuar
-				alert(
-					"Advertencia: No se pudo actualizar el Excel, pero el proyecto se creará de todas formas."
-				);
+				// alert(
+				// 	"Advertencia: No se pudo actualizar el Excel, pero el proyecto se creará de todas formas."
+				// );
 			}
 			const data = await createProjectService(dataComplete);
+			console.log("Todos los datos: ",data);
+
+			console.log(data.data.project.vertices);
+			console.log(data.data.project.aforo);
+			
+			const request_data = {
+				"id": Number(data.data.project.id),
+				"aforo": JSON.parse(data.data.project.aforo),
+				"vertices": data.data.project.vertices
+			};
+
+			console.log("Enviando datos:", request_data);
+
+			try {
+				// 2. Esperamos a que la función POST termine
+				const result = await handlePostProjectData(request_data);
+				
+				// 3. Si llega aquí, es porque fue exitoso
+				alert("¡Proyecto guardado con éxito!");
+				console.log("Respuesta del servidor:", result);
+			} catch (error) {
+				// 4. Si hay error (401, 500, etc.), cae aquí
+				alert("Hubo un error al guardar los datos.");
+			}
+
 
 			// cuando se crea un nuevo projecto y su version 1 (automaticamente)
 			if (data.data.project.parent_id === 0) {
@@ -1638,6 +1850,37 @@ const FileButtonModal = ({ onImportExcel }) => {
 
 		handleClose();
 	};
+	
+	// const [excelAforo, setExcelAforo] = useState(null);
+
+	// // Cargar datos de excel aforo
+	// const handleChangeExcelAforo = (e) => {
+	// 	const file = e.target.files[0];
+	// 	if (!file) return;
+
+	// 	const reader = new FileReader();
+
+	// 	reader.onload = (event) => {
+	// 	const data = new Uint8Array(event.target.result);
+	// 	const workbook = read(data, { type: "array" });
+
+	// 	const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+	// 	// 🔥 Leer directamente las celdas
+	// 	const celdaA1 = sheet["B5"]?.v || 0;
+	// 	const celdaB1 = sheet["B6"]?.v || 0;
+
+	// 	const suma = Number(celdaA1) + Number(celdaB1);
+	// 	console.log(suma)
+	// 	setExcelAforo(suma);
+	// 	handleClose();
+
+	// 	};
+
+	// 	reader.readAsArrayBuffer(file);
+
+	// };
+
 
 	return (
 		<>
@@ -1691,7 +1934,7 @@ const FileButtonModal = ({ onImportExcel }) => {
 								{" "}
 								{/* DESCARGA DE PLANTILLA */}
 								<a
-									href="/descargas/template_project.xlsx"
+									href="/descargas/template_aforo_v2.xlsx"
 									download="Plantilla del Proyecto.xlsx"
 								>
 									<Button
