@@ -7,3 +7,7 @@ Dockerfile
 .dockerignore
 public/models
 public/textures
+
+!public/models/basketball_court/
+!public/models/gate/
+!public/models/tree/
