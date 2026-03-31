@@ -20,4 +20,4 @@ EXPOSE 80
 # Variable de entorno para que Express/Node sepa en qué puerto escuchar
 ENV PORT_SERVER=80
 
-CMD ["npm", "run", "prod"]
+CMD ["npm", "run", "preview", "--", "--host", "--port", "80"]
