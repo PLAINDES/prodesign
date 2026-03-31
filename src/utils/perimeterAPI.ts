@@ -54,9 +54,10 @@ export const savePerimetersToAPI = async (
 			ambientesCancha: perimetros.lateralesCancha || null,
 			resumenGeneral,
 		};
+		const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 		const response = await fetch(
-			`http://192.168.18.200:8000/api/v1/projects/${projectId}/perimeters`,
+			`${API_BASE_URL}/api/v1/projects/${projectId}/perimeters`,
 			{
 				method: "POST",
 				headers: {
@@ -82,9 +83,11 @@ export const savePerimetersToAPI = async (
 
 // Obtener resumen para costos
 export const getCostSummary = async (projectId: number) => {
+	const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000";
+	
 	try {
 		const response = await fetch(
-			`/api/projects/${projectId}/perimeters/cost-summary`
+			`${API_BASE_URL}/api/projects/${projectId}/perimeters/cost-summary`
 		);
 
 		const data = await response.json();

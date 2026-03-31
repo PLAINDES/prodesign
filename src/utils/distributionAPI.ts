@@ -12,6 +12,8 @@ export const saveDistributionToAPI = async (
 			totalFloors: distribution.totalFloors,
 		});
 
+		const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 		const payload = {
 			layoutMode: distribution.layoutMode,
 			totalFloors: distribution.totalFloors,
@@ -29,7 +31,7 @@ export const saveDistributionToAPI = async (
 		};
 
 		const response = await fetch(
-			`http://192.168.18.200:8000/api/v1/projects/${projectId}/distribution`,
+			`${API_BASE_URL}/api/v1/projects/${projectId}/distribution`,
 			{
 				method: "POST",
 				headers: {
@@ -53,9 +55,11 @@ export const saveDistributionToAPI = async (
 };
 
 export const getDistributionFromAPI = async (projectId: number) => {
+	const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 	try {
 		const response = await fetch(
-			`http://192.168.18.200:8000/api/v1/projects/${projectId}/distribution`
+			`${API_BASE_URL}/api/v1/projects/${projectId}/distribution`
 		);
 		const data = await response.json();
 
