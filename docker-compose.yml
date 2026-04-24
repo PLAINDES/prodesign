@@ -4,11 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # AQUÍ ES DONDE PASAMOS LAS VARIABLES A VITE
-        - VITE_API_BASE_URL=http://3.142.156.141:8000
-        - VITE_API_BASE_URL_CALCULATE=http://3.142.156.141:8001
+        - VITE_API_BASE_URL=http://localhost:8000
+        - VITE_API_BASE_URL_CALCULATE=http://localhost:8001
     container_name: prodesign-react
-    # Mantenemos tu puerto 5199 mapeado al 80 del contenedor
     ports:
       - "5199:80"
     restart: always
@@ -17,6 +15,4 @@ services:
 
 networks:
   prosupervision_network:
-    # Asegúrate de haber creado esta red antes con: 
-    # docker network create prosupervision_network
     external: true

@@ -554,7 +554,7 @@ const NewProjectForm = forwardRef(
 				
 				// Usamos axios.post
 				const response = await axios.post(
-					`${BASE_URL_CALC}/api/v1/generate-project`,
+					`${BASE_URL_CALC}/api/v2/generate-project`,
 					dataToSend, // El JSON que mencionas va aquí directamente como segundo argumento
 					{
 						headers: {
@@ -1761,13 +1761,7 @@ const ambientesComplementarios = [
 	{ capacidad: 0, ambienteComplementario: "Topico" },
 ];
 
-const ambientesDefault = [
-	{ capacidad: 0, ambienteComplementario: "Biblioteca escolar" },
-	//{ capacidad: 0, ambienteComplementario: "Laboratorio de Ciencias" },
-	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
-	{ capacidad: 0, ambienteComplementario: "Taller EPT" },
-];
-
+const ambientesDefault = ambientesComplementarios
 const validationSchema = yup
 	.object({
 		name: yup.string().required("El nombre es requerido"),

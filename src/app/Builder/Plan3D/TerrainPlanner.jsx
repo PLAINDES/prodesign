@@ -10230,38 +10230,43 @@ const Plano2D = () => {
 };
 
 function ProjectViewer({ params, url_calc }) {
-  const [pisoActivo, setPisoActivo] = useState(0); // 0 = primer piso, 1 = segundo piso
+	const [pisoActivo, setPisoActivo] = useState(0); // 0 = primer piso, 1 = segundo piso
 
-  const pisos = ["Piso 1", "Piso 2"];
+	const tipo_render = ["2d", "3d"];
+	const [renderSeleccionado, setRenderSeleccionado] = useState(0);
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "15px", width: "90%", overflow: "hidden" }}>
-      
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: "10px" }}>
-        {pisos.map((piso, index) => (
-          <button
-            key={index}
-            onClick={() => setPisoActivo(index)}
-            style={{
-              padding: "8px 16px",
-              border: "1px solid #ccc",
-              backgroundColor: pisoActivo === index ? "#ddd" : "#fff",
-              cursor: "pointer",
-              borderRadius: "5px"
-            }}
-          >
-            {piso}
-          </button>
-        ))}
-      </div>
+	return (
+		<div style={{ display: "flex", flexDirection: "column", gap: "15px", width: "90%", overflow: "hidden" }}>
+			
+			{/* Tabs de Selección de Render */}
+			<div style={{ display: "flex", gap: "10px" }}>
+			{tipo_render.map((tipo, index) => (
+				<button
+				key={index}
+				onClick={() => setRenderSeleccionado(index)} // Cambia entre 0 (2d) y 1 (3d)
+				style={{
+					padding: "8px 16px",
+					border: "1px solid #ccc",
+					backgroundColor: renderSeleccionado === index ? "#007bff" : "#fff",
+					color: renderSeleccionado === index ? "#fff" : "#000",
+					cursor: "pointer",
+					borderRadius: "5px",
+					fontWeight: "bold"
+				}}
+				>
+				{tipo.toUpperCase()}
+				</button>
+			))}
+			</div>
 
-      {/* Iframe del piso seleccionado */}
-      <iframe
-        title={`Project Viewer ${pisos[pisoActivo]}`}
-        src={`${url_calc}/api/v1/project-plane2d/${Number(params.id - 1)}?piso=${pisoActivo + 1}`}
-        style={{ border: "1px solid #fff", height: "85vh", width: "100%" }}
-      ></iframe>
-    </div>
-  );
+			<iframe
+			title={`Project Viewer ${tipo_render[renderSeleccionado]}`}
+			// Corregimos la concatenación de parámetros: el primero usa '?', los siguientes '&'
+			src={`${url_calc}/api/v2/project-render/${params.id - 1}?render=${tipo_render[renderSeleccionado]}`}
+			// style={{ border: "1px solid #ccc", height: "85vh", width: "100%", borderRadius: "8px" }}
+			style={{ border: "1px solid #fff", height: "85vh", width: "100%" }}
+			
+			></iframe>
+		</div>
+	);
 }

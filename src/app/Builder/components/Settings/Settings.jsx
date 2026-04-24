@@ -78,6 +78,18 @@ const ambientesDefault = [
 	{ capacidad: 0, ambienteComplementario: "Biblioteca escolar" },
 	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
 	{ capacidad: 0, ambienteComplementario: "Taller EPT" },
+	{ capacidad: 0, ambienteComplementario: "Sala de Usos Múltiples (SUM)" },
+	{ capacidad: 0, ambienteComplementario: "Cocina escolar" },
+	{ capacidad: 0, ambienteComplementario: "Comedor" },
+	{ capacidad: 0, ambienteComplementario: "Sala de Psicomotricidad" },
+	{ capacidad: 0, ambienteComplementario: "Dirección administrativa" },
+	{ capacidad: 0, ambienteComplementario: "Sala de maestros" },
+	{ capacidad: 0, ambienteComplementario: "Patio Inicial" },
+	{ capacidad: 0, ambienteComplementario: "Auditorio multiusos" },
+	{ capacidad: 0, ambienteComplementario: "Sala de reuniones" },
+	{ capacidad: 0, ambienteComplementario: "Laboratorio" },
+	{ capacidad: 0, ambienteComplementario: "Lactario" },
+	{ capacidad: 0, ambienteComplementario: "Topico" },
 ];
 
 export default function Settings({ projectData, school, handleSetClassrooms }) {
