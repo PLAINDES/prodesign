@@ -40,7 +40,6 @@ import { setAmbienceData } from "../../../../redux/distribution/ambienceSlice";
 
 import "./styles.css";
 import { RowFormAC } from "../../../components/NewProject/RowFormAC";
-import { createThumbnail } from "../../../components/NewProject/createThumbnail";
 import { UpperLowerCase } from "../../../../utils/utils";
 
 const styleModal = {
@@ -78,6 +77,18 @@ const ambientesDefault = [
 	{ capacidad: 0, ambienteComplementario: "Biblioteca escolar" },
 	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
 	{ capacidad: 0, ambienteComplementario: "Taller EPT" },
+	{ capacidad: 0, ambienteComplementario: "Sala de Usos Múltiples (SUM)" },
+	{ capacidad: 0, ambienteComplementario: "Cocina escolar" },
+	{ capacidad: 0, ambienteComplementario: "Comedor" },
+	{ capacidad: 0, ambienteComplementario: "Sala de Psicomotricidad" },
+	{ capacidad: 0, ambienteComplementario: "Dirección administrativa" },
+	{ capacidad: 0, ambienteComplementario: "Sala de maestros" },
+	{ capacidad: 0, ambienteComplementario: "Patio Inicial" },
+	{ capacidad: 0, ambienteComplementario: "Auditorio multiusos" },
+	{ capacidad: 0, ambienteComplementario: "Sala de reuniones" },
+	{ capacidad: 0, ambienteComplementario: "Laboratorio" },
+	{ capacidad: 0, ambienteComplementario: "Lactario" },
+	{ capacidad: 0, ambienteComplementario: "Topico" },
 ];
 
 export default function Settings({ projectData, school, handleSetClassrooms }) {
@@ -475,7 +486,7 @@ export default function Settings({ projectData, school, handleSetClassrooms }) {
 				);
 
 				// 9. Crear thumbnail
-				createThumbnail(createdVersion.id);
+				// createThumbnail(createdVersion.id);
 
 				// 10. Actualizar Redux
 				dispatch(addProject({ child: createdVersion }));

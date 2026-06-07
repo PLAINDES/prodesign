@@ -14,7 +14,7 @@ import {
 	SettingsPage,
 } from "../pages";
 
-export const ArqPlataformRouter = ({ school }) => {
+export const ArqPlataformRouter = () => {
 	const id = useSelector((state) => state.auth.uid);
 	const dispatch = useDispatch();
 
@@ -23,16 +23,16 @@ export const ArqPlataformRouter = ({ school }) => {
 	return (
 		<AppLayout>
 			<Routes>
-				<Route path="/" element={<Home school={school} />} />
+				<Route path="/" element={<Home />} />
 				<Route path="/perfil" element={<PerfilPage />} />
 				{/* <Route path="/proyecto/:slug" element={<ModulePage />} /> */}
 				<Route
 					path="/proyecto/:slug/:id/versions"
-					element={<VersionsPage school={school} />}
+					element={<VersionsPage/>}
 				/>
 				<Route
 					path="/proyecto/:slug/:id/costs"
-					element={<CostsPage school={school} />}
+					element={<CostsPage/>}
 				/>
 				<Route path="/sistema" element={<SistemaPage />} />
 				<Route path="/admin/settings" element={<SettingsPage />} />

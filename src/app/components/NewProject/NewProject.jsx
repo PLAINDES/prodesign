@@ -1,10 +1,11 @@
+"use client"
 import { useState, useRef, useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import styled from "@mui/material/styles/styled";
-import NewProjectForm from "./NewProjectForm";
-// import Tooltip from "@mui/material/Tooltip";
+import ProjectSchoolForm from "./ProjectSchoolForm";
+import { useForm } from 'react-hook-form';
 
 import MuiDialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -15,6 +16,9 @@ import IconButton from "@mui/material/IconButton";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import Swal from "sweetalert2";
+import axios from "axios";
+
+const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 
 const NewProject = ({ onRow, data, school }) => {
 	const [open, setOpen] = useState(false);
@@ -28,9 +32,13 @@ const NewProject = ({ onRow, data, school }) => {
 
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
+	const [createdProject, setCreatedProject] = useState(false);
 
 	useEffect(() => {
 		if (!newProject.show && newProject.id) {
+
+			setCreatedProject(true);
+
 			Swal.fire({
 				title: "Éxito",
 				text: "El proyecto ha sido creado",
@@ -44,10 +52,62 @@ const NewProject = ({ onRow, data, school }) => {
 				if (result.isConfirmed) {
 					navigate(`/proyecto/colegios/${newProject.id}`);
 				}
-				handleClose(); // Cierra el modal en cualquier caso
 			});
 		}
-	}, [newProject.show, newProject.id]);
+	}, [newProject, navigate]);
+
+	const useFormProject = useForm();
+	const { register, handleSubmit, formState: { errors } } = useFormProject
+	const onSubmit = (data) => {
+		sendDataForm(data)
+	};
+
+	const [jobId, setjobId] = useState(null)
+	const [projectId, setprojectId] = useState(null)
+	const [statusJobForm, setStatusJobForm] = useState(null)
+
+	async function sendDataForm(data) {
+
+		const response = await axios.post(BASE_URL_CALC + "/api/v3/generate-project",
+			data = data
+		)
+
+		if (response.status == 200) {
+			navigate('/proyecto/colegios/' + response.data.project_id)
+			// setprojectId(response.data.project_id)
+			// setjobId(response.data.job_id)
+			// verifJob(response.data.job_id, setStatusJobForm)
+		}
+
+	}
+
+	// useEffect(() => {
+	// 	if (statusJobForm !== null) {
+	// 		console.log("Tarea terminada", statusJobForm);
+	// 	}
+	// }, [statusJobForm])
+
+	// async function verifJob(id, setStatusJob) {
+	// 	try {
+	// 		const responseJob = await axios.get(BASE_URL_CALC + "/api/v3/jobs/" + id);
+	// 		console.log(responseJob.data);
+
+	// 		const status = responseJob.data.status;
+
+	// 		if ("finished" === status) {
+	// 			setStatusJob(status);
+	// 		} else {
+	// 			setTimeout(() => {
+	// 				verifJob(id, setStatusJob);
+	// 			}, 1000);
+	// 		}
+	// 	} catch (error) {
+	// 		console.error("Error en la verificación:", error);
+	// 		setTimeout(() => {
+	// 			verifJob(id, setStatusJob);
+	// 		}, 2000);
+	// 	}
+	// }
 
 	return (
 		<>
@@ -57,7 +117,6 @@ const NewProject = ({ onRow, data, school }) => {
 					sx={{ cursor: "pointer" }}
 				/>
 			) : (
-				// <Tooltip title="Crear proyecto nuevo">
 				<ColorButton
 					variant="contained"
 					sx={{ fontWeight: 500 }}
@@ -67,7 +126,6 @@ const NewProject = ({ onRow, data, school }) => {
 					<AddOutlinedIcon />
 					&nbsp; Nuevo
 				</ColorButton>
-				// </Tooltip>
 			)}
 			<Dialog
 				open={open}
@@ -86,7 +144,7 @@ const NewProject = ({ onRow, data, school }) => {
 				}}
 				onClose={handleClose}
 			>
-				{newProject.show ? (
+				{!createdProject ? (
 					<DialogTitle
 						sx={{
 							m: 0,
@@ -97,6 +155,7 @@ const NewProject = ({ onRow, data, school }) => {
 						}}
 					>
 						Crear proyecto nuevo
+
 						<IconButton
 							onClick={handleClose}
 							sx={{
@@ -114,14 +173,22 @@ const NewProject = ({ onRow, data, school }) => {
 						sx={{
 							display: "flex",
 							justifyContent: "space-between",
+							alignItems: "center",
+							p: 2,
+							borderBottom: "1px solid #e0e0e0",
 						}}
 					>
 						<Button onClick={handleClose} color="error">
 							Cerrar
 						</Button>
 
-						<RouterLink to={"/proyecto/colegios/" + newProject.id}>
-							<Button color="primary">Ir al proyecto</Button>
+						<RouterLink
+							to={`/proyecto/colegios/${newProject.id}`}
+							style={{ textDecoration: "none" }}
+						>
+							<Button variant="contained" color="primary">
+								Ir al proyecto
+							</Button>
 						</RouterLink>
 					</Box>
 				)}
@@ -134,31 +201,23 @@ const NewProject = ({ onRow, data, school }) => {
 						},
 					}}
 				>
-					<NewProjectForm
-						ref={formRef}
-						data={data}
-						handleClose={handleClose}
-						handleShow={handleShow}
-						school={school}
-					/>
+					<ProjectSchoolForm useForm={useFormProject} />
 				</DialogContent>
-				{newProject.show ? (
-					<DialogActions sx={{ py: "1.2rem" }}>
-						<Button
-							color="secondary"
-							variant="contained"
-							onClick={handleClose}
-						>
-							Cancelar
-						</Button>
-						<Button
-							variant="contained"
-							onClick={() => formRef.current.handleSubmit()}
-						>
-							Guardar
-						</Button>
-					</DialogActions>
-				) : null}
+				<DialogActions sx={{ py: "1.2rem" }}>
+					<Button
+						color="secondary"
+						variant="contained"
+						onClick={handleClose}
+					>
+						Cancelar
+					</Button>
+					<Button
+						variant="contained"
+						onClick={handleSubmit(onSubmit)}
+					>
+						Guardar
+					</Button>
+				</DialogActions>
 			</Dialog>
 		</>
 	);
@@ -171,41 +230,6 @@ const Dialog = styled(MuiDialog)(({ theme }) => ({
 		},
 	},
 }));
-
-// export const styleModal = {
-// 	position: "absolute",
-// 	padding: "2rem 3rem",
-// 	top: "50%",
-// 	left: "50%",
-// 	// transform: 'translate(-50%, -50%)',
-// 	marginTop: {
-// 		xs: "-40vh",
-// 		sm: "-40vh",
-// 		md: "-40vh"
-// 	},
-// 	marginLeft: {
-// 		// xs: "-175px",
-// 		xs: "-45vw",
-// 		sm: "-40vw",
-// 		md: "-400px"
-// 	},
-// 	height: {
-// 		xs: "80vh",
-// 		sm: "80vh",
-// 		md: "80v"
-// 	},
-// 	width: {
-// 		// xs: "350px",
-// 		xs: "90vw",
-// 		sm: "80vw",
-// 		md: "800px"
-// 	},
-// 	bgcolor: 'background.paper',
-// 	overflowY: "scroll",
-// 	borderRadius: '6px',
-// 	boxShadow: 24,
-// 	p: 4
-// }
 
 const ColorButton = styled(Button)({
 	borderRadius: ".42rem",

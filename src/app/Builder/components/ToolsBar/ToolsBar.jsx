@@ -31,6 +31,9 @@ import Settings from "../Settings/Settings";
 import { requestExport } from "../../../../redux/features/exportSlice";
 import { useParams } from "react-router-dom";
 
+import { useRender } from '../../RenderContext';
+
+
 const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 
 export default function ToolsBar({
@@ -117,6 +120,23 @@ export default function ToolsBar({
 		// }
 	};
 
+	const tipo_render = ["2d", "3d", "render ia"];
+	const { renderSeleccionado, cambiarRender } = useRender();
+
+
+	async function getProinvierteLink() {
+		const projectId = params.id;
+		// http://localhost:8001/api/v3/project/generate-proinvierte/656
+		const url_api_generate =  `${BASE_URL_CALC}/api/v3/project/generate-proinvierte/${projectId}`;
+		const url_proinvierte = `${import.meta.env.VITE_URL_PROINVIERTE}/?prodesign=${projectId}`;
+		const response = await axios.get(url_api_generate)
+
+		if(response.status === 200){
+			window.open(url_proinvierte, '_blank');
+		}
+
+	}
+
 	return (
 		<Box
 			sx={{
@@ -148,26 +168,54 @@ export default function ToolsBar({
 						</Button>
 					</li> */}
 
-					<li>
+					{/* <li>
 						<Button2D handleViewState={handleViewState} />
 					</li>
 
 					<li>
 						<Button3D handleViewState={handleViewState} />
-					</li>
-
-					{/* <li>
-						<Button disabled>
-							<DeleteIcon htmlColor="#3699FF" />&nbsp; Eliminar
-						</Button>
 					</li> */}
 
-					{/* <li>
-						<Button disabled>
-							<CopyIcon htmlColor="#3699FF" />&nbsp; Copiar
-						</Button>
-					</li> */}
+					<div style={{ display: "flex", gap: "10px" }}>
+						{tipo_render.map((tipo, index) => (
+							<button
+							key={index}
+							onClick={() => cambiarRender(index)} // Cambia entre 0 (2d) y 1 (3d)
+							style={{
+								marginTop: "4px",
+								height:"38px",
+								padding: "0px 16px",
+								border: "1px solid #ccc",
+								backgroundColor: renderSeleccionado === index ? "#007bff" : "#fff",
+								color: renderSeleccionado === index ? "#fff" : "#000",
+								cursor: "pointer",
+								borderRadius: "5px",
+								fontWeight: "bold"
+							}}
+							>
+							{tipo.toUpperCase()}
+							</button>
+						))}
 
+						<button
+							onClick={getProinvierteLink}
+							style={{
+								marginTop: "4px",
+								height:"38px",
+								padding: "0px 16px",
+								border: "1px solid #ccc",
+								backgroundColor: "#007bff",
+								color: "#fff",
+								cursor: "pointer",
+								borderRadius: "5px",
+								fontWeight: "bold"
+							}}
+							>
+								Enviar a proinvierte
+							</button>
+					</div>
+
+					
 					<li>
 						<Settings
 							//state={state}
@@ -176,8 +224,6 @@ export default function ToolsBar({
 							handleSetClassrooms={handleSetClassrooms}
 						/>
 					</li>
-
-					{/* <li><Button disabled>REPORTE</Button></li> */}
 
 					<li>
 						<select
@@ -189,18 +235,8 @@ export default function ToolsBar({
 							onChange={handleExportChange}
 						>
 							<option value="EXPORTAR">EXPORTAR</option>
-							{/* <option value="json">📄 Exportar JSON</option> */}
-							{/* <option value="analyze">🔍 Analizar Escena</option> */}
-							{/* <option value="obj">OBJ (Mesh)</option> */}
-
 							<option value="dxf">DXF (AUTOCAD)</option>
 						</select>
-						{/* <button
-							onClick={exportarJSON}
-							style={{ padding: "10px", fontSize: "16px" }}
-						>
-							Exportar distribución 3D a JSON
-						</button> */}
 					</li>
 
 					{/* <li>

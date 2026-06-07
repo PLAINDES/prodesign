@@ -16,7 +16,7 @@ ENV VITE_API_BASE_URL_CALCULATE=$VITE_API_BASE_URL_CALCULATE
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-# Copiamos el resto del código
+# Copiamos el resto del códigoa
 COPY . .
 
 # 3. Construimos el proyecto

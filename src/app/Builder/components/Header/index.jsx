@@ -15,6 +15,8 @@ import zIndex from "@mui/material/styles/zIndex";
 export default function Header({
 	state, school, view, handleViewState, handleDrawerToggle, handleSetClassrooms
 }) {
+
+
 	return (
 		<AppBar
 			component="header"
@@ -29,6 +31,7 @@ export default function Header({
 				zIndex: 50,
 			}}
 		>
+			
 			<Toolbar  sx={{ px: "5px" }}>
 				{/* ================== ON DESKTOP ================== */}
 				<Box
@@ -51,39 +54,6 @@ export default function Header({
 					/>
 					<UserPopover />
 				</Box>
-
-
-				{/* ================== ON MOBILE ================== */}
-				{/* <Grid container justifyContent="space-between" sx={{ display: { sm: "none" } }}>
-					<Grid item>
-						<IconButton
-							color="inherit"
-							onClick={() => alert("aun no implementado")}
-						>
-							<KeyboardBackspaceIcon />
-						</IconButton>
-					</Grid>
-					<Grid item>
-						<IconButton
-							onClick={() => alert("(center camera to scene) aun no implementado")}>
-							<CenterFocusWeakOutlinedIcon />
-						</IconButton>
-						<SidebarMobile
-							result_data={result_data}
-							classroom_measurements={classroom_measurements}
-							construction_info={construction_info}
-							state={state}
-						/>
-					</Grid>
-					<Grid item>
-						<IconButton
-							color="inherit"
-							onClick={handleDrawerToggle}
-						>
-							<MenuIcon />
-						</IconButton>
-					</Grid>
-				</Grid> */}
 			</Toolbar>
 		</AppBar>
 	)

@@ -24,43 +24,9 @@ export default function Breadcrumb() {
 					</Typography>
 				</Breadcrumbs>
 			</Box>
-			{/* <Breadcrumbs aria-label="breadcrumb" separator={<NavigateNextIcon fontSize="small" />}>
-				<StyledBreadcrumb
-					component="a"
-					href="#"
-					label="Home"
-					icon={<HomeIcon fontSize="small" />}
-				/>
-				<StyledBreadcrumb component="a" href="#" label="Colegios" />
-				<StyledBreadcrumb
-					label="Costos"
-					deleteIcon={<ExpandMoreIcon />}
-					onDelete={handleClick}
-				/>
-			</Breadcrumbs> */}
 		</div>
 	)
 }
-
-// const StyledBreadcrumb = styled(Chip)(({ theme }) => {
-// 	const backgroundColor =
-// 		theme.palette.mode === "light"
-// 			? "#f5f5f5"
-// 			: theme.palette.grey[800]
-// 	return {
-// 		// backgroundColor,
-// 		height: theme.spacing(3),
-// 		color: theme.palette.text.primary,
-// 		fontWeight: theme.typography.fontWeightRegular,
-// 		"&:hover, &:focus": {
-// 			backgroundColor: emphasize(backgroundColor, 0.06),
-// 		},
-// 		"&:active": {
-// 			boxShadow: theme.shadows[1],
-// 			backgroundColor: emphasize(backgroundColor, 0.12),
-// 		}
-// 	}
-// });
 
 function LinkRouter(props) {
 	return <Link {...props} component={RouterLink} />;

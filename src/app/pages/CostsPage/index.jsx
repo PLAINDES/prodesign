@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Grid from "@mui/material/Unstable_Grid2";
+import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import TableProjects from "../../components/GridData/TableProjects";
 import Paper from "@mui/material/Paper";
@@ -10,7 +10,6 @@ import SelectSlot from "./Misc/SelectSlot";
 import { getProjectsCosts } from "../../../services/projectsService";
 import Dashboard from "./views/Dashboard";
 import CostsTables from "./views/CostsTables";
-import { School } from "../../Builder/Plan3D/components/Pabellones/school-class";
 
 export function CostsPage({ school }) {
 	const [costs, setCosts] = useState(null);
@@ -47,6 +46,7 @@ export function CostsPage({ school }) {
 		return handleSlot("dashboard");
 	}, [projects, projectID]);
 	console.log("slottt:", slot);
+	
 	return (
 		<Grid container spacing={{ xs: 1.5, sm: 2 }}>
 			<Grid

@@ -4,13 +4,10 @@ import { SelectionOutline } from "../Pabellones/components/BIM/SelectionOutline"
 import Roof from "./components/Roof";
 import Walls from "./components/Walls";
 import Bigas from "./Bigas";
-import { useLoader } from "@react-three/fiber";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { useSelector } from "react-redux";
-import { Base, Subtraction, Geometry } from "@react-three/csg";
-import * as THREE from "three";
-
 // Funciones auxiliares para cálculos
+
+
 const calculateArea = (classroom) => {
 	return classroom.width * classroom.length; // Área en m²
 };

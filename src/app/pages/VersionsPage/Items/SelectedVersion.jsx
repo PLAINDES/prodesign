@@ -10,7 +10,6 @@ import getConstructionData from "../../../../utils/getConstructionData";
 // import View3D from "../BuildViews/View3D";
 // import View2D from "../BuildViews/View2D";
 import Plan3D from "../../../Builder/Plan3D/Plan3D";
-import Preview3D from "../../../Builder/Plan3D/Preview3D";
 
 export default function SelectedVersion({ selectedVersion, school }) {
 	if (!selectedVersion) return null;
@@ -40,22 +39,10 @@ export default function SelectedVersion({ selectedVersion, school }) {
 				</Grid>
 				<Grid item xs={12} xl={6}>
 					<div style={{ height: "100%", minHeight: "500px" }}>
-						{/* {selectedVersion
-							// ? <View3D selectedVersion={selectedVersion} />
-							? <Plan3D
-								result_data={result_data}
-								classroom_measurements={classroom_measurements}
-								construction_info={construction_info}
-								bathrooms={bathrooms}
-								data={data}
-								view={{ view: "3D", roof: true }}
-								school={school}
-							/>
-							: <Skeleton animation="wave" variant="rectangular" height="100%" />
-						} */}
+						
 						{selectedVersion
 							? (
-								<Preview3D school={school} state={selectedVersion} />
+								<></>
 							)
 							: <Skeleton animation="wave" variant="rectangular" height="100%" />
 						}
@@ -63,21 +50,6 @@ export default function SelectedVersion({ selectedVersion, school }) {
 				</Grid>
 				<Grid item xs={12} xl={6}>
 					<div style={{ height: "100%", minHeight: "500px" }}>
-						{/* {selectedVersion
-							? <Plan3D
-									result_data={result_data}
-									classroom_measurements={classroom_measurements}
-									construction_info={construction_info}
-
-									bathrooms={bathrooms}
-									data={data}
-									view={{ view: "2D", roof: true }}
-									aspect={1}
-
-									school={school}
-								/>
-							: <Skeleton animation="wave" variant="rectangular" height="100%" />
-						} */}
 					</div>
 				</Grid>
 			</Grid>

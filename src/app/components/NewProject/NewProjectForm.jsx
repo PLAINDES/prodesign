@@ -45,7 +45,7 @@ import {
 	updateProjectService,
 } from "../../../services/projectsService";
 import { addProject, setProjects } from "../../../redux/projects/projectSlice";
-import { createThumbnail } from "./createThumbnail";
+// import { createThumbnail } from "./createThumbnail";
 
 import * as XLSX from "xlsx";
 import TerrainDataTable from "./TerrainDataTable";
@@ -84,7 +84,7 @@ import { read, utils } from "xlsx";
 const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 
 const NewProjectForm = forwardRef(
-	({ data, handleClose, handleShow, school }, ref) => {
+	({ data, handleClose, handleShow, school, setCreatedProject, createdProject }, ref) => {
 		const id = useSelector((state) => state.auth.uid);
 		const [rows, setRows] = useState(
 			data?.puntos
@@ -122,6 +122,7 @@ const NewProjectForm = forwardRef(
 		};
 		const [dataExcel, setDataExcel] = useState(x);
 
+		const [provincia_selected, set_provincia_selected] = useState("");
 
 		const [inicial, setInicial] = useState(
 			data?.aforo ? !!JSON.parse(data?.aforo).aforoInicial : false
@@ -140,7 +141,6 @@ const NewProjectForm = forwardRef(
 		const [plantillas, setPlantillas] = useState([]);
 		const location = useLocation();
 		const slug = location.pathname.split("/")[2];
-		const [createdProject, setCreatedProject] = useState();
 
 		const [tableAforo, setTableAforo] = useState(false);
 		const [selectedTipologia, setSelectedTipologia] = useState("");
@@ -554,7 +554,7 @@ const NewProjectForm = forwardRef(
 				
 				// Usamos axios.post
 				const response = await axios.post(
-					`${BASE_URL_CALC}/api/v1/generate-project`,
+					`${BASE_URL_CALC}/api/v3/generate-project`,
 					dataToSend, // El JSON que mencionas va aquí directamente como segundo argumento
 					{
 						headers: {
@@ -564,9 +564,10 @@ const NewProjectForm = forwardRef(
 						}
 					}
 				);
-
+				
 				if (response.status === 200 || response.status === 201) {
 					console.log("Datos enviados con éxito:", response.data);
+					setCreatedProject(true)
 					return response.data;
 				}
 
@@ -595,12 +596,6 @@ const NewProjectForm = forwardRef(
 			aulaSecundaria && levels.push("Secundaria");
 
 			const verticesArray = vertices.map(({ x, y }) => [x, y]);
-			// const verticesMaximumRectangle = {
-			// 	vertices: maximumRectangle.vertices,
-			// 	ancho: maximumRectangle.ancho,
-			// 	alto: maximumRectangle.alto,
-			// 	area: maximumRectangle.area,
-			// };
 			const verticesMaximumRectangle = maximumRectangle.vertices;
 			const angleMaximumRectangle = maximumRectangle.anguloGrados;
 			const availableVertices = verticesArray.filter(
@@ -620,13 +615,8 @@ const NewProjectForm = forwardRef(
 				),
 				width: maximumRectangle.ancho,
 				height: maximumRectangle.alto,
-				//area: maximumRectangle.area,
 				number_floors: numberFloors,
 				stairs: JSON.stringify(dataExcel.stairs),
-				//ubication: values.ubication,
-				// departamento: values.departamento,
-				// distrito: values.distrito,
-				// provincia: values.provincia,
 				level: JSON.stringify(levels),
 				puntos: JSON.stringify(rows),
 				aforo: JSON.stringify(allDataAforo),
@@ -635,7 +625,6 @@ const NewProjectForm = forwardRef(
 				vertices: verticesArray,
 				vertices_rectangle: verticesMaximumRectangle,
 				angle: angleMaximumRectangle,
-				//coordenadas: document.getElementById("coordenadas").value,
 				user_id: id,
 				type_id: plantillas?.id,
 			};
@@ -711,36 +700,39 @@ const NewProjectForm = forwardRef(
 			// ========================================
 			// PASO 3: Actualizar el Excel del backend
 			// ========================================
-			try {
-				const excelUpdateResult = await updateProjectExcelService(
-					projectExcelData
-				);
-				console.log(
-					"✅ Excel actualizado correctamente:",
-					excelUpdateResult
-				);
+			// try {
+			// 	const excelUpdateResult = await updateProjectExcelService(
+			// 		projectExcelData
+			// 	);
+			// 	console.log(
+			// 		"✅ Excel actualizado correctamente:",
+			// 		excelUpdateResult
+			// 	);
 
-				// Opcional: Puedes guardar los resultados calculados si los necesitas
-				// setCalculatedMeters(excelUpdateResult.data.calculated_results);
-			} catch (excelError) {
-				console.error("❌ Error al actualizar Excel:", excelError);
+			// 	// Opcional: Puedes guardar los resultados calculados si los necesitas
+			// 	// setCalculatedMeters(excelUpdateResult.data.calculated_results);
+			// } catch (excelError) {
+			// 	console.error("❌ Error al actualizar Excel:", excelError);
 
-				// Decide si continuar o abortar la creación del proyecto
-				// Opción 1: Mostrar error pero continuar
-				// alert(
-				// 	"Advertencia: No se pudo actualizar el Excel, pero el proyecto se creará de todas formas."
-				// );
-			}
+			// 	// Decide si continuar o abortar la creación del proyecto
+			// 	// Opción 1: Mostrar error pero continuar
+			// 	// alert(
+			// 	// 	"Advertencia: No se pudo actualizar el Excel, pero el proyecto se creará de todas formas."
+			// 	// );
+			// }
 			const data = await createProjectService(dataComplete);
 			console.log("Todos los datos: ",data);
 
 			console.log(data.data.project.vertices);
 			console.log(data.data.project.aforo);
+
+			// DATOS PARA ENVIAR AL API DE CALCULO
 			
 			const request_data = {
 				"id": Number(data.data.project.id),
 				"aforo": JSON.parse(data.data.project.aforo),
-				"vertices": data.data.project.vertices
+				"vertices": data.data.project.vertices,
+				"provincia": provincia_selected,
 			};
 
 			console.log("Enviando datos:", request_data);
@@ -1546,7 +1538,10 @@ const NewProjectForm = forwardRef(
 											<Select
 												//label="Provincia"
 												name="ubication"
-												onChange={handleProvinciaChange}
+												onChange={e => {
+													handleProvinciaChange(e);
+													set_provincia_selected(e.target.value);
+												}}
 												disabled={!values.departamento}
 												style={styleInput}
 											>
@@ -1761,13 +1756,7 @@ const ambientesComplementarios = [
 	{ capacidad: 0, ambienteComplementario: "Topico" },
 ];
 
-const ambientesDefault = [
-	{ capacidad: 0, ambienteComplementario: "Biblioteca escolar" },
-	//{ capacidad: 0, ambienteComplementario: "Laboratorio de Ciencias" },
-	{ capacidad: 0, ambienteComplementario: "Taller creativo" },
-	{ capacidad: 0, ambienteComplementario: "Taller EPT" },
-];
-
+const ambientesDefault = ambientesComplementarios
 const validationSchema = yup
 	.object({
 		name: yup.string().required("El nombre es requerido"),

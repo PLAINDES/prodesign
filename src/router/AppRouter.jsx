@@ -6,7 +6,6 @@ import { CheckingAuth } from "../ui";
 import { AuthRoutes } from "../auth/routes/AuthRouthes";
 import { ArqPlataformRouter } from "./../app/router/ArqPlataformRouter";
 import PlanIndex from "../app/Builder/PlanIndex";
-import { School } from "../app/Builder/Plan3D/components/Pabellones/school-class";
 import { toggleDoor, toggleWindow } from "../redux/projects/projectSlice";
 
 export const AppRouter = () => {
@@ -27,7 +26,6 @@ export const AppRouter = () => {
 
 	if (status === "checking") return <CheckingAuth />;
 
-	const school = new School();
 
 	return (
 		<Routes>
@@ -35,11 +33,11 @@ export const AppRouter = () => {
 				<Route>
 					<Route
 						path="/*"
-						element={<ArqPlataformRouter school={school} />}
+						element={<ArqPlataformRouter />}
 					/>
 					<Route
 						path="/proyecto/:slug/:id"
-						element={<PlanIndex school={school} />}
+						element={<PlanIndex />}
 					/>
 				</Route>
 			) : (
