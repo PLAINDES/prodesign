@@ -40,7 +40,6 @@ import { setAmbienceData } from "../../../../redux/distribution/ambienceSlice";
 
 import "./styles.css";
 import { RowFormAC } from "../../../components/NewProject/RowFormAC";
-import { createThumbnail } from "../../../components/NewProject/createThumbnail";
 import { UpperLowerCase } from "../../../../utils/utils";
 
 const styleModal = {
@@ -487,7 +486,7 @@ export default function Settings({ projectData, school, handleSetClassrooms }) {
 				);
 
 				// 9. Crear thumbnail
-				createThumbnail(createdVersion.id);
+				// createThumbnail(createdVersion.id);
 
 				// 10. Actualizar Redux
 				dispatch(addProject({ child: createdVersion }));

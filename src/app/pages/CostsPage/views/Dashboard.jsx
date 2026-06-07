@@ -1,6 +1,7 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Grid from "@mui/material/Unstable_Grid2";
+import Grid from "@mui/material/Grid2";
+
 import Paper from "@mui/material/Paper";
 import styled from "@mui/material/styles/styled";
 import Typography from "@mui/material/Typography";

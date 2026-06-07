@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Grid from "@mui/material/Unstable_Grid2";
+import Grid from "@mui/material/Grid2";
 import moment from "moment";
 import TableProjects from "./TableProjects";
 
@@ -7,7 +7,6 @@ const GridData = ({ projects, typeProject }) => {
 	const [projectsFiltrados, setProjectsFiltrados] = useState(null);
 	const [fechaInicio, setFechaInicio] = useState("");
 	const [fechaFin, setFechaFin] = useState("");
-
 	const options = (value) => {
 		switch (value) {
 			case "0":
@@ -51,6 +50,8 @@ const GridData = ({ projects, typeProject }) => {
 	}
 
 	useEffect(() => {
+		console.log("grid data:", projects);
+		
 		if (fechaInicio && fechaFin) dateRangeFilter();
 		else {
 			if (projects?.length) setProjectsFiltrados(projects);

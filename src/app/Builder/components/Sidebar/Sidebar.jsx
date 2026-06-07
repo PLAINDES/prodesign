@@ -8,15 +8,19 @@ import {
 	Typography,
 } from "@mui/material";
 import { ChevronDown, Home } from "lucide-react";
+import { useRender } from '../../RenderContext';
 
 export default function Sidebar({ state, school, ...props}) {
+
+	const { dataProject } = useRender();
+
 	useEffect(() => {
 		Array.from(document.getElementsByClassName("sidebar-item")).forEach(
 			(el) => {
 				el.className = "sidebar-item active";
 			}
 		);
-	}, []); // open
+	}, []);
 
 	return (
 		<div className="sidebar" {...props}>
@@ -25,23 +29,23 @@ export default function Sidebar({ state, school, ...props}) {
 					<span className="sidebar-anchor">
 						Informacion del Proyecto{" "}
 					</span>
-					<p style={{ marginTop: ".4rem" }}>Nombre: {state.name}</p>
+					<p style={{ marginTop: ".4rem" }}>Nombre: {dataProject?.name}</p>
 					<p>Versión: VERSIÓN 1</p>
-					<p>Zona: {state.zone}</p>
+					<p>Zona: {dataProject?.zone}</p>
 					<p>
 						Niveles:&nbsp;
 						{new Intl.ListFormat("es", {
 							style: "long",
 							type: "conjunction",
-						}).format(state.level)}
+						}).format(state?.level)}
 					</p>
-					<p>Tipo: {state.sublevel}</p>
-					<p>Aforo Estudiantil: {school.maxCapacity}</p>
+					<p>Tipo: {state?.sublevel}</p>
+					<p>Aforo Estudiantil: {school?.maxCapacity}</p>
 				</li>
 				<li className="sidebar-item">
 					<span className="sidebar-anchor">Terreno </span>
 					<p>
-						Area total: {school.totalArea}m
+						Area total: {school?.totalArea}m
 						<span style={{ fontSize: "1.5rem" }}>²</span>
 					</p>
 					<p>Perimetro: 5345m</p>
@@ -49,11 +53,11 @@ export default function Sidebar({ state, school, ...props}) {
 				<li className="sidebar-item">
 					<span className="sidebar-anchor">Area Disponible</span>
 					<p style={{ marginTop: "10px" }}>
-						Area : {school.generalArea}m
+						Area : {school?.generalArea}m
 					</p>
 					<p>Perimetro : 3500m</p>
-					<p>Ancho: {school.width}m</p>
-					<p>Largo: {school.length}m</p>
+					<p>Ancho: {school?.width}m</p>
+					<p>Largo: {school?.length}m</p>
 				</li>
 				<li className="sidebar-item">
 					{/* <a href="#" className="sidebar-anchor">Cantidad: </a> */}
@@ -85,7 +89,7 @@ export default function Sidebar({ state, school, ...props}) {
 								variant="body3"
 								sx={{ fontWeight: 600 }}
 							>
-								Aulas: {school.numberOfClassrooms.getTotal()}
+								Aulas: {school?.numberOfClassrooms?.getTotal?.()}
 							</Typography>
 						</AccordionSummary>
 
@@ -102,26 +106,26 @@ export default function Sidebar({ state, school, ...props}) {
 									sx={{ color: "text.secondary" }}
 								>
 									📚 Inicial:{" "}
-									{school.numberOfClassrooms.inicial}
+									{school?.numberOfClassrooms?.inicial}
 								</Typography>
 								<Typography
 									variant="body2"
 									sx={{ color: "text.secondary" }}
 								>
 									📘 Primaria:{" "}
-									{school.numberOfClassrooms.primaria}
+									{school?.numberOfClassrooms?.primaria}
 								</Typography>
 								<Typography
 									variant="body2"
 									sx={{ color: "text.secondary" }}
 								>
 									📕 Secundaria:{" "}
-									{school.numberOfClassrooms.secundaria}
+									{school?.numberOfClassrooms?.secundaria}
 								</Typography>
 							</Box>
 						</AccordionDetails>
 					</Accordion>
-					<p>Baños : {school.bathrooms.length}</p>
+					<p>Baños : {school?.bathrooms.length}</p>
 					<Accordion
 						sx={{
 							boxShadow: "none",
@@ -150,12 +154,12 @@ export default function Sidebar({ state, school, ...props}) {
 								sx={{ fontWeight: 600 }}
 							>
 								Ambientes :{" "}
-								{school.complementaryEnvironment.length}
+								{school?.complementaryEnvironment.length}
 							</Typography>
 						</AccordionSummary>
 
 						<AccordionDetails sx={{ padding: "0 0 0 5px" }}>
-							{school.complementaryEnvironment.map((ambiente) => (
+							{school?.complementaryEnvironment.map((ambiente) => (
 								<Box
 									sx={{
 										display: "flex",
@@ -167,21 +171,14 @@ export default function Sidebar({ state, school, ...props}) {
 										variant="body3"
 										sx={{ color: "text.secondary" }}
 									>
-										<Home sx={{}}/>{" "}
-										{ambiente.ambienteComplementario}
+										{/* <Home sx={{}}/>{" "} */}
+										{ambiente?.ambienteComplementario}
 									</Typography>
 								</Box>
 							))}
 						</AccordionDetails>
 					</Accordion>
 				</li>
-				{/* <li className="sidebar-item">
-				
-					<span className="sidebar-anchor">Medidas del Aula</span>
-					<p>Columna: 0.25m</p>
-					<p>Largo: 8m</p>
-					<p>Ancho: 7.2m</p>
-				</li> */}
 			</ul>
 		</div>
 	);
