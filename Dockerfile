@@ -1,30 +1,40 @@
-FROM node:20-alpine3.19
+# ETAPA 1: Construcción
+FROM node:20 AS build
 
 WORKDIR /app
 
-# 1. Declaramos los argumentos que vendrán desde el docker-compose.yml
-# Deben empezar con VITE_ para que Vite los reconozca automáticamente
-ARG VITE_API_BASE_URL
-ARG VITE_API_BASE_URL_CALCULATE
-
-# 2. Convertimos los argumentos en variables de entorno del sistema 
-# para que el proceso de 'npm run build' pueda leerlos
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_API_BASE_URL_CALCULATE=$VITE_API_BASE_URL_CALCULATE
-
-# Copiamos archivos de dependencias e instalamos
+# Copiamos archivos de dependencias
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+# RUN npm install --legacy-peer-deps
 
-# Copiamos el resto del códigoa
+# Por esto:
+RUN npm ci --legacy-peer-deps
+# Copiamos el resto del código
 COPY . .
 
-# 3. Construimos el proyecto
-# Aquí es donde Vite "inyecta" los valores de ENV en el código JS final
+# Argumentos para Vite
+ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL_CALCULATE
+ARG VITE_URL_PROINVIERTE
+
+# Definimos las variables de entorno
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL_CALCULATE=$VITE_API_BASE_URL_CALCULATE
+ENV VITE_URL_PROINVIERTE=$VITE_URL_PROINVIERTE
+
+# Construimos la aplicación
 RUN npm run build
 
-EXPOSE 80
-ENV PORT_SERVER=80
+# ETAPA 2: Servidor de producción (Nginx)
+FROM nginx:alpine
 
-# Usamos preview para servir los archivos compilados en el puerto 80
-CMD ["npm", "run", "preview", "--", "--host", "--port", "80"]
+
+# Copiamos los archivos generados de la etapa 'build' al servidor Nginx
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Exponemos el puerto 80
+EXPOSE 80
+
+# Iniciamos Nginx
+CMD ["nginx", "-g", "daemon off;"]

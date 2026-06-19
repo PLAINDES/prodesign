@@ -1,11 +1,11 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid2";
-
 import Paper from "@mui/material/Paper";
 import styled from "@mui/material/styles/styled";
 import Typography from "@mui/material/Typography";
 import ComparisonChart from "../Charts/ComparisonChart";
+
 import {
 	Button,
 	Dialog,
@@ -17,106 +17,44 @@ import {
 	Select,
 	CircularProgress,
 } from "@mui/material";
+
 import TableCosts from "../TableCosts";
-import { useState, useEffect } from "react";
 import NewCostsTables from "./NewCostsTable";
-import { updateProjectExcelService } from "../../../../services/spreadsheetService";
-import { useSelector } from "react-redux";
+import { useState } from "react";
 
-export default function Dashboard({ project, costs, school, handleCosts }) {
-	// Validaciones iniciales
+export default function Dashboard({ project, costs, handleCosts }) {
+	// Validación básica
 	if (!project || !costs) return <></>;
-	console.log("📦 Project:", project);
-	console.log("💰 Costs:", costs);
-	//console.log("numeros de ambientes", numberOfAmbience);
 
-	//if (project.length - 1 !== costs.calculatedCosts.length) return <></>;
-
-	const { numberOfClassrooms } = school;
-
-	// Estado para manejar los proyectos de costos creados
+	// Estados locales (solo frontend)
 	const [savedProjects, setSavedProjects] = useState([]);
 	const [selectedProjectId, setSelectedProjectId] = useState("");
 	const [selectedProjectData, setSelectedProjectData] = useState(null);
-	const [loadingProjectData, setLoadingProjectData] = useState(false);
-	const [excelData, setExcelData] = useState({});
-	const numberOfAmbience = useSelector((state) => state.ambience);
 	const [open, setOpen] = useState(false);
 
 	const versions = project.filter((el) => el.parent_id !== 0);
-	useEffect(() => {
-		const fetchExcelData = async () => {
-			try {
-				const data = await updateProjectExcelService(numberOfAmbience);
-				setExcelData(data);
-			} catch (error) {
-				console.error("Error al obtener datos de Excel:", error);
-			}
-		};
 
-		fetchExcelData();
-	}, []);
-
-	console.log("datos enviados excel::::::", excelData);
-
-	const handleClickOpen = () => {
-		setOpen(true);
-	};
-
-	const handleClose = () => {
-		setOpen(false);
-	};
+	const handleClickOpen = () => setOpen(true);
+	const handleClose = () => setOpen(false);
 
 	const handleProjectChange = (event) => {
 		const selectedId = event.target.value;
-		console.log("🔄 Select cambiado a ID:", selectedId);
-
 		setSelectedProjectId(selectedId);
 
-		// Buscar el proyecto seleccionado en savedProjects
 		const projectData = savedProjects.find((p) => p.id === selectedId);
-
-		console.log("🔍 Buscando proyecto con ID:", selectedId);
-		console.log(
-			"📋 Proyectos disponibles:",
-			savedProjects.map((p) => ({ id: p.id, name: p.name }))
-		);
-		console.log("✅ Proyecto encontrado:", projectData);
-
-		if (projectData) {
-			setSelectedProjectData(projectData);
-			console.log("📊 Datos del proyecto seleccionado:", {
-				id: projectData.id,
-				name: projectData.name,
-				categories: projectData.costsCategories,
-				costs: projectData.calculatedCosts,
-			});
-		} else {
-			console.warn("⚠️ No se encontró el proyecto con ID:", selectedId);
-		}
+		setSelectedProjectData(projectData || null);
 	};
 
-	// Función que se ejecuta cuando se crea un nuevo proyecto de costos
+	// Crear nueva versión de costeo (local)
 	const handleNewProjectVersion = (
 		updatedCategories,
 		updatedCalculatedCosts,
 		projectData
 	) => {
-		console.log("🎯 handleNewProjectVersion llamado con:");
-		console.log("  - Categories:", updatedCategories);
-		console.log("  - Calculated Costs:", updatedCalculatedCosts);
-		console.log("  - Project Data:", projectData);
-
-		// Validar que tengamos los datos necesarios
-		if (!updatedCategories || !updatedCalculatedCosts || !projectData) {
-			console.error("❌ Faltan datos para crear el proyecto");
-			return;
-		}
+		if (!updatedCategories || !updatedCalculatedCosts || !projectData) return;
 
 		const nextProjectNumber = savedProjects.length + 1;
-
-		// Usar un ID único y consistente
-		const newProjectId = `project-${projectData.id}-${Date.now()}`;
+		const newProjectId = `project-${Date.now()}`;
 
 		const newProject = {
 			id: newProjectId,
@@ -126,43 +64,16 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 			projectData: { ...projectData },
 		};
 
-		console.log("✨ Nuevo proyecto creado:", newProject);
-
-		// Agregar el nuevo proyecto a la lista
-		setSavedProjects((prev) => {
-			const updated = [...prev, newProject];
-			console.log("📋 Proyectos guardados actualizados:", updated);
-			return updated;
-		});
-
-		// Seleccionar automáticamente el nuevo proyecto
+		setSavedProjects((prev) => [...prev, newProject]);
 		setSelectedProjectId(newProjectId);
 		setSelectedProjectData(newProject);
-
-		console.log("🎯 Proyecto auto-seleccionado:", newProjectId);
 	};
 
-	// Determinar si hay proyectos guardados
 	const hasProjects = savedProjects.length > 0;
 
-	console.log("📊 Estado actual del Dashboard:");
-	console.log("  - Proyectos guardados:", savedProjects.length);
-	console.log("  - Proyecto seleccionado ID:", selectedProjectId);
-	console.log(
-		"  - Datos del proyecto seleccionado:",
-		selectedProjectData ? selectedProjectData.name : "ninguno"
-	);
-
 	return (
-		<Grid
-			xs={12}
-			sx={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "7px",
-			}}
-		>
-			{/* Botón para crear nuevo costeo */}
+		<Grid xs={12} sx={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+			{/* Tablas de costos iniciales */}
 			{project.map((el, i) => (
 				<TableCosts
 					key={el.id}
@@ -174,7 +85,7 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 				/>
 			))}
 
-			{/* Sección que aparece cuando hay proyectos guardados */}
+			{/* Sección de proyectos guardados */}
 			{hasProjects && (
 				<>
 					<div style={{ paddingBottom: "9px" }}>
@@ -184,9 +95,7 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 					<Grid container spacing={2}>
 						<Grid item xs={12} sm={4}>
 							<FormControl fullWidth>
-								<InputLabel id="project-select-label">
-									Proyecto
-								</InputLabel>
+								<InputLabel id="project-select-label">Proyecto</InputLabel>
 								<Select
 									labelId="project-select-label"
 									id="project-select"
@@ -204,11 +113,7 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 						</Grid>
 
 						<Grid item xs={12} sm={4}>
-							<Button
-								variant="contained"
-								fullWidth
-								sx={{ height: "56px" }}
-							>
+							<Button variant="contained" fullWidth sx={{ height: "56px" }}>
 								Exportar Reporte
 							</Button>
 						</Grid>
@@ -225,19 +130,9 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 						</Grid>
 					</Grid>
 
-					{/* Mostrar tabla de costos del proyecto seleccionado */}
+					{/* Tabla del proyecto seleccionado */}
 					<div style={{ marginTop: "16px" }}>
-						{loadingProjectData ? (
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "center",
-									padding: "40px",
-								}}
-							>
-								<CircularProgress />
-							</div>
-						) : selectedProjectData ? (
+						{selectedProjectData ? (
 							<>
 								<Typography
 									variant="h6"
@@ -253,20 +148,11 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 								</Typography>
 								<NewCostsTables
 									key={selectedProjectData.id}
-									project={[
-										project[0],
-										selectedProjectData.projectData,
-									]}
+									project={[project[0], selectedProjectData.projectData]}
 									costs={{
-										costsCategories: [
-											selectedProjectData.costsCategories,
-										],
-										calculatedCosts: [
-											selectedProjectData.calculatedCosts,
-										],
+										costsCategories: [selectedProjectData.costsCategories],
+										calculatedCosts: [selectedProjectData.calculatedCosts],
 									}}
-									numberOfClassrooms={numberOfClassrooms}
-									excelData={excelData}
 								/>
 							</>
 						) : (
@@ -289,69 +175,39 @@ export default function Dashboard({ project, costs, school, handleCosts }) {
 			<Dialog
 				open={open}
 				onClose={handleClose}
-				aria-labelledby="alert-dialog-title"
-				aria-describedby="alert-dialog-description"
 				maxWidth="md"
 				fullWidth
 			>
-				<DialogTitle id="alert-dialog-title">
-					Comparación de costos
-				</DialogTitle>
+				<DialogTitle>Comparación de costos</DialogTitle>
 				<DialogContent>
-					<Grid xs={12}>
-						<Grid container spacing={2}>
-							<Grid xs={12}>
-								<Paper
-									variant="outlined"
-									sx={{
-										padding: "6px 0",
-										textAlign: "center",
-										boxShadow:
-											"0 2px 5px 1px rgb(64 60 67 / 16%)",
-									}}
-								>
-									<Typography fontWeight={500}>
-										COMPARACIÓN DE COSTOS
-									</Typography>
-								</Paper>
-							</Grid>
-							<Grid xs={12}>
-								<Card>
-									<CardContent
-										sx={{
-											px: 1.5,
-											pt: 2,
-											position: "relative",
-											":last-child": {
-												paddingBottom: "8px",
-											},
-										}}
-									>
-										{savedProjects.length > 1 ? (
-											<ComparisonChart
-												// versions={savedProjects.map(
-												// 	(p) => p.projectData
-												// )}
-												// costs={savedProjects.map(
-												// 	(p) => p.calculatedCosts
-												// )}
-												savedProjects={savedProjects}
-											/>
-										) : (
-											<Typography
-												variant="body2"
-												sx={{
-													textAlign: "center",
-													py: 4,
-												}}
-											>
-												Necesitas al menos 2 proyectos
-												para comparar
-											</Typography>
-										)}
-									</CardContent>
-								</Card>
-							</Grid>
+					<Grid container spacing={2}>
+						<Grid xs={12}>
+							<Paper
+								variant="outlined"
+								sx={{
+									padding: "6px 0",
+									textAlign: "center",
+									boxShadow: "0 2px 5px 1px rgb(64 60 67 / 16%)",
+								}}
+							>
+								<Typography fontWeight={500}>COMPARACIÓN DE COSTOS</Typography>
+							</Paper>
+						</Grid>
+						<Grid xs={12}>
+							<Card>
+								<CardContent sx={{ px: 1.5, pt: 2, pb: 2 }}>
+									{savedProjects.length > 1 ? (
+										<ComparisonChart savedProjects={savedProjects} />
+									) : (
+										<Typography
+											variant="body2"
+											sx={{ textAlign: "center", py: 4 }}
+										>
+											Necesitas al menos 2 proyectos para comparar
+										</Typography>
+									)}
+								</CardContent>
+							</Card>
 						</Grid>
 					</Grid>
 				</DialogContent>

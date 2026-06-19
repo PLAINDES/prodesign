@@ -1,0 +1,51 @@
+name: Deploy PRODESIGN FRONT
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sincronizar archivos
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_IP }}
+          REMOTE_USER: ${{ secrets.SSH_USER }}
+          SOURCE: "./"
+          TARGET: "/home/ftpceon/ftp/prodesign/prodesign/" # Ruta unificada
+          ARGS: "-rlgoDzvc -i"
+          EXCLUDE: >
+            /.git/,
+            /.github/,
+            node_modules/,
+            logs/,
+
+      - name: Desplegar con Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # Ahora la ruta coincide con el TARGET anterior
+            cd /home/ftpceon/ftp/prodesign/prodesign/
+
+            echo "Validando docker-compose..."
+            docker compose config > /dev/null
+
+            echo "Construyendo e iniciando..."
+            # Agregamos --pull para asegurar actualizaciones en imágenes base
+            docker compose -p prodesign up -d --build
+
+            echo "Limpiando imágenes residuales..."
+            docker image prune -f
+
+            echo "Estado actual:"
+            docker compose -p prodesign ps

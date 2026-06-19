@@ -11,128 +11,35 @@ import tableCellClasses from "@mui/material/TableCell/tableCellClasses";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import MuiRadio from "@mui/material/Radio";
+import {row_lima_callao} from "./options_table"
+import {rows_excep_lima_callao} from "./options_table"
+import {rows_selva} from "./options_table"
+import {rows_sierra} from "./options_table"
+import {rows} from "./options_table"
 
-function createData(
-	categoria,
-	muros_y_columnas,
-	techos,
-	puertas_y_ventanas,
-	revestimientos,
-	banos,
-	instalaciones,
-	desc
-) {
-	return {
-		categoria,
-		muros_y_columnas,
-		techos,
-		puertas_y_ventanas,
-		revestimientos,
-		banos,
-		instalaciones,
-	};
-}
-
-// const rows = [
-// 	createData("A", 588.68, 357.54, 319.48, 344.34, 116.20, 341.50),
-// 	createData("B", 379.54, 233.27, 168.39, 260.90, 88.35, 249.34),
-// 	createData("C", 261.26, 192.72, 108.84, 193.54, 61.29, 157.30),
-// 	createData("D", 252.64, 122.32, 95.33, 148.50, 32.70, 99.37),
-// 	createData("E", 177.86, 45.60, 81.57, 102.17, 19.23, 72.17),
-// 	createData("F", 133.95, 25.08, 61.24, 72.02, 14.32, 41.29),
-// 	createData("G", 78.92, 17.24, 33.08, 59.05, 9.85, 38.29),
-// 	createData("H", 0, 0, 16.54, 23.62, 0, 20.68),
-// 	createData("I", 0, 0, 0, 0, 0, 0)
-// ];
-
-const rows = [
-	createData(
-		"A",
-		"Estructuras laminares curvadas de concreto armado que incluyen en una sola armadura la cimentación y el techo. Para este caso no se considera los valores de la columna Nº2.",
-		"Losa o aligerado de concreto armado con luces mayores de 6m. Con sobrecarga mayor a 300 kg/m2.",
-		"Aluminio pesado con perfiles especiales. Madera fina ornamental (caoba, cedro o pino selecto). Vidrio insulado (1)",
-		"Mármol importado, madera fina (caoba o similar), baldosa acústica en techo o similar.",
-		"Baños completos (7) de lujo importado con enchape fino (mármol o similar).",
-		"Aire acondicionado, ilu- minación especial, ventilación forzada, sist. hidroneumático, agua caliente y fría, intercomunicador alarmas, ascensor, sist. de bombeo de agua y desague (5), teléfono, gas natural."
-	),
-	createData(
-		"B",
-		"Columnas, vigas y/o placas de concreto armado y/o metálicas.",
-		"Aligerados o losas de concreto armado inclinadas.",
-		"Aluminio o madera fina (caoba o similar) de diseño especial, vidrio polarizado (2) y curvado, laminado otemplado.",
-		"Mármol nacional, madera fina (caoba o similar) enchapes en techos.",
-		"Baños completos (7) importados con mayólica o cerámico decorativo importado.",
-		"Sistemas de bombeo de agua potable (5), ascensor, teléfono, agua caliente y fría, gas natural."
-	),
-	createData(
-		"C",
-		"Placas de concreto (e=10 a 15 cm), alba- ñilería armada, ladrillo o similar con columna y vigas de amarre de concreto armado.",
-		"Aligerado o losas de concreto armado horizontales.",
-		"Aluminio o madera fina (caoba o similar), vidrio tratado polarizado (2), laminado o templado.",
-		"Superficie caravista obtenida mediante encofrado especial, enchape en techos.",
-		"Baños completos (7) nacionales con mayólica o cerámico nacional de color.",
-		"Igual al Punto 'B' sin ascensor."
-	),
-	createData(
-		"D",
-		"Ladrillo o similar sin elementos de concreto armado. Drywall o similar incluye techo (6)",
-		"Calamina metálica, fibrocemento sobre viguería metálica.",
-		"Ventanas de aluminio, puertas de madera selecta, vidrio tratado transparente (3).",
-		"Enchape de madera o laminados, piedra o material vitrificado.",
-		"Baños completos (7) nacionales blancos con mayólica blanca.",
-		"Agua fría, agua caliente, corriente trifásica teléfono, gas natural."
-	),
-	createData(
-		"E",
-		"Adobe, tapial o quincha.",
-		"Madera con material impermeabilizante.",
-		"Ventanas de fierro, puertas de madera selecta (caoba o similar), vidrio transparente (4)",
-		"Superficie de ladrillo caravista.",
-		"Baños con mayólica blanca, parcial.",
-		"Agua fría, agua caliente, corriente monofásica, teléfono, gas natural."
-	),
-	createData(
-		"F",
-		"Madera (estoraque, pumaquiro, huayruro, machinga, catahua amarilla, copaiba, diablo fuerte, tornillo o similares). Drywall o similar (sin techo)",
-		"Calamina metálica, fibrocemento o teja sobre viguería de madera corriente.",
-		"Ventanas de fierro o aluminio industrial, puertas contraplacadas de madera (cedro o similar), puertas material MDF o HDF, vidrio simple",
-		"Tarrajeo frotachado y/o yeso moldurado, pintura lavable.",
-		"Baños blancos sin mayólica.",
-		"Agua fría, corriente monofásica, gas natural."
-	),
-	createData(
-		"G",
-		"Pircado con mezcla de barro.",
-		"Madera rústica o caña con torta de barro.",
-		"Madera corriente con marcos en puertas y ventanas de pvc o madera corriente.",
-		"Estucado de yeso y/o barro, pintura al temple o al agua.",
-		"Sanitarios básicos de losa de  2da., fierro  fundido o granito.",
-		"Agua fría, corriente monofásica, teléfono."
-	),
-	createData(
-		"H",
-		"",
-		"Sin techo.",
-		"Madera rústica.",
-		"Pintado en ladrillo rústico, placa de concreto o similar.",
-		"Sin aparatos sanitarios.",
-		"Agua fría, corriente monofásica sin empotrar"
-	),
-	createData(
-		"I",
-		"",
-		"",
-		"Sin puertas ni ventanas.",
-		"Sin revestimientos en ladrillo, adobe o similar.",
-		"",
-		"Sin instalación eléctrica ni sanitaria."
-	),
-];
-
-export default function TableSelect({ project, categories }) {
+export default function TableSelect({ regionProject, categories }) {
 	const [selectedCategories, setSelectedCategories] = useState({
 		...categories,
 	});
+
+	const [optionsSelectedRegion, setoptionsSelectedRegion] = useState(rows)
+
+	useEffect(()=>{
+		console.log("REGION: ", regionProject);
+		if (regionProject == "SIERRA") {
+			setoptionsSelectedRegion(rows_sierra)
+		}
+		else if (regionProject == "SELVA") {
+			setoptionsSelectedRegion(rows_selva)
+		}
+		else if (regionProject == "COSTA (EXCEPTO LIMA METROPOLITANA Y CALLAO)") {
+			setoptionsSelectedRegion(rows_excep_lima_callao)
+		}
+		else if (regionProject == "LIMA METROPOLITANA Y PROVINCIA CONSTITUCIONAL DEL CALLAO") {
+			setoptionsSelectedRegion(rows_sierra)
+		}
+
+	}, [regionProject])
 
 	const handleChange = (evt) => {
 		setSelectedCategories({
@@ -158,7 +65,7 @@ export default function TableSelect({ project, categories }) {
 						<StyledTableCell align="center" colSpan={2}>
 							ESTRUCTURAS
 						</StyledTableCell>
-						<StyledTableCell align="center" colSpan={3}>
+						<StyledTableCell align="center" colSpan={4}>
 							ACABADOS
 						</StyledTableCell>
 						<StyledTableCell
@@ -174,6 +81,7 @@ export default function TableSelect({ project, categories }) {
 							MUROS Y COLUMNAS
 						</StyledTableCell>
 						<StyledTableCell align="center">TECHOS</StyledTableCell>
+						<StyledTableCell align="center">PISOS</StyledTableCell>
 						<StyledTableCell align="center">
 							PUERTAS Y VENTANAS
 						</StyledTableCell>
@@ -184,7 +92,7 @@ export default function TableSelect({ project, categories }) {
 					</TableRow>
 				</TableHead>
 				<TableBody>
-					{rows.map((row, i) => (
+					{optionsSelectedRegion.map((row, i) => (
 						<StyledTableRow
 							key={i}
 							onClick={(evt) => evt.target.children[0].click()}
@@ -225,6 +133,22 @@ export default function TableSelect({ project, categories }) {
 								/>
 								<Typography maxWidth="140px" fontSize="0.9rem">
 									{row.techos}
+								</Typography>
+							</StyledTableCell>
+							<StyledTableCell align="center">
+								<Radio
+									type="radio"
+									name="pisos"
+									value={row.categoria}
+									checked={
+										selectedCategories.pisos ===
+										row.categoria
+									}
+									onChange={handleChange}
+									disabled={!row.pisos}
+								/>
+								<Typography maxWidth="140px" fontSize="0.9rem">
+									{row.pisos}
 								</Typography>
 							</StyledTableCell>
 							<StyledTableCell align="center">
