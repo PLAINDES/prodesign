@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-        VITE_API_BASE_URL_CALCULATE: ${VITE_API_BASE_URL_CALCULATE:-http://localhost:8001}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://apiprodesign.pro-invest.pe}
+        VITE_API_BASE_URL_CALCULATE: ${VITE_API_BASE_URL_CALCULATE:-https://apiprodesign.pro-invest.pe}
         VITE_URL_PROINVIERTE: ${VITE_URL_PROINVIERTE:-https://apiproinvierte.pro-invest.pe}
         VITE_URL_PROBUDGETS_PORTAL: ${VITE_URL_PROBUDGETS_PORTAL:-https://probudget.pro-invest.pe/admin/budget/list}
     container_name: prodesign-react
