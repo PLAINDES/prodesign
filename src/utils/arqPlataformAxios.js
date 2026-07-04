@@ -1,0 +1,73 @@
+import axios from "axios";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
+
+export const arqPlataformAxios = axios.create({
+	baseURL: BASE_URL,
+});
+
+/**
+ *
+ * @param {import("axios").AxiosRequestConfig } param0
+ * @returns
+ */
+export const request = async ({ ...options }) => {
+	//   arqPlataformAxios.defaults.headers.common.Authorization
+	//   = `Bearer ${localStorage.getItem(
+	//     "token"
+	//   )}`;
+
+	// arqPlataformAxios.interceptors.request.use((config) => {
+	// 	config.headers = {
+	// 		...config.headers,
+	// 		"x-token": `${localStorage.getItem("token")}`,
+	// 	};
+	// 	return config;
+	// });
+
+	const onSuccess = (response) => response;
+	const onError = (error) => {
+		error.error = true;
+		return error;
+	};
+
+	try {
+		const response = await arqPlataformAxios(options);
+		return onSuccess(response);
+	} catch (error) {
+		return onError(error);
+	}
+};
+
+export const arqPlataformAxiosCalc = axios.create({
+	baseURL: BASE_URL_CALC,
+});
+
+/**
+ *
+ * @param {import("axios").AxiosRequestConfig } param0
+ * @returns
+ */
+export const requestCalc = async (options) => {
+    // 1. Asegúrate de usar la misma instancia que invocas abajo (arqPlataformAxiosCalc)
+    const token = localStorage.getItem("token");
+    
+    arqPlataformAxiosCalc.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+    const onSuccess = (response) => response;
+    const onError = (error) => {
+        // Es mejor loguear el error para debuguear el 401
+        console.error("Error en la petición:", error.response || error);
+        error.error = true;
+        return error;
+    };
+
+    try {
+        // 2. Pasamos las options (method, url, data, etc.)
+        const response = await arqPlataformAxiosCalc(options);
+        return onSuccess(response);
+    } catch (error) {
+        return onError(error);
+    }
+};

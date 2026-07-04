@@ -1,0 +1,20 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+        VITE_API_BASE_URL_CALCULATE: ${VITE_API_BASE_URL_CALCULATE:-http://localhost:8001}
+        VITE_URL_PROINVIERTE: ${VITE_URL_PROINVIERTE:-https://apiproinvierte.pro-invest.pe}
+        VITE_URL_PROBUDGETS_PORTAL: ${VITE_URL_PROBUDGETS_PORTAL:-https://probudget.pro-invest.pe/prodesign}
+    container_name: prodesign-react
+    ports:
+      - "5199:80"
+    restart: always
+    networks:
+      - prodesign_network
+
+networks:
+  prodesign_network:
+    external: true
