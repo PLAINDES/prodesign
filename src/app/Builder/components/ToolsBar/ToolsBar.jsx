@@ -190,7 +190,7 @@ export default function ToolsBar({
 		const projectId = params.id;
 		const urlProbudgetsPortal = import.meta.env.VITE_URL_PROBUDGETS_PORTAL;
 		if (!projectId || !urlProbudgetsPortal) return "#";
-		return `${urlProbudgetsPortal}?id=${projectId}`;
+		return `${urlProbudgetsPortal}?proyecto_id=${projectId}`;
 	}
 
 	return (

@@ -49,6 +49,9 @@ jobs:
             ls -la
             echo "========================================="
 
+            echo "Actualizando VITE_URL_PROBUDGETS_PORTAL en .env..."
+            sed -i 's|VITE_URL_PROBUDGETS_PORTAL=.*|VITE_URL_PROBUDGETS_PORTAL=https://probudget.pro-invest.pe/admin/budget/list|' .env 2>/dev/null || true
+
             echo "Validando docker-compose..."
             docker compose config > /dev/null
 
