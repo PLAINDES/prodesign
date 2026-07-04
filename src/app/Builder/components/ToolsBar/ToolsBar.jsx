@@ -33,7 +33,6 @@ import { requestExport } from "../../../../redux/features/exportSlice";
 import { useParams } from "react-router-dom";
 
 import { useRender } from '../../RenderContext';
-import { useApi } from '../../../../hooks/useApi';
 
 
 const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
@@ -187,42 +186,12 @@ export default function ToolsBar({
 		}
 	}
 
-	const { sendData } = useApi();
-
-	const handleSendToProbudget = async () => {
+	function getProbudgetsUrl() {
 		const projectId = params.id;
 		const urlProbudgetsPortal = import.meta.env.VITE_URL_PROBUDGETS_PORTAL;
-		if (!projectId || !urlProbudgetsPortal) return;
-
-		Swal.fire({
-			title: 'Sincronizando...',
-			text: 'Enviando datos del proyecto a ProBudget',
-			allowOutsideClick: false,
-			allowEscapeKey: false,
-			didOpen: () => Swal.showLoading()
-		});
-
-		try {
-			await sendData(dataProject);
-			Swal.fire({
-				title: '¡Datos enviados!',
-				text: 'El proyecto se ha sincronizado correctamente con ProBudget.',
-				icon: 'success',
-				confirmButtonText: 'Ir a ProBudget'
-			}).then((result) => {
-				if (result.isConfirmed) {
-					window.open(`${urlProbudgetsPortal}?id=${projectId}`, '_blank');
-				}
-			});
-		} catch (error) {
-			Swal.fire({
-				title: 'Error',
-				text: error.message || 'Hubo un error al sincronizar con ProBudget.',
-				icon: 'error',
-				confirmButtonText: 'Aceptar'
-			});
-		}
-	};
+		if (!projectId || !urlProbudgetsPortal) return "#";
+		return `${urlProbudgetsPortal}?id=${projectId}`;
+	}
 
 	return (
 		<Box
@@ -303,8 +272,10 @@ export default function ToolsBar({
 								{isGeneratingPdf ? "Generando..." : "Enviar a proinvierte"}
 							</button>
 
-						<button
-							onClick={handleSendToProbudget}
+						<a
+							href={getProbudgetsUrl()}
+							target="_blank"
+							rel="noopener noreferrer"
 							style={{
 								marginTop: "4px",
 								height:"38px",
@@ -316,11 +287,12 @@ export default function ToolsBar({
 								borderRadius: "5px",
 								fontWeight: "bold",
 								display: "inline-flex",
-								alignItems: "center"
+								alignItems: "center",
+								textDecoration: "none"
 							}}
 						>
 							Enviar a probudget
-						</button>
+						</a>
 					</div>
 
 					
