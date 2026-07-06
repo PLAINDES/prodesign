@@ -6,7 +6,8 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://apiprodesign.pro-invest.pe}
         VITE_API_BASE_URL_CALCULATE: ${VITE_API_BASE_URL_CALCULATE:-https://apiprodesign.pro-invest.pe}
-        VITE_URL_PROINVIERTE: ${VITE_URL_PROINVIERTE:-https://apiproinvierte.pro-invest.pe}
+        # [DOCUMENTACIÓN] Se corrigió el valor por defecto de VITE_URL_PROINVIERTE a https://proinvierte.pro-invest.pe para apuntar a la interfaz del portal de usuario en lugar del backend de la API.
+        VITE_URL_PROINVIERTE: ${VITE_URL_PROINVIERTE:-https://proinvierte.pro-invest.pe}
         VITE_URL_PROBUDGETS_PORTAL: ${VITE_URL_PROBUDGETS_PORTAL:-https://probudget.pro-invest.pe/admin/budget/list}
     container_name: prodesign-react
     ports:
