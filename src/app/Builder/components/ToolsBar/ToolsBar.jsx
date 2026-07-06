@@ -60,7 +60,7 @@ export default function ToolsBar({
 	const params = useParams();
 
 
-	const handleImgPlane2D = async(projectId)=>{
+	const handleImgPlane2D = async (projectId) => {
 		try {
 			const token = localStorage.getItem('token');
 			const response = await axios.get(`/api/v1/project/${Number(projectId - 1)}`, {
@@ -76,7 +76,7 @@ export default function ToolsBar({
 			// 🔹 Insertarlo en el iframe usando srcdoc
 			const iframe = document.getElementById("miIframe"); // tu iframe en el DOM
 			iframe.srcdoc = htmlContent;
-			
+
 		} catch (error) {
 			console.log(error);
 		}
@@ -98,13 +98,13 @@ export default function ToolsBar({
 			const url = window.URL.createObjectURL(new Blob([response.data]));
 			const link = document.createElement('a');
 			link.href = url;
-			
+
 			// Nombre del archivo que verá el usuario
 			link.setAttribute('download', `Plano_Proyecto_${projectId}.dxf`);
-			
+
 			document.body.appendChild(link);
 			link.click();
-			
+
 			// Limpieza
 			link.parentNode.removeChild(link);
 			window.URL.revokeObjectURL(url);
@@ -231,8 +231,8 @@ export default function ToolsBar({
 					<li>
 						<Button3D handleViewState={handleViewState} />
 					</li> */}
-
-					<div style={{ display: "flex", gap: "10px" }}>
+					{/* [DOCUMENTACIÓN] Se movieron "Settings" (Ajustes) y "select-export" (EXPORTAR) dentro del contenedor flex principal para asegurar una alineación horizontal perfecta y homogénea en toda la barra de herramientas superior. */}
+					<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
 						{tipo_render.map((tipo, index) => (
 							<button
 							key={index}
@@ -260,17 +260,19 @@ export default function ToolsBar({
 								marginTop: "4px",
 								height:"38px",
 								padding: "0px 16px",
-								border: "1px solid #ccc",
-								backgroundColor: isGeneratingPdf ? "#6c757d" : "#007bff",
+								border: "1px solid #007bff",
+								backgroundColor: "#007bff",
 								color: "#fff",
-								cursor: isGeneratingPdf ? "not-allowed" : "pointer",
+								cursor: "pointer",
 								borderRadius: "5px",
 								fontWeight: "bold",
-								opacity: isGeneratingPdf ? 0.6 : 1
+								display: "inline-flex",
+								alignItems: "center",
+								textDecoration: "none"
 							}}
-							>
-								{isGeneratingPdf ? "Generando..." : "Enviar a proinvierte"}
-							</button>
+						>
+							{isGeneratingPdf ? "Generando..." : "Enviar a proinvierte"}
+						</button>
 
 						<a
 							href={getProbudgetsUrl()}
@@ -291,33 +293,34 @@ export default function ToolsBar({
 								textDecoration: "none"
 							}}
 						>
-							Enviar a probudget
+							Enviar a ProBudgets
 						</a>
-					</div>
 
-					
-					<li>
 						<Settings
 							//state={state}
 							projectData={state}
 							school={school}
 							handleSetClassrooms={handleSetClassrooms}
 						/>
-					</li>
 
-					<li>
 						<select
 							id="select-export"
 							style={{
-								margin: "0.3rem 0.4rem",
+								marginTop: "4px",
+								height: "38px",
+								padding: "0px 16px",
 								backgroundColor: "#E4E6EF",
+								border: "1px solid #ccc",
+								borderRadius: "5px",
+								fontWeight: "bold",
+								cursor: "pointer",
 							}}
 							onChange={handleExportChange}
 						>
 							<option value="EXPORTAR">EXPORTAR</option>
 							<option value="dxf">DXF (AUTOCAD)</option>
 						</select>
-					</li>
+					</div>
 
 					{/* <li>
 						<select

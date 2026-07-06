@@ -44,7 +44,7 @@ export const useApi = () => {
         }
       }
       if (coords.length < 3) return 250.75;
-      
+
       let area = 0;
       const n = coords.length;
       for (let i = 0; i < n; i++) {
@@ -69,39 +69,128 @@ export const useApi = () => {
 
     // 4. Parse ambientes
     let ambientes = [];
-    let parsedAmbientes = [];
-    if (projectData.ambientes) {
-      try {
-        parsedAmbientes = typeof projectData.ambientes === 'string'
-          ? JSON.parse(projectData.ambientes)
-          : projectData.ambientes;
-      } catch (e) {
-        console.error("Error parseando ambientes:", e);
-      }
-    }
-    if (Array.isArray(parsedAmbientes) && parsedAmbientes.length > 0) {
-      ambientes = parsedAmbientes.map(amb => ({
-        tipo: amb.tipo || amb.ambiente || "Aula",
-        cantidad: parseInt(amb.cantidad || amb.count || 1),
-        area: parseFloat(parseFloat(amb.area || amb.superficie || 50.0).toFixed(2))
-      }));
-    } else if (projectData.aforo) {
-      let aforoData = [];
-      try {
-        aforoData = typeof projectData.aforo === 'string'
-          ? JSON.parse(projectData.aforo)
-          : projectData.aforo;
-      } catch (e) {}
-      if (Array.isArray(aforoData)) {
-        aforoData.forEach(item => {
-          if (item.cantidad_aulas > 0) {
-            ambientes.push({
-              tipo: `Aula ${item.grado || 'General'}`,
-              cantidad: parseInt(item.cantidad_aulas),
-              area: 50.0
+    
+    // [DOCUMENTACIÓN] Se intenta obtener y agrupar los ambientes reales de la generación (resumen_ambientes)
+    const parsedResumen = projectData.resumen_ambientes
+      ? (typeof projectData.resumen_ambientes === 'string' ? JSON.parse(projectData.resumen_ambientes) : projectData.resumen_ambientes)
+      : null;
+
+    if (Array.isArray(parsedResumen) && parsedResumen.length > 0) {
+      const groups = {};
+      
+      parsedResumen.forEach((levelObj) => {
+        if (typeof levelObj !== "object" || levelObj === null) return;
+        Object.keys(levelObj).forEach((levelName) => {
+          const rows = levelObj[levelName];
+          if (Array.isArray(rows)) {
+            rows.forEach((row) => {
+              if (Array.isArray(row)) {
+                row.forEach((amb) => {
+                  if (typeof amb !== "object" || amb === null) return;
+                  const name = amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
+                  const largo = parseFloat(amb.largo || 0);
+                  const ancho = parseFloat(amb.ancho || 7.5);
+                  
+                  let unitArea = largo * ancho;
+                  const lowerName = name.toLowerCase();
+                  if (lowerName.includes("escalera")) {
+                    unitArea = 8.64;
+                  } else if (lowerName.includes("sshh sec - hombres") || lowerName.includes("sshh prim - hombres")) {
+                    unitArea = 14.5;
+                  } else if (lowerName.includes("sshh sec - mujeres") || lowerName.includes("sshh prim - mujeres")) {
+                    unitArea = 15.5;
+                  } else if (lowerName.includes("topico")) {
+                    unitArea = 27.0;
+                  } else if (lowerName.includes("lactario")) {
+                    unitArea = 22.5;
+                  } else if (lowerName.includes("cocina inicial")) {
+                    unitArea = 18.2;
+                  } else if (lowerName.includes("espera")) {
+                    unitArea = 15.0;
+                  } else if (lowerName.includes("ingreso") && lowerName.includes("admin")) {
+                    unitArea = 18.0;
+                  } else if (lowerName.includes("losa")) {
+                    unitArea = 420.0;
+                  } else if (lowerName.includes("sum")) {
+                    unitArea = 172.5;
+                  } else if (lowerName.includes("cocina prim")) {
+                    unitArea = 36.4;
+                  } else if (lowerName.includes("patio")) {
+                    unitArea = 150.0;
+                  }
+                  
+                  if (unitArea <= 0) unitArea = 50.0;
+                  
+                  if (!groups[name]) {
+                    groups[name] = { count: 0, unitArea };
+                  }
+                  groups[name].count += 1;
+                });
+              }
             });
           }
         });
+      });
+
+      Object.keys(groups).forEach((name) => {
+        ambientes.push({
+          tipo: name,
+          cantidad: groups[name].count,
+          area: parseFloat(groups[name].unitArea.toFixed(2))
+        });
+      });
+    }
+
+    // [DOCUMENTACIÓN] Si no hay resumen_ambientes, recurre a 'ambientes' o 'aforo' (con mapeo robusto para mayúsculas/minúsculas)
+    if (ambientes.length === 0) {
+      let parsedAmbientes = [];
+      if (projectData.ambientes) {
+        try {
+          parsedAmbientes = typeof projectData.ambientes === 'string'
+            ? JSON.parse(projectData.ambientes)
+            : projectData.ambientes;
+        } catch (e) {
+          console.error("Error parseando ambientes:", e);
+        }
+      }
+      if (Array.isArray(parsedAmbientes) && parsedAmbientes.length > 0) {
+        ambientes = parsedAmbientes.map(amb => {
+          const tipo = amb.tipo || amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
+          const cantidad = parseInt(amb.cantidad || amb.Cantidad || amb.count || 1, 10);
+          
+          let unitArea = amb.Unitario || amb.unitario || amb.area || amb.superficie;
+          if (unitArea === undefined && (amb.Metros_cuadrados !== undefined || amb.metros_cuadrados !== undefined)) {
+            const total = parseFloat(amb.Metros_cuadrados || amb.metros_cuadrados || 0);
+            unitArea = cantidad > 0 ? total / cantidad : total;
+          }
+          if (unitArea === undefined) {
+            unitArea = 50.0;
+          }
+
+          return {
+            tipo,
+            cantidad,
+            area: parseFloat(parseFloat(unitArea).toFixed(2))
+          };
+        });
+      } else if (projectData.aforo) {
+        let aforoData = [];
+        try {
+          aforoData = typeof projectData.aforo === 'string'
+            ? JSON.parse(projectData.aforo)
+            : projectData.aforo;
+        } catch (e) { }
+        if (Array.isArray(aforoData)) {
+          aforoData.forEach(item => {
+            if (item.cantidad_aulas > 0) {
+              ambientes.push({
+                tipo: `Aula ${item.grado || 'General'}`,
+                cantidad: parseInt(item.cantidad_aulas, 10),
+                area: 60.0 // Aulas estándar son de 60m2 según Excel (7.5 * 8)
+              });
+            }
+          });
+        }
       }
     }
 
@@ -115,6 +204,9 @@ export const useApi = () => {
 
     // 5. Build payload
     const payload = {
+      // [DOCUMENTACIÓN] Se agregaron proyecto_id y proyect_id para coincidir con la nomenclatura del portal de presupuestos
+      proyecto_id: parseInt(projectData.id || 0, 10),
+      proyect_id: parseInt(projectData.id || 0, 10),
       nombreProyecto: projectData.name?.trim() || "Proyecto Sin Nombre",
       tipologia: projectData.tipologia || "Educación",
       zona: projectData.zone || "Urbano",
@@ -125,7 +217,7 @@ export const useApi = () => {
       distrito: projectData.distrito || "Tu Distrito",
       responsable: projectData.responsable || projectData.manager || "Nombre Responsable",
       cliente: projectData.cliente || projectData.client || "Nombre Cliente",
-      
+
       categoriaId: 2,
       areaTechada: areaTechada,
       areaTerreno: areaTerreno,
@@ -135,17 +227,56 @@ export const useApi = () => {
       incluyeColumnetasViguetas: projectData.incluyeColumnetasViguetas ?? false,
       cimentaciones: cimentaciones,
       ambientes: ambientes,
-      exteriores: (projectData.exteriores || [
-        {
-          tipo: "Patio",
-          cantidad: 1,
-          area: 40.0
-        }
-      ]).map(ext => ({
-        tipo: ext.tipo || "Patio",
-        cantidad: parseInt(ext.cantidad || ext.count || 1),
-        area: parseFloat(parseFloat(ext.area || 40.0).toFixed(2))
-      }))
+      // [DOCUMENTACIÓN] Se modificó el mapeo de exteriores para incluir y calcular dinámicamente las 12 extensiones requeridas para ProBudgets (Áreas Verdes, Losa Deportiva, Patio de Inicial, Cerco Perimétrico H=3m, etc.) en base al terreno y niveles del proyecto.
+      exteriores: (() => {
+        const hasInicial =
+          (projectData.level && projectData.level.toLowerCase().includes("inicial")) ||
+          (projectData.sublevel && projectData.sublevel.toLowerCase().includes("inicial")) ||
+          (projectData.tipologia && projectData.tipologia.toLowerCase().includes("inicial")) ||
+          (ambientes.some(amb => amb.tipo && (amb.tipo.toLowerCase().includes("inicial") || amb.tipo.toLowerCase().includes("psicomotri"))));
+
+        const getPerimeter = (verts) => {
+          if (!verts || verts.length < 3) return 120.0;
+          let coords = [];
+          if (Array.isArray(verts)) {
+            if (Array.isArray(verts[0])) {
+              coords = verts;
+            } else if (typeof verts[0] === 'object' && verts[0] !== null) {
+              coords = verts.map(v => [v.x || v.east || 0, v.y || v.north || 0]);
+            }
+          }
+          if (coords.length < 3) return 120.0;
+          let perim = 0;
+          const n = coords.length;
+          for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            const dx = coords[j][0] - coords[i][0];
+            const dy = coords[j][1] - coords[i][1];
+            perim += Math.sqrt(dx * dx + dy * dy);
+          }
+          return perim;
+        };
+
+        const perimeter = getPerimeter(verticesParaEnviar);
+        const areasVerdes = parseFloat(Math.max(30.0, areaTerreno * 0.15).toFixed(2));
+        const veredas = parseFloat(Math.max(50.0, areaTerreno * 0.10).toFixed(2));
+        const hasSportsCourt = areaTerreno > 800;
+
+        return [
+          { tipo: "AREAS VERDES", cantidad: 1, area: areasVerdes },
+          { tipo: "LOSA DEPORTIVA", cantidad: hasSportsCourt ? 1 : 0, area: hasSportsCourt ? 540.0 : 0.0 },
+          { tipo: "COBERTURA LOSA DEPORTIVA", cantidad: hasSportsCourt ? 1 : 0, area: hasSportsCourt ? 540.0 : 0.0 },
+          { tipo: "PATIO DE INICIAL", cantidad: hasInicial ? 1 : 0, area: hasInicial ? 120.0 : 0.0 },
+          { tipo: "COBERTURA PATIO DE INICIAL", cantidad: hasInicial ? 1 : 0, area: hasInicial ? 120.0 : 0.0 },
+          { tipo: "ASTA DE BANDERA", cantidad: 1, area: 1.0 },
+          { tipo: "VEREDAS Y RAMPAS DE CONCRETO", cantidad: 1, area: veredas },
+          { tipo: "PAVIMENTO RIGIDO VEHICULAR", cantidad: 1, area: 80.0 },
+          { tipo: "LAMAS EN PASADIZOS", cantidad: 1, area: 45.0 },
+          { tipo: "ESTACIONAMIENTO DE BICICLETAS", cantidad: 1, area: 30.0 },
+          { tipo: "CERCO PERIMETRICO H=3.00m", cantidad: 1, area: parseFloat(perimeter.toFixed(2)) },
+          { tipo: "PORTADA DE INGRESO (PORTON METALICO)", cantidad: 1, area: 6.0 }
+        ];
+      })()
     };
 
     console.log("📤 Sync payload to ProBudgets:", payload);

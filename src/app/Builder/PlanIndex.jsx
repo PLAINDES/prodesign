@@ -22,6 +22,43 @@ function PlanContent() {
 	const [view, setViewState] = useState({ view: "2D", roof: true });
 	const params = useParams();
 	const { dataProject, loading, setLoading, error, retryJob, renderSeleccionado, jobStatus } = useRender();
+	
+	// [DOCUMENTACIÓN] Se agregó la variable de estado 'progress' y un efecto 'useEffect' para simular y mostrar de forma dinámica
+	// el porcentaje de progreso (grado de generación) de los planos 2D y modelos 3D del proyecto.
+	const [progress, setProgress] = useState(0);
+
+	useEffect(() => {
+		let interval;
+		if (jobStatus === "generating") {
+			setProgress(0);
+			interval = setInterval(() => {
+				setProgress((prev) => {
+					if (prev < 30) {
+						return Math.min(prev + Math.floor(Math.random() * 3) + 3, 30);
+					} else if (prev < 60) {
+						return Math.min(prev + Math.floor(Math.random() * 2) + 1, 60);
+					} else if (prev < 85) {
+						return Math.min(prev + (Math.random() > 0.3 ? 1 : 0), 85);
+					} else if (prev < 95) {
+						return Math.min(prev + (Math.random() > 0.7 ? 1 : 0), 95);
+					} else if (prev < 98) {
+						return Math.min(prev + (Math.random() > 0.9 ? 1 : 0), 98);
+					} else {
+						return prev;
+					}
+				});
+			}, 1000);
+		} else if (jobStatus === "finished" || !loading) {
+			setProgress(100);
+		} else {
+			setProgress(0);
+		}
+
+		return () => {
+			if (interval) clearInterval(interval);
+		};
+	}, [jobStatus, loading]);
+
 	const tipo_render = ["2d", "3d", "render ia"];
 	const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 	const url_calc = BASE_URL_CALC;
@@ -93,6 +130,27 @@ function PlanContent() {
 										? "Generando modelo 3D..."
 										: "Procesando render IA..."}
 						</p>
+						
+						{/* [DOCUMENTACIÓN] Se agregó la visualización del porcentaje/barra de progreso para la generación 2D/3D */}
+						{jobStatus === "generating" && (
+							<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", width: "220px", marginTop: "5px" }}>
+								<div style={{ fontSize: "1.3rem", fontWeight: "600", color: "#38bdf8", fontFamily: "sans-serif" }}>
+									{progress}%
+								</div>
+								<div style={{ width: "100%", height: "6px", backgroundColor: "rgba(255, 255, 255, 0.1)", borderRadius: "9999px", overflow: "hidden" }}>
+									<div 
+										style={{ 
+											width: `${progress}%`, 
+											height: "100%", 
+											background: "linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)", 
+											borderRadius: "9999px",
+											transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)" 
+										}} 
+									/>
+								</div>
+							</div>
+						)}
+
 						{(jobStatus === "generating" || jobStatus === "failed") && (
 							<p style={{ color: "#aaa", fontSize: "0.9rem" }}>
 								{jobStatus === "failed" 
