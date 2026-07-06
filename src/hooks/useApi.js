@@ -69,6 +69,7 @@ export const useApi = () => {
 
     // 4. Parse ambientes
     let ambientes = [];
+    const groups = {};
     
     // [DOCUMENTACIÓN] Se intenta obtener y agrupar los ambientes reales de la generación (resumen_ambientes)
     const parsedResumen = projectData.resumen_ambientes
@@ -76,8 +77,6 @@ export const useApi = () => {
       : null;
 
     if (Array.isArray(parsedResumen) && parsedResumen.length > 0) {
-      const groups = {};
-      
       parsedResumen.forEach((levelObj) => {
         if (typeof levelObj !== "object" || levelObj === null) return;
         Object.keys(levelObj).forEach((levelName) => {
@@ -87,7 +86,7 @@ export const useApi = () => {
               if (Array.isArray(row)) {
                 row.forEach((amb) => {
                   if (typeof amb !== "object" || amb === null) return;
-                  const name = amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
+                  let name = amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
                   const largo = parseFloat(amb.largo || 0);
                   const ancho = parseFloat(amb.ancho || 7.5);
                   
@@ -120,6 +119,15 @@ export const useApi = () => {
                   }
                   
                   if (unitArea <= 0) unitArea = 50.0;
+
+                  // [DOCUMENTACIÓN] Normalizar únicamente a AULA INICIAL, AULA PRIMARIA, AULA SECUNDARIA en mayúsculas. Los demás ambientes conservan su capitalización original para coincidir con el Excel de ProBudgets y evitar errores #DIV/0! o #N/A.
+                  if (lowerName.includes("ciclo i") || lowerName.includes("ciclo ii") || (lowerName.includes("inicial") && lowerName.includes("aula"))) {
+                    name = "AULA INICIAL";
+                  } else if (lowerName.includes("primaria") && lowerName.includes("aula")) {
+                    name = "AULA PRIMARIA";
+                  } else if (lowerName.includes("secundaria") && lowerName.includes("aula")) {
+                    name = "AULA SECUNDARIA";
+                  }
                   
                   if (!groups[name]) {
                     groups[name] = { count: 0, unitArea };
@@ -131,18 +139,10 @@ export const useApi = () => {
           }
         });
       });
-
-      Object.keys(groups).forEach((name) => {
-        ambientes.push({
-          tipo: name,
-          cantidad: groups[name].count,
-          area: parseFloat(groups[name].unitArea.toFixed(2))
-        });
-      });
     }
 
     // [DOCUMENTACIÓN] Si no hay resumen_ambientes, recurre a 'ambientes' o 'aforo' (con mapeo robusto para mayúsculas/minúsculas)
-    if (ambientes.length === 0) {
+    if (Object.keys(groups).length === 0) {
       let parsedAmbientes = [];
       if (projectData.ambientes) {
         try {
@@ -154,8 +154,8 @@ export const useApi = () => {
         }
       }
       if (Array.isArray(parsedAmbientes) && parsedAmbientes.length > 0) {
-        ambientes = parsedAmbientes.map(amb => {
-          const tipo = amb.tipo || amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
+        parsedAmbientes.forEach(amb => {
+          let tipo = amb.tipo || amb.ambiente || amb.Ambiente || amb.Ambientes || "Aula";
           const cantidad = parseInt(amb.cantidad || amb.Cantidad || amb.count || 1, 10);
           
           let unitArea = amb.Unitario || amb.unitario || amb.area || amb.superficie;
@@ -167,11 +167,20 @@ export const useApi = () => {
             unitArea = 50.0;
           }
 
-          return {
-            tipo,
-            cantidad,
-            area: parseFloat(parseFloat(unitArea).toFixed(2))
-          };
+          // Normalizar únicamente aulas a mayúsculas
+          const lowerTipo = tipo.toLowerCase();
+          if (lowerTipo.includes("ciclo i") || lowerTipo.includes("ciclo ii") || (lowerTipo.includes("inicial") && lowerTipo.includes("aula"))) {
+            tipo = "AULA INICIAL";
+          } else if (lowerTipo.includes("primaria") && lowerTipo.includes("aula")) {
+            tipo = "AULA PRIMARIA";
+          } else if (lowerTipo.includes("secundaria") && lowerTipo.includes("aula")) {
+            tipo = "AULA SECUNDARIA";
+          }
+
+          if (!groups[tipo]) {
+            groups[tipo] = { count: 0, unitArea };
+          }
+          groups[tipo].count += cantidad;
         });
       } else if (projectData.aforo) {
         let aforoData = [];
@@ -183,16 +192,36 @@ export const useApi = () => {
         if (Array.isArray(aforoData)) {
           aforoData.forEach(item => {
             if (item.cantidad_aulas > 0) {
-              ambientes.push({
-                tipo: `Aula ${item.grado || 'General'}`,
-                cantidad: parseInt(item.cantidad_aulas, 10),
-                area: 60.0 // Aulas estándar son de 60m2 según Excel (7.5 * 8)
-              });
+              let tipo = `Aula ${item.grado || 'General'}`;
+              const lowerTipo = tipo.toLowerCase();
+              if (lowerTipo.includes("ciclo i") || lowerTipo.includes("ciclo ii") || lowerTipo.includes("inicial")) {
+                tipo = "AULA INICIAL";
+              } else if (lowerTipo.includes("primaria")) {
+                tipo = "AULA PRIMARIA";
+              } else if (lowerTipo.includes("secundaria")) {
+                tipo = "AULA SECUNDARIA";
+              } else {
+                tipo = tipo.toUpperCase();
+              }
+
+              if (!groups[tipo]) {
+                groups[tipo] = { count: 0, unitArea: 60.0 };
+              }
+              groups[tipo].count += parseInt(item.cantidad_aulas, 10);
             }
           });
         }
       }
     }
+
+    // Convertir el mapa de grupos a la lista final
+    Object.keys(groups).forEach((name) => {
+      ambientes.push({
+        tipo: name,
+        cantidad: groups[name].count,
+        area: parseFloat(groups[name].unitArea.toFixed(2))
+      });
+    });
 
     if (ambientes.length === 0) {
       ambientes.push({
