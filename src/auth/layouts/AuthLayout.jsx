@@ -172,27 +172,31 @@ export const AuthLayout = ({ children }) => {
 						))}
 					</Stack>
 
-					{/* Botón de llamada a la acción */}
+					{/* [DOCUMENTACIÓN] Se actualizó el botón de WhatsApp con el número de Brittney (+51 998 951 597) sin prefijo en pantalla y con un diseño más redondeado y minimalista (outlined, sin sombras pronunciadas, bordes circulares y flat look) */}
 					<Button 
-						variant="contained" 
+						variant="outlined" 
 						fullWidth
-						href="https://wa.me/51954510980?text=Hola,%20quiero%20saber%20m%C3%A1s%20sobre%20Pro%20Design"
+						href="https://wa.me/51998951597?text=Hola,%20quiero%20saber%20m%C3%A1s%20sobre%20Pro%20Design"
 						target="_blank"
 						sx={{ 
-							py: 1.5, 
-							borderRadius: "12px",
-							fontWeight: 600,
-							fontSize: "1rem",
-							boxShadow: "0 8px 16px -4px rgba(37, 99, 235, 0.3)",
+							py: 1.2, 
+							borderRadius: "50px",
+							fontWeight: 500,
+							fontSize: "0.95rem",
+							borderColor: theme.palette.primary.main,
+							color: theme.palette.primary.main,
 							textTransform: "none",
+							boxShadow: "none",
 							'&:hover': {
-								boxShadow: "0 12px 20px -4px rgba(37, 99, 235, 0.4)",
-								transform: "translateY(-2px)",
+								borderColor: theme.palette.primary.main,
+								bgcolor: theme.palette.mode === 'light' ? 'rgba(37, 99, 235, 0.04)' : 'rgba(14, 165, 233, 0.08)',
+								transform: "translateY(-1px)",
+								boxShadow: "none",
 								transition: "all 0.2s ease-in-out"
 							}
 						}}
 					>
-						Conversemos sobre tu proyecto: 954-510-980
+						Conversemos sobre tu proyecto: 998 951 597
 					</Button>
 				</Box>
 			</Grid>

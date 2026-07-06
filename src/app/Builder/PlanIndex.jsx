@@ -48,7 +48,16 @@ function PlanContent() {
 					}
 				});
 			}, 1000);
-		} else if (jobStatus === "finished" || !loading) {
+		} else if (loading && (jobStatus === "finished" || dataProject?.status_job === "finished")) {
+			// [DOCUMENTACIÓN] Para la pantalla de carga "Cargando vista...", simulamos el tramo final del 98% al 99% hasta que cargue completamente el iframe.
+			setProgress(98);
+			interval = setInterval(() => {
+				setProgress((prev) => {
+					if (prev < 99) return prev + 1;
+					return prev;
+				});
+			}, 1000);
+		} else if (!loading) {
 			setProgress(100);
 		} else {
 			setProgress(0);
@@ -57,7 +66,7 @@ function PlanContent() {
 		return () => {
 			if (interval) clearInterval(interval);
 		};
-	}, [jobStatus, loading]);
+	}, [jobStatus, loading, dataProject?.status_job]);
 
 	const tipo_render = ["2d", "3d", "render ia"];
 	const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
@@ -119,8 +128,20 @@ function PlanContent() {
 					{/* [DOCUMENTACIÓN - TAREA 2]: Overlay de Carga Contextual
 					    Se evalúa el estado del trabajo (jobStatus) y el tipo de render 
 					    para proveer una retroalimentación más amigable al usuario. */}
+					{/* [DOCUMENTACIÓN] Se unificó la interfaz de carga (Backdrop) para que en todas las pantallas (2D, 3D y render IA), así como en el estado "Cargando vista...", el porcentaje de progreso se dibuje de forma centralizada y alineada dentro del propio spinner circular (CircularProgress). Se removió la barra de progreso inferior duplicada para lograr un diseño minimalista y limpio acorde al feedback. */}
 					<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", textAlign: "center" }}>
-						<CircularProgress color="inherit" size={60} />
+						<Box sx={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+							<CircularProgress color="inherit" size={80} thickness={4} />
+							<div style={{
+								position: "absolute",
+								color: "#38bdf8",
+								fontWeight: "700",
+								fontSize: "1.2rem",
+								fontFamily: "sans-serif"
+							}}>
+								{progress}%
+							</div>
+						</Box>
 						<p style={{ fontWeight: "500", fontSize: "1.1rem" }}>
 							{dataProject?.status_job === "finished" 
 								? "Cargando vista..." 
@@ -130,26 +151,6 @@ function PlanContent() {
 										? "Generando modelo 3D..."
 										: "Procesando render IA..."}
 						</p>
-						
-						{/* [DOCUMENTACIÓN] Se agregó la visualización del porcentaje/barra de progreso para la generación 2D/3D */}
-						{jobStatus === "generating" && (
-							<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", width: "220px", marginTop: "5px" }}>
-								<div style={{ fontSize: "1.3rem", fontWeight: "600", color: "#38bdf8", fontFamily: "sans-serif" }}>
-									{progress}%
-								</div>
-								<div style={{ width: "100%", height: "6px", backgroundColor: "rgba(255, 255, 255, 0.1)", borderRadius: "9999px", overflow: "hidden" }}>
-									<div 
-										style={{ 
-											width: `${progress}%`, 
-											height: "100%", 
-											background: "linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)", 
-											borderRadius: "9999px",
-											transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)" 
-										}} 
-									/>
-								</div>
-							</div>
-						)}
 
 						{(jobStatus === "generating" || jobStatus === "failed") && (
 							<p style={{ color: "#aaa", fontSize: "0.9rem" }}>
