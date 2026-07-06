@@ -1,6 +1,95 @@
 // [DOCUMENTACIÓN] Custom Hook useApi para la sincronización del proyecto con ProBudgets.
 // Mapea la información técnica del proyecto (áreas, cimentaciones, ambientes) y realiza la petición POST.
 
+// [DOCUMENTACIÓN] Mapa de traducción exacto al formato del Excel de ProBudgets para que coincida con las opciones del select.
+const MAPA_EXCEL = {
+  "aulas secundaria": "Aulas Secundaria",
+  "aula de innovacion sec": "Aula de Innovacion Sec",
+  "aula de innovación sec": "Aula de Innovacion Sec",
+  "taller creativo sec": "Taller creativo Sec",
+  "laboratorio": "Laboratorio",
+  "escalera sec": "Escalera Sec",
+  "sshh sec - hombres": "SSHH Sec - Hombres",
+  "sshh sec - mujeres": "SSHH Sec - Mujeres",
+  "aulas primaria": "Aulas Primaria",
+  "biblioteca": "Biblioteca",
+  "aula de innovacion prim": "Aula de Innovacion Prim",
+  "aula de innovación prim": "Aula de Innovacion Prim",
+  "taller creativo prim": "Taller creativo Prim",
+  "escalera prim": "Escalera Prim",
+  "sshh prim - hombres": "SSHH Prim - Hombres",
+  "sshh prim - mujeres": "SSHH Prim - Mujeres",
+  "aulas ciclo i": "Aulas Ciclo I",
+  "aulas ciclo ii": "Aulas Ciclo II",
+  "aulas psicomotricidad": "Aulas Psicomotricidad",
+  "aulas psicomotrici": "Aulas Psicomotricidad",
+  "topico": "Topico",
+  "tópico": "Topico",
+  "lactario": "Lactario",
+  "sshh inicial - hombres": "SSHH Inicial - Hombres",
+  "sshh inicial - mujeres": "SSHH Inicial - Mujeres",
+  "cocina inicial": "Cocina Inicial",
+  "direccion adm.": "Direccion Adm.",
+  "dirección adm.": "Direccion Adm.",
+  "direccion": "Direccion Adm.",
+  "dirección": "Direccion Adm.",
+  "área de espera": "Área de espera",
+  "area de espera": "Área de espera",
+  "espera": "Área de espera",
+  "sala de reuniones": "Sala de Reuniones",
+  "reuniones": "Sala de Reuniones",
+  "area de ingreso": "Area de ingreso",
+  "área de ingreso": "Area de ingreso",
+  "ingreso": "Area de ingreso",
+  "sala de profesores": "Sala de Profesores",
+  "profesores": "Sala de Profesores",
+  "sshh adm. - hombres": "SSHH Adm. - Hombres",
+  "sshh adm. - mujeres": "SSHH Adm. - Mujeres",
+  "losa deportiva": "Losa Deportiva",
+  "losa": "Losa Deportiva",
+  "taller ept": "Taller EPT",
+  "sum": "SUM",
+  "cocina prim - sec": "Cocina Prim - Sec",
+  "cocina prim": "Cocina Prim - Sec",
+  "cocina sec": "Cocina Prim - Sec",
+  "patio de inicial": "Patio de Inicial",
+  "patio": "Patio de Inicial"
+};
+
+// [DOCUMENTACIÓN] Normaliza los nombres de los ambientes para ajustarlos exactamente al catálogo de opciones de ProBudgets.
+const normalizarAmbiente = (rawName) => {
+  if (!rawName) return "Aulas Primaria";
+  const nameClean = rawName.trim().toLowerCase();
+  
+  for (const [key, val] of Object.entries(MAPA_EXCEL)) {
+    if (nameClean === key || nameClean.includes(key)) {
+      return val;
+    }
+  }
+  
+  if (nameClean.includes("secundaria")) return "Aulas Secundaria";
+  if (nameClean.includes("primaria")) return "Aulas Primaria";
+  if (nameClean.includes("inicial") || nameClean.includes("ciclo")) return "Aulas Ciclo II";
+  if (nameClean.includes("aula")) return "Aulas Primaria";
+  
+  if (nameClean.includes("sshh") && nameClean.includes("hombres")) {
+    if (nameClean.includes("sec")) return "SSHH Sec - Hombres";
+    if (nameClean.includes("prim")) return "SSHH Prim - Hombres";
+    if (nameClean.includes("inicial")) return "SSHH Inicial - Hombres";
+    if (nameClean.includes("adm")) return "SSHH Adm. - Hombres";
+    return "SSHH Prim - Hombres";
+  }
+  if (nameClean.includes("sshh") && nameClean.includes("mujeres")) {
+    if (nameClean.includes("sec")) return "SSHH Sec - Mujeres";
+    if (nameClean.includes("prim")) return "SSHH Prim - Mujeres";
+    if (nameClean.includes("inicial")) return "SSHH Inicial - Mujeres";
+    if (nameClean.includes("adm")) return "SSHH Adm. - Mujeres";
+    return "SSHH Prim - Mujeres";
+  }
+  
+  return rawName.charAt(0).toUpperCase() + rawName.slice(1);
+};
+
 export const useApi = () => {
   const sendData = async (projectData) => {
     const baseUrl = import.meta.env.VITE_URL_PROBUDGETS || "https://probudget.pro-invest.pe";
@@ -120,14 +209,8 @@ export const useApi = () => {
                   
                   if (unitArea <= 0) unitArea = 50.0;
 
-                  // [DOCUMENTACIÓN] Normalizar únicamente a AULA INICIAL, AULA PRIMARIA, AULA SECUNDARIA en mayúsculas. Los demás ambientes conservan su capitalización original para coincidir con el Excel de ProBudgets y evitar errores #DIV/0! o #N/A.
-                  if (lowerName.includes("ciclo i") || lowerName.includes("ciclo ii") || (lowerName.includes("inicial") && lowerName.includes("aula"))) {
-                    name = "AULA INICIAL";
-                  } else if (lowerName.includes("primaria") && lowerName.includes("aula")) {
-                    name = "AULA PRIMARIA";
-                  } else if (lowerName.includes("secundaria") && lowerName.includes("aula")) {
-                    name = "AULA SECUNDARIA";
-                  }
+                  // [DOCUMENTACIÓN] Se normalizan los nombres de los ambientes al catálogo exacto de ProBudgets.
+                  name = normalizarAmbiente(name);
                   
                   if (!groups[name]) {
                     groups[name] = { count: 0, unitArea };
@@ -167,15 +250,8 @@ export const useApi = () => {
             unitArea = 50.0;
           }
 
-          // Normalizar únicamente aulas a mayúsculas
-          const lowerTipo = tipo.toLowerCase();
-          if (lowerTipo.includes("ciclo i") || lowerTipo.includes("ciclo ii") || (lowerTipo.includes("inicial") && lowerTipo.includes("aula"))) {
-            tipo = "AULA INICIAL";
-          } else if (lowerTipo.includes("primaria") && lowerTipo.includes("aula")) {
-            tipo = "AULA PRIMARIA";
-          } else if (lowerTipo.includes("secundaria") && lowerTipo.includes("aula")) {
-            tipo = "AULA SECUNDARIA";
-          }
+          // [DOCUMENTACIÓN] Se normalizan los nombres de los ambientes al catálogo exacto de ProBudgets.
+          tipo = normalizarAmbiente(tipo);
 
           if (!groups[tipo]) {
             groups[tipo] = { count: 0, unitArea };
@@ -193,16 +269,8 @@ export const useApi = () => {
           aforoData.forEach(item => {
             if (item.cantidad_aulas > 0) {
               let tipo = `Aula ${item.grado || 'General'}`;
-              const lowerTipo = tipo.toLowerCase();
-              if (lowerTipo.includes("ciclo i") || lowerTipo.includes("ciclo ii") || lowerTipo.includes("inicial")) {
-                tipo = "AULA INICIAL";
-              } else if (lowerTipo.includes("primaria")) {
-                tipo = "AULA PRIMARIA";
-              } else if (lowerTipo.includes("secundaria")) {
-                tipo = "AULA SECUNDARIA";
-              } else {
-                tipo = tipo.toUpperCase();
-              }
+              // [DOCUMENTACIÓN] Se normalizan los nombres de los ambientes al catálogo exacto de ProBudgets.
+              tipo = normalizarAmbiente(tipo);
 
               if (!groups[tipo]) {
                 groups[tipo] = { count: 0, unitArea: 60.0 };
@@ -293,10 +361,10 @@ export const useApi = () => {
 
         return [
           { tipo: "AREAS VERDES", cantidad: 1, area: areasVerdes },
-          { tipo: "LOSA DEPORTIVA", cantidad: hasSportsCourt ? 1 : 0, area: hasSportsCourt ? 540.0 : 0.0 },
-          { tipo: "COBERTURA LOSA DEPORTIVA", cantidad: hasSportsCourt ? 1 : 0, area: hasSportsCourt ? 540.0 : 0.0 },
-          { tipo: "PATIO DE INICIAL", cantidad: hasInicial ? 1 : 0, area: hasInicial ? 120.0 : 0.0 },
-          { tipo: "COBERTURA PATIO DE INICIAL", cantidad: hasInicial ? 1 : 0, area: hasInicial ? 120.0 : 0.0 },
+          { tipo: "LOSA DEPORTIVA", cantidad: 1, area: 540.0 },
+          { tipo: "COBERTURA LOSA DEPORTIVA", cantidad: 1, area: 540.0 },
+          { tipo: "PATIO DE INICIAL", cantidad: 1, area: 120.0 },
+          { tipo: "COBERTURA PATIO DE INICIAL", cantidad: 1, area: 120.0 },
           { tipo: "ASTA DE BANDERA", cantidad: 1, area: 1.0 },
           { tipo: "VEREDAS Y RAMPAS DE CONCRETO", cantidad: 1, area: veredas },
           { tipo: "PAVIMENTO RIGIDO VEHICULAR", cantidad: 1, area: 80.0 },
