@@ -193,11 +193,18 @@ const NewProjectForm = forwardRef(
 			setPriorityVertices(priority);
 		};
 		// [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
+		// Usa una comparación robusta con tolerancia para evitar problemas de coma flotante y de tipos.
 		const handleToggleExcludedVertex = (vertexCoords) => {
-			const exists = exclutedVertices.some(([vx, vy]) => vx === vertexCoords[0] && vy === vertexCoords[1]);
+			const exists = exclutedVertices.some(([vx, vy]) => 
+				Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 && 
+				Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001
+			);
 			let newExclusions;
 			if (exists) {
-				newExclusions = exclutedVertices.filter(([vx, vy]) => !(vx === vertexCoords[0] && vy === vertexCoords[1]));
+				newExclusions = exclutedVertices.filter(([vx, vy]) => 
+					!(Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 && 
+					  Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001)
+				);
 			} else {
 				newExclusions = [...exclutedVertices, vertexCoords];
 			}
@@ -2597,7 +2604,10 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted, onToggleVertex }) => {
 				{/* Vértices con Etiquetas */}
 				{verticesTotal.map((p, i) => {
 					const s = svgConfig.toSvg(p);
-					const isExcluded = verticesExcluted.some(([vx, vy]) => vx === p[0] && vy === p[1]);
+					const isExcluded = verticesExcluted.some(([vx, vy]) => 
+						Math.abs(Number(vx) - Number(p[0])) < 0.001 && 
+						Math.abs(Number(vy) - Number(p[1])) < 0.001
+					);
 					return (
 						<g 
 							key={i}
@@ -3154,7 +3164,10 @@ const TerrainPreview = ({
 					{/* Vértices del Terreno */}
 					{vertices.map((p, i) => {
 						const s = svgConfig.toSvg(p);
-						const isExcluded = excludedVertices?.some(([vx, vy]) => vx === p[0] && vy === p[1]);
+						const isExcluded = excludedVertices?.some(([vx, vy]) => 
+							Math.abs(Number(vx) - Number(p[0])) < 0.001 && 
+							Math.abs(Number(vy) - Number(p[1])) < 0.001
+						);
 						return (
 							<g
 								key={i}

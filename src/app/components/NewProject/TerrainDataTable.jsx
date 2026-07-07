@@ -27,6 +27,14 @@ const calcularDistanciaUTM = (v1, v2) => {
 	return Math.sqrt(dx * dx + dy * dy).toFixed(2);
 };
 
+// [DOCUMENTACIÓN] Función auxiliar para comparar coordenadas con tolerancia a imprecisiones de coma flotante
+// y diferencias de tipo (string vs number) surgidas del parsing de Excel o inputs.
+const coordsMatch = (c1, c2) => {
+	if (!c1 || !c2) return false;
+	return Math.abs(Number(c1[0]) - Number(c2[0])) < 0.001 && 
+	       Math.abs(Number(c1[1]) - Number(c2[1])) < 0.001;
+};
+
 // COMPONENTE TABLA DE VÉRTICES
 const TerrainDataTable = ({
 	vertices,
@@ -61,8 +69,8 @@ const TerrainDataTable = ({
 		let changed = false;
 		const newOptions = { ...selectedOptions };
 		vertices.forEach((vertice) => {
-			const isExcluded = excludedVertices?.some(([vx, vy]) => vx === vertice.x && vy === vertice.y);
-			const isPriority = priorityVertices?.some(([vx, vy]) => vx === vertice.x && vy === vertice.y);
+			const isExcluded = excludedVertices?.some((c) => coordsMatch(c, [vertice.x, vertice.y]));
+			const isPriority = priorityVertices?.some((c) => coordsMatch(c, [vertice.x, vertice.y]));
 			
 			let expectedValue = "";
 			if (isExcluded) expectedValue = "Exclusion";
@@ -88,7 +96,7 @@ const TerrainDataTable = ({
 
 		const isSame = lastExcludedRef.current && 
 			lastExcludedRef.current.length === excluded.length &&
-			lastExcludedRef.current.every(([x, y], idx) => x === excluded[idx][0] && y === excluded[idx][1]);
+			lastExcludedRef.current.every(([x, y], idx) => coordsMatch([x, y], excluded[idx]));
 
 		if (!isSame) {
 			lastExcludedRef.current = excluded;
@@ -103,7 +111,7 @@ const TerrainDataTable = ({
 
 		const isSame = lastPriorityRef.current && 
 			lastPriorityRef.current.length === priority.length &&
-			lastPriorityRef.current.every(([x, y], idx) => x === priority[idx][0] && y === priority[idx][1]);
+			lastPriorityRef.current.every(([x, y], idx) => coordsMatch([x, y], priority[idx]));
 
 		if (!isSame) {
 			lastPriorityRef.current = priority;
