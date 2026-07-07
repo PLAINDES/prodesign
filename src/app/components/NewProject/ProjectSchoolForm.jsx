@@ -112,18 +112,36 @@ function ProjectSchoolForm({ useForm }) {
         setexclutedVertices(newExclusions);
     };
 
+    // [DOCUMENTACIÓN] Se registraron los campos virtuales y extra (aforo, vertices, excluded_vertices, ambientes)
+    // para que sean rastreados correctamente por React Hook Form y enviados al backend, evitando errores 422.
     useEffect(() => {
         register("width");
         register("height");
         register("vertices_rectangle");
         register("angle");
+        register("excluded_vertices");
+        register("aforo");
+        register("vertices");
+        register("ambientes");
     }, [register]);
 
+    // [DOCUMENTACIÓN] Sincroniza el estado local de exclusiones de vértices al campo del formulario excluded_vertices
+    useEffect(() => {
+        setValue("excluded_vertices", exclutedVertices);
+    }, [exclutedVertices, setValue]);
+
+
+    // [DOCUMENTACIÓN] Sincroniza el estado local del cuadrante máximo al formulario.
+    // Mapea los vértices del cuadrante (objetos con formato { east, north }) a una lista de listas [[east, north], ...]
+    // para cumplir con la validación de Pydantic en el backend (List[List[float]]).
     useEffect(() => {
         if (maximumRectangle && maximumRectangle.vertices) {
             setValue("width", maximumRectangle.ancho);
             setValue("height", maximumRectangle.alto);
-            setValue("vertices_rectangle", maximumRectangle.vertices);
+            
+            const formattedVertices = maximumRectangle.vertices.map(v => [v.east, v.north]);
+            setValue("vertices_rectangle", formattedVertices);
+            
             setValue("angle", maximumRectangle.anguloGrados);
         } else {
             setValue("width", null);
@@ -154,7 +172,6 @@ function ProjectSchoolForm({ useForm }) {
             console.log(dataFileAforo);
             const data_aforo_extracted = extraerResumenAforo(dataFileAforo)
             setdataAforo(data_aforo_extracted)
-            register()
             console.log(data_aforo_extracted);
             setValue("aforo", data_aforo_extracted);
         }
@@ -292,6 +309,17 @@ function ProjectSchoolForm({ useForm }) {
         );
     };
 
+    // [DOCUMENTACIÓN] Sincroniza el estado local de ambientes complementarios al campo del formulario ambientes,
+    // estructurando cada ambiente como un objeto { ambienteComplementario, capacidad: 0 } tal como lo espera el backend.
+    // Se colocó esta declaración después de la inicialización de personName para evitar el error de referencia léxica.
+    useEffect(() => {
+        const listAmbientes = personName.map((name) => ({
+            ambienteComplementario: name,
+            capacidad: 0,
+        }));
+        setValue("ambientes", listAmbientes);
+    }, [personName, setValue]);
+
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={{ xs: 2, sm: 3 }}>
@@ -330,7 +358,8 @@ function ProjectSchoolForm({ useForm }) {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <span>N° PISOS:</span>
-                    <select {...register("pisos")} style={{ ...styleInput }}>
+                    {/* [DOCUMENTACIÓN] Se cambió el registro de pisos a number_floors para alinearse con el nombre esperado por la API backend */}
+                    <select {...register("number_floors")} style={{ ...styleInput }}>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>

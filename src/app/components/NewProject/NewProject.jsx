@@ -66,19 +66,31 @@ const NewProject = ({ onRow, data, school }) => {
 	const [projectId, setprojectId] = useState(null)
 	const [statusJobForm, setStatusJobForm] = useState(null)
 
+	// [DOCUMENTACIÓN] Se envolvió la petición Axios en un bloque try/catch para capturar los errores 422
+	// de validación de Pydantic, reportando el detalle en la consola y mostrando un modal informativo al usuario.
 	async function sendDataForm(data) {
-
-		const response = await axios.post(BASE_URL_CALC + "/api/v3/generate-project",
-			data = data
-		)
-
-		if (response.status == 200) {
-			navigate('/proyecto/colegios/' + response.data.project_id)
-			// setprojectId(response.data.project_id)
-			// setjobId(response.data.job_id)
-			// verifJob(response.data.job_id, setStatusJobForm)
+		try {
+			const response = await axios.post(BASE_URL_CALC + "/api/v3/generate-project", data);
+			if (response.status == 200) {
+				navigate('/proyecto/colegios/' + response.data.project_id);
+			}
+		} catch (error) {
+			console.error("Error al enviar el formulario del proyecto:", error);
+			if (error.response) {
+				console.error("Detalles de validación del backend:", error.response.data);
+				Swal.fire({
+					title: "Error de Validación",
+					text: JSON.stringify(error.response.data.detail || error.response.data),
+					icon: "error",
+				});
+			} else {
+				Swal.fire({
+					title: "Error",
+					text: "No se pudo conectar con el servidor",
+					icon: "error",
+				});
+			}
 		}
-
 	}
 
 	// useEffect(() => {

@@ -233,10 +233,12 @@ export const RenderProvider = ({ children }) => {
             setJobStatus("finished");
             fetchDataProject();
           } else if (currentStatus === "failed") {
-            // [DOCUMENTACIÓN] Se eliminó la llamada automática a generarPlano() que causaba un bucle infinito en caso de fallos persistentes del worker.
+            // [DOCUMENTACIÓN] Se eliminó la llamada automática a generarPlano() que causaba un bucle infinito en caso de fallos del worker.
+            // Se lee y muestra el mensaje de error explicativo devuelto por el backend.
             console.log("❌ Job falló");
             setJobStatus("failed");
-            setError("La generación del plano falló. Por favor, haz clic en Reintentar.");
+            const backendError = response.data.error || "La generación del plano falló.";
+            setError(`${backendError} Por favor, haz clic en Reintentar.`);
             setLoading(false);
           } else {
             setTimeout(consultar, 3000);
