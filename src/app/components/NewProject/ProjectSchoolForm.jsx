@@ -93,6 +93,18 @@ function ProjectSchoolForm({ useForm }) {
     const handleClickOpenDialogMax = () => setOpenDialogMax(true);
     const handleCloseDialogMax = () => setOpenDialogMax(false);
 
+    // [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
+    const handleToggleExcludedVertex = (vertexCoords) => {
+        const exists = exclutedVertices.some(([vx, vy]) => vx === vertexCoords[0] && vy === vertexCoords[1]);
+        let newExclusions;
+        if (exists) {
+            newExclusions = exclutedVertices.filter(([vx, vy]) => !(vx === vertexCoords[0] && vy === vertexCoords[1]));
+        } else {
+            newExclusions = [...exclutedVertices, vertexCoords];
+        }
+        setexclutedVertices(newExclusions);
+    };
+
     useEffect(() => {
         register("width");
         register("height");
@@ -371,6 +383,8 @@ function ProjectSchoolForm({ useForm }) {
                                     vertices={dataVertices}
                                     onDeleteVertex={handleDeleteVertex}
                                     onUpdateVertex={handleUpdateVertex}
+                                    excludedVertices={exclutedVertices}
+                                    onExcludedChange={setexclutedVertices}
                                 />
                             </Grid>
 
@@ -403,6 +417,7 @@ function ProjectSchoolForm({ useForm }) {
                                                     excludedVertices={exclutedVertices}
                                                     onSelectMaxRectangle={handleClickOpenDialogMax}
                                                     maxRectangleData={maximumRectangle}
+                                                    onToggleVertex={handleToggleExcludedVertex}
                                                 />
                                             </Grid>
 
@@ -478,6 +493,7 @@ function ProjectSchoolForm({ useForm }) {
                                     <PoligonoChart
                                         verticesTotal={verticesGrafic}
                                         verticesExcluted={exclutedVertices}
+                                        onToggleVertex={handleToggleExcludedVertex}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -503,13 +519,6 @@ function ProjectSchoolForm({ useForm }) {
                 }
                 <Grid item xs={12}>
                     <span>Ambientes Complementarios:</span>
-                    {/* <select {...register("ambientes_complementarios")} style={{ ...styleInput }}>
-                        {
-                            options_ambientes_complementarios.map((item, i) => {
-                                return <option value={item} key={i}>{item}</option>
-                            })
-                        }
-                    </select> */}
                     <br />
                     <FormControl sx={{ m: 1, width: "100%" }}>
                         <InputLabel id="demo-multiple-checkbox-label">Seleccione</InputLabel>
@@ -602,12 +611,14 @@ export const styleInput = {
 
 // [DOCUMENTACIÓN] Se implementó el componente TerrainPreview usando SVG nativo para mostrar
 // una miniatura interactiva del terreno, con soporte completo para Light/Dark Mode y mejor performance.
+// [DOCUMENTACIÓN] Se agregó la prop onToggleVertex para manejar la exclusión interactiva al hacer clic sobre los vértices, y se renderizan etiquetas V1, V2, etc.
 const TerrainPreview = ({
 	vertices,
 	rectangleVertices,
 	excludedVertices,
 	onSelectMaxRectangle,
-	maxRectangleData
+	maxRectangleData,
+	onToggleVertex
 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -725,13 +736,36 @@ const TerrainPreview = ({
 						const s = svgConfig.toSvg(p);
 						const isExcluded = excludedVertices?.some(([vx, vy]) => vx === p[0] && vy === p[1]);
 						return (
-							<circle
+							<g
 								key={i}
-								cx={s.x}
-								cy={s.y}
-								r={svgConfig.viewW * 0.008 || 2.5}
-								fill={isExcluded ? "#f44336" : colors.availStroke}
-							/>
+								onClick={() => onToggleVertex?.(p)}
+								style={{ cursor: 'pointer' }}
+							>
+								{/* Hitbox invisible más grande para facilitar clic/toque */}
+								<circle
+									cx={s.x}
+									cy={s.y}
+									r={svgConfig.viewW * 0.02 || 6}
+									fill="transparent"
+								/>
+								<circle
+									cx={s.x}
+									cy={s.y}
+									r={svgConfig.viewW * 0.008 || 2.5}
+									fill={isExcluded ? "#f44336" : colors.availStroke}
+									style={{ transition: "fill 0.2s ease" }}
+								/>
+								<text
+									x={s.x + (svgConfig.viewW * 0.012 || 3.5)}
+									y={s.y - (svgConfig.viewW * 0.01 || 2.5)}
+									fontSize={svgConfig.viewW * 0.024 || 8}
+									fill={isExcluded ? "#f44336" : (isDark ? "#ffffff" : "#2e7d32")}
+									fontWeight="bold"
+									style={{ userSelect: "none" }}
+								>
+									V{i + 1}
+								</text>
+							</g>
 						);
 					})}
 
@@ -795,9 +829,9 @@ const TerrainPreview = ({
 	);
 };
 
-// [DOCUMENTACIÓN] Se portó el componente PoligonoChart desde NewProjectForm para renderizar el terreno
-// en formato SVG nativo en el modal de creación de escuelas, con soporte de Dark Mode y numeración de vértices.
-const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
+// [DOCUMENTACIÓN] Se portó el componente PoligonoChart desde NewProjectForm para renderizar el terreno.
+// [DOCUMENTACIÓN] Se agregó la prop onToggleVertex para manejar la exclusión interactiva al hacer clic sobre los vértices.
+const PoligonoChart = ({ verticesTotal, verticesExcluted, onToggleVertex }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
@@ -907,12 +941,24 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
 					const s = svgConfig.toSvg(p);
 					const isExcluded = verticesExcluted.some(([vx, vy]) => vx === p[0] && vy === p[1]);
 					return (
-						<g key={i}>
+						<g 
+							key={i}
+							onClick={() => onToggleVertex?.(p)}
+							style={{ cursor: "pointer" }}
+						>
+							{/* Hitbox invisible más grande para facilitar clic/toque */}
+							<circle
+								cx={s.x}
+								cy={s.y}
+								r={svgConfig.viewW * 0.02 || 6}
+								fill="transparent"
+							/>
 							<circle
 								cx={s.x}
 								cy={s.y}
 								r={svgConfig.viewW * 0.008 || 2}
 								fill={isExcluded ? colors.totalStroke : colors.availStroke}
+								style={{ transition: "fill 0.2s ease" }}
 							/>
 							<text
 								x={s.x + (svgConfig.viewW * 0.012 || 3)}
@@ -920,6 +966,7 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
 								fontSize={svgConfig.viewW * 0.026 || 8}
 								fill={isExcluded ? colors.totalStroke : colors.textFill}
 								fontWeight="bold"
+								style={{ userSelect: "none" }}
 							>
 								V{i + 1}
 							</text>

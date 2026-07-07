@@ -192,6 +192,17 @@ const NewProjectForm = forwardRef(
 		const handlePriorityChange = (priority) => {
 			setPriorityVertices(priority);
 		};
+		// [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
+		const handleToggleExcludedVertex = (vertexCoords) => {
+			const exists = exclutedVertices.some(([vx, vy]) => vx === vertexCoords[0] && vy === vertexCoords[1]);
+			let newExclusions;
+			if (exists) {
+				newExclusions = exclutedVertices.filter(([vx, vy]) => !(vx === vertexCoords[0] && vy === vertexCoords[1]));
+			} else {
+				newExclusions = [...exclutedVertices, vertexCoords];
+			}
+			setExclutedVertices(newExclusions);
+		};
 		// CONTROLADOR PARA ELIMINAR VERTICES
 		const handleDeleteVertex = (vertexId) => {
 			const newVertices = vertices.filter(v => v.vertice !== vertexId);
@@ -1358,6 +1369,8 @@ const NewProjectForm = forwardRef(
 														handlePriorityChange
 													}
 													onDeleteVertex={handleDeleteVertex}
+													excludedVertices={exclutedVertices}
+													priorityVertices={priorityVertices}
 												/>
 
 												{/* [DOCUMENTACIÓN] Se cambió la condición de visualización de loading a vertices.length > 0 para que la tabla y el visor SVG de terreno queden visibles permanentemente después de cargar el Excel, en lugar de ocultarse al apagarse el spinner. */}
@@ -1389,6 +1402,7 @@ const NewProjectForm = forwardRef(
 																		excludedVertices={exclutedVertices}
 																		onSelectMaxRectangle={handleClickOpenDialogMax}
 																		maxRectangleData={maximumRectangle}
+																		onToggleVertex={handleToggleExcludedVertex}
 																	/>
 																</Grid>
 
@@ -1502,6 +1516,9 @@ const NewProjectForm = forwardRef(
 																	}
 																	verticesExcluted={
 																		exclutedVertices
+																	}
+																	onToggleVertex={
+																		handleToggleExcludedVertex
 																	}
 																/>
 															</Grid>
@@ -2470,7 +2487,8 @@ const TerrainFileButton = ({ onImportVerticesExcel }) => {
 // [DOCUMENTACIÓN] Se rediseñó el componente PoligonoChart para renderizar el terreno usando SVG nativo
 // en lugar de Canvas/Chart.js. Cuenta con soporte integrado para Dark Mode y dibuja los vértices 
 // numerados del terreno (V1, V2...) para mejorar la claridad visual del plano.
-const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
+// [DOCUMENTACIÓN] Se agregó la prop onToggleVertex para manejar la exclusión interactiva al hacer clic sobre los vértices.
+const PoligonoChart = ({ verticesTotal, verticesExcluted, onToggleVertex }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
@@ -2580,12 +2598,24 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
 					const s = svgConfig.toSvg(p);
 					const isExcluded = verticesExcluted.some(([vx, vy]) => vx === p[0] && vy === p[1]);
 					return (
-						<g key={i}>
+						<g 
+							key={i}
+							onClick={() => onToggleVertex?.(p)}
+							style={{ cursor: "pointer" }}
+						>
+							{/* Hitbox invisible más grande para facilitar clic/toque */}
+							<circle
+								cx={s.x}
+								cy={s.y}
+								r={svgConfig.viewW * 0.02 || 6}
+								fill="transparent"
+							/>
 							<circle
 								cx={s.x}
 								cy={s.y}
 								r={svgConfig.viewW * 0.008 || 2}
 								fill={isExcluded ? colors.totalStroke : colors.availStroke}
+								style={{ transition: "fill 0.2s ease" }}
 							/>
 							<text
 								x={s.x + (svgConfig.viewW * 0.012 || 3)}
@@ -2593,6 +2623,7 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
 								fontSize={svgConfig.viewW * 0.026 || 8}
 								fill={isExcluded ? colors.totalStroke : colors.textFill}
 								fontWeight="bold"
+								style={{ userSelect: "none" }}
 							>
 								V{i + 1}
 							</text>
@@ -2994,123 +3025,194 @@ const RectangleChart = ({
 	);
 };
 
+// [DOCUMENTACIÓN] Se rediseñó el componente TerrainPreview para usar SVG nativo en lugar de Chart.js.
+// Esto permite soportar el modo oscuro nativo, unifica la visualización con ProjectSchoolForm y
+// habilita el comportamiento interactivo para que el usuario pueda hacer clic/tocar los vértices
+// (V1, V2, etc.) y alternar su exclusión de manera inmediata.
 const TerrainPreview = ({
 	vertices,
 	rectangleVertices,
 	excludedVertices,
 	onSelectMaxRectangle,
-	maxRectangleData
+	maxRectangleData,
+	onToggleVertex
 }) => {
-	const chartRef = useRef(null);
-	const chartInstance = useRef(null);
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 
-	useEffect(() => {
-		if (chartInstance.current) {
-			chartInstance.current.destroy();
-		}
-
-		if (!vertices || vertices.length === 0) return;
-
-		const ctx = chartRef.current.getContext("2d");
-
-		const availableVertices = vertices.filter(
-			([x, y]) =>
-				!excludedVertices?.some(([vx, vy]) => vx === x && vy === y)
+	const availableVertices = useMemo(() => {
+		return vertices.filter(
+			([x, y]) => !excludedVertices?.some(([vx, vy]) => vx === x && vy === y)
 		);
+	}, [vertices, excludedVertices]);
 
-		const closedVertices = [...vertices, vertices[0]];
-		const closedAvailable = availableVertices.length > 0 ? [...availableVertices, availableVertices[0]] : [];
-		const closedRectangle = rectangleVertices?.length > 0 ? [...rectangleVertices, rectangleVertices[0]] : [];
+	// Calcular bounding box
+	const bbox = useMemo(() => {
+		if (!vertices.length) return { minX: 0, maxX: 100, minY: 0, maxY: 100, w: 100, h: 100 };
+		const xs = vertices.map(p => p[0]);
+		const ys = vertices.map(p => p[1]);
+		const minX = Math.min(...xs);
+		const maxX = Math.max(...xs);
+		const minY = Math.min(...ys);
+		const maxY = Math.max(...ys);
+		return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
+	}, [vertices]);
 
-		chartInstance.current = new Chart(ctx, {
-			type: "line",
-			data: {
-				datasets: [
-					{
-						label: "Terreno Completo",
-						data: closedVertices.map(([x, y]) => ({ x, y })),
-						borderColor: "rgba(158, 158, 158, 0.8)",
-						backgroundColor: "rgba(238, 238, 238, 0.3)",
-						borderWidth: 2,
-						fill: true,
-						pointRadius: 4,
-						pointBackgroundColor: (context) => {
-							const idx = context.dataIndex;
-							if (idx >= vertices.length) return "rgba(158, 158, 158, 0.8)";
-							const v = vertices[idx];
-							return excludedVertices?.some(([x, y]) => x === v[0] && y === v[1])
-								? "#f44336"
-								: "#4caf50";
-						},
-						pointBorderColor: "#fff",
-						pointBorderWidth: 2,
-					},
-					{
-						label: "Área Disponible",
-						data: closedAvailable.map(([x, y]) => ({ x, y })),
-						borderColor: "#4caf50",
-						backgroundColor: "rgba(76, 175, 80, 0.2)",
-						borderWidth: 2,
-						fill: true,
-						pointRadius: 0,
-						showLine: true,
-					},
-					{
-						label: "Cuadrante Máximo",
-						data: closedRectangle.map(([x, y]) => ({ x, y })),
-						borderColor: "#ff9800",
-						backgroundColor: "rgba(255, 152, 0, 0.2)",
-						borderWidth: 3,
-						fill: false,
-						pointRadius: 5,
-						pointBackgroundColor: "#ff9800",
-						pointBorderColor: "#fff",
-						pointBorderWidth: 2,
-						borderDash: [5, 5],
-					},
-				],
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				interaction: { mode: 'nearest', intersect: false },
-				plugins: {
-					legend: { position: "top", labels: { boxWidth: 12, padding: 10, font: { size: 11 } } },
-					tooltip: { enabled: true },
-					title: {
-						display: true,
-						text: maxRectangleData?.area
-							? `Cuadrante: ${maxRectangleData.ancho?.toFixed(2)}m x ${maxRectangleData.alto?.toFixed(2)}m = ${maxRectangleData.area?.toFixed(2)}m² (${maxRectangleData.anguloGrados?.toFixed(1)}°)`
-							: "Vista previa del terreno",
-						font: { size: 12, weight: 'bold' }
-					},
-				},
-				scales: {
-					x: { type: "linear", title: { display: true, text: "X (m)" }, grid: { drawTicks: false } },
-					y: { type: "linear", title: { display: true, text: "Y (m)" }, grid: { drawTicks: false } },
-				},
-			},
-		});
+	// Configuración de escala
+	const svgConfig = useMemo(() => {
+		const pad = Math.max(bbox.w, bbox.h) * 0.15 || 10;
+		const minX = bbox.minX - pad;
+		const minY = bbox.minY - pad;
+		const viewW = bbox.w + pad * 2;
+		const viewH = bbox.h + pad * 2;
+		const toSvg = ([x, y]) => ({ x: x, y: minY + viewH - (y - minY) });
+		return { minX, minY, viewW, viewH, toSvg };
+	}, [bbox]);
 
-		return () => chartInstance.current?.destroy();
-	}, [vertices, rectangleVertices, excludedVertices, maxRectangleData]);
+	const totalPoints = useMemo(() => {
+		return vertices.map(p => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [vertices, svgConfig]);
+
+	const availablePoints = useMemo(() => {
+		return availableVertices.map(p => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [availableVertices, svgConfig]);
+
+	const rectPoints = useMemo(() => {
+		if (!rectangleVertices || rectangleVertices.length === 0) return null;
+		return rectangleVertices.map(p => {
+			const pt = p.east !== undefined ? [p.east, p.north] : p;
+			const s = svgConfig.toSvg(pt);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [rectangleVertices, svgConfig]);
+
+	if (!vertices || vertices.length === 0) {
+		return null;
+	}
+
+	const colors = {
+		totalStroke: isDark ? "#78909c" : "#9e9e9e",
+		totalFill: isDark ? "rgba(120, 144, 156, 0.1)" : "rgba(158, 158, 158, 0.15)",
+		availStroke: isDark ? "#81c784" : "#4caf50",
+		availFill: isDark ? "rgba(129, 199, 132, 0.15)" : "rgba(76, 175, 80, 0.15)",
+		rectStroke: isDark ? "#ffa726" : "#ff9800",
+		rectFill: isDark ? "rgba(255, 167, 38, 0.15)" : "rgba(255, 152, 0, 0.15)",
+		textFill: isDark ? "#ffffff" : "#2e7d32",
+		svgBg: isDark ? "#1e1e1e" : "#ffffff",
+	};
 
 	return (
-		<Box sx={{ position: 'relative', minHeight: 320 }}>
-			<canvas ref={chartRef} style={{ width: '100%', height: '100%' }} />
+		<Box sx={{ position: 'relative', width: '100%', mb: 2 }}>
+			<Box
+				sx={{
+					width: "100%",
+					backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "grey.50",
+					p: 2,
+					borderRadius: 3,
+					border: "1px solid",
+					borderColor: "divider",
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center"
+				}}
+			>
+				<svg
+					viewBox={`${svgConfig.minX} ${svgConfig.minY} ${svgConfig.viewW} ${svgConfig.viewH}`}
+					width="100%"
+					style={{
+						maxHeight: "300px",
+						borderRadius: 8,
+						background: colors.svgBg
+					}}
+				>
+					{/* Terreno Total */}
+					<polygon
+						points={totalPoints}
+						fill={colors.totalFill}
+						stroke={colors.totalStroke}
+						strokeWidth={svgConfig.viewW * 0.003 || 1}
+					/>
+
+					{/* Terreno Disponible */}
+					{availablePoints && (
+						<polygon
+							points={availablePoints}
+							fill={colors.availFill}
+							stroke={colors.availStroke}
+							strokeWidth={svgConfig.viewW * 0.004 || 1.2}
+						/>
+					)}
+
+					{/* Vértices del Terreno */}
+					{vertices.map((p, i) => {
+						const s = svgConfig.toSvg(p);
+						const isExcluded = excludedVertices?.some(([vx, vy]) => vx === p[0] && vy === p[1]);
+						return (
+							<g
+								key={i}
+								onClick={() => onToggleVertex?.(p)}
+								style={{ cursor: 'pointer' }}
+							>
+								{/* Hitbox invisible más grande para facilitar clic/toque */}
+								<circle
+									cx={s.x}
+									cy={s.y}
+									r={svgConfig.viewW * 0.02 || 6}
+									fill="transparent"
+								/>
+								<circle
+									cx={s.x}
+									cy={s.y}
+									r={svgConfig.viewW * 0.008 || 2.5}
+									fill={isExcluded ? "#f44336" : colors.availStroke}
+									style={{ transition: "fill 0.2s ease" }}
+								/>
+								<text
+									x={s.x + (svgConfig.viewW * 0.012 || 3.5)}
+									y={s.y - (svgConfig.viewW * 0.01 || 2.5)}
+									fontSize={svgConfig.viewW * 0.024 || 8}
+									fill={isExcluded ? "#f44336" : colors.textFill}
+									fontWeight="bold"
+									style={{ userSelect: "none" }}
+								>
+									V{i + 1}
+								</text>
+							</g>
+						);
+					})}
+
+					{/* Rectángulo Máximo (Overlay) */}
+					{rectPoints && (
+						<polygon
+							points={rectPoints}
+							fill={colors.rectFill}
+							stroke={colors.rectStroke}
+							strokeWidth={svgConfig.viewW * 0.006 || 1.8}
+							strokeDasharray={`${svgConfig.viewW * 0.01}, ${svgConfig.viewW * 0.01}`}
+						/>
+					)}
+				</svg>
+			</Box>
 
 			{rectangleVertices?.length > 0 && (
 				<Box sx={{
 					position: 'absolute',
-					bottom: 10,
-					right: 10,
-					bgcolor: 'rgba(0,0,0,0.7)',
+					bottom: 15,
+					right: 15,
+					bgcolor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.7)',
 					color: 'white',
-					p: 1,
+					px: 1.5,
+					py: 0.5,
 					borderRadius: 1,
 					fontSize: '0.75rem'
 				}}>
-					Cuadrante: {maxRectangleData?.ancho?.toFixed(1)}m x {maxRectangleData?.alto?.toFixed(1)}m
+					Cuadrante: {maxRectangleData?.ancho?.toFixed(1)}m × {maxRectangleData?.alto?.toFixed(1)}m
 				</Box>
 			)}
 
@@ -3122,7 +3224,8 @@ const TerrainPreview = ({
 					transform: 'translate(-50%, -50%)',
 					textAlign: 'center',
 					p: 2,
-					bgcolor: 'rgba(255,255,255,0.9)',
+					bgcolor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255,255,255,0.95)',
+					boxShadow: 3,
 					borderRadius: 2,
 					border: '2px dashed #ff9800',
 					maxWidth: '80%'

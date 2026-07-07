@@ -34,12 +34,12 @@ const TerrainDataTable = ({
 	onPriorityChange,
 	onDeleteVertex,
 	onUpdateVertex,
+	excludedVertices = [],
+	priorityVertices = [],
 }) => {
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(4);
 	const [selectedOptions, setSelectedOptions] = useState({});
-	const [excludedVertices, setExcludedVertices] = useState([]);
-	const [priorityVertices, setPriorityVertices] = useState([]);
 
 	useEffect(() => {
 		setSelectedOptions(
@@ -50,11 +50,36 @@ const TerrainDataTable = ({
 		);
 	}, [vertices]);
 
+	// [DOCUMENTACIÓN] Sincroniza las opciones de la tabla cuando cambian los vértices excluidos
+	// o prioritarios desde el exterior (por ejemplo, al hacer clic sobre ellos en el mapa/gráfico).
+	useEffect(() => {
+		let changed = false;
+		const newOptions = { ...selectedOptions };
+		vertices.forEach((vertice) => {
+			const isExcluded = excludedVertices?.some(([vx, vy]) => vx === vertice.x && vy === vertice.y);
+			const isPriority = priorityVertices?.some(([vx, vy]) => vx === vertice.x && vy === vertice.y);
+			
+			let expectedValue = "";
+			if (isExcluded) expectedValue = "Exclusion";
+			else if (isPriority) expectedValue = "Prioridad";
+
+			const currentValue = selectedOptions[vertice.vertice] || "";
+			if (currentValue !== expectedValue) {
+				if (expectedValue !== "" || currentValue === "Exclusion" || currentValue === "Prioridad") {
+					newOptions[vertice.vertice] = expectedValue;
+					changed = true;
+				}
+			}
+		});
+		if (changed) {
+			setSelectedOptions(newOptions);
+		}
+	}, [excludedVertices, priorityVertices, vertices]);
+
 	useEffect(() => {
 		const excluded = vertices
 			.filter((vertice) => selectedOptions[vertice.vertice] === "Exclusion")
 			.map((vertice) => [vertice.x, vertice.y]);
-		setExcludedVertices(excluded);
 		onExcludedChange && onExcludedChange(excluded);
 	}, [selectedOptions, vertices, onExcludedChange]);
 
@@ -62,7 +87,6 @@ const TerrainDataTable = ({
 		const priority = vertices
 			.filter((vertice) => selectedOptions[vertice.vertice] === "Prioridad")
 			.map((vertice) => [vertice.x, vertice.y]);
-		setPriorityVertices(priority);
 		onPriorityChange && onPriorityChange(priority);
 	}, [selectedOptions, vertices, onPriorityChange]);
 
