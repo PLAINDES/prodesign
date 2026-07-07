@@ -1,5 +1,7 @@
-// TAREA 1: Agregado botón para eliminar vértice en la tabla de terreno
-// TAREA 2: Agregada columna de Distancia (m) usando fórmula euclidiana para UTM
+// [DOCUMENTACIÓN] Se reestructuró por completo el componente como un componente de presentación
+// controlado, derivando la selección de opciones (Exclusión/Prioridad) directamente desde las propiedades
+// 'excludedVertices' y 'priorityVertices' del padre. Se eliminaron los estados locales de selección
+// y todos los 'useEffect' para descartar definitivamente los parpadeos y los bucles de renderizado.
 import {
 	Card,
 	Paper,
@@ -15,7 +17,7 @@ import {
 	TextField,
 	Box
 } from "@mui/material";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StraightenIcon from "@mui/icons-material/Straighten";
 
@@ -27,15 +29,14 @@ const calcularDistanciaUTM = (v1, v2) => {
 	return Math.sqrt(dx * dx + dy * dy).toFixed(2);
 };
 
-// [DOCUMENTACIÓN] Función auxiliar para comparar coordenadas con tolerancia a imprecisiones de coma flotante
-// y diferencias de tipo (string vs number) surgidas del parsing de Excel o inputs.
+// [DOCUMENTACIÓN] Comparación robusta con tolerancia a coma flotante para asociar los selectores
 const coordsMatch = (c1, c2) => {
 	if (!c1 || !c2) return false;
 	return Math.abs(Number(c1[0]) - Number(c2[0])) < 0.001 && 
 	       Math.abs(Number(c1[1]) - Number(c2[1])) < 0.001;
 };
 
-// COMPONENTE TABLA DE VÉRTICES
+// COMPONENTE TABLA DE VÉRTICES (CONTROLADO)
 const TerrainDataTable = ({
 	vertices,
 	onExcludedChange,
@@ -47,83 +48,38 @@ const TerrainDataTable = ({
 }) => {
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(4);
-	const [selectedOptions, setSelectedOptions] = useState({});
 
-	// [DOCUMENTACIÓN] Se utiliza useRef para recordar las últimas listas de exclusión y prioridad notificadas
-	// al padre, evitando bucles de renderizado infinitos si las funciones callback cambian de referencia.
-	const lastExcludedRef = useRef(null);
-	const lastPriorityRef = useRef(null);
-
-	useEffect(() => {
-		setSelectedOptions(
-			vertices.reduce((acc, vertice) => {
-				acc[vertice.vertice] = "";
-				return acc;
-			}, {})
-		);
-	}, [vertices]);
-
-	// [DOCUMENTACIÓN] Sincroniza las opciones de la tabla cuando cambian los vértices excluidos
-	// o prioritarios desde el exterior (por ejemplo, al hacer clic sobre ellos en el mapa/gráfico).
-	useEffect(() => {
-		let changed = false;
-		const newOptions = { ...selectedOptions };
+	// [DOCUMENTACIÓN] Derivación instantánea y memoizada de las opciones seleccionadas
+	const selectedOptions = useMemo(() => {
+		const options = {};
 		vertices.forEach((vertice) => {
 			const isExcluded = excludedVertices?.some((c) => coordsMatch(c, [vertice.x, vertice.y]));
 			const isPriority = priorityVertices?.some((c) => coordsMatch(c, [vertice.x, vertice.y]));
 			
-			let expectedValue = "";
-			if (isExcluded) expectedValue = "Exclusion";
-			else if (isPriority) expectedValue = "Prioridad";
-
-			const currentValue = selectedOptions[vertice.vertice] || "";
-			if (currentValue !== expectedValue) {
-				if (expectedValue !== "" || currentValue === "Exclusion" || currentValue === "Prioridad") {
-					newOptions[vertice.vertice] = expectedValue;
-					changed = true;
-				}
+			if (isExcluded) {
+				options[vertice.vertice] = "Exclusion";
+			} else if (isPriority) {
+				options[vertice.vertice] = "Prioridad";
+			} else {
+				options[vertice.vertice] = "";
 			}
 		});
-		if (changed) {
-			setSelectedOptions(newOptions);
+		return options;
+	}, [vertices, excludedVertices, priorityVertices]);
+
+	// [DOCUMENTACIÓN] Manejo de cambio en el selector que actualiza las colecciones del padre
+	const handleSelectChange = (vertice, value) => {
+		const newExclusions = (excludedVertices || []).filter((c) => !coordsMatch(c, [vertice.x, vertice.y]));
+		const newPriorities = (priorityVertices || []).filter((c) => !coordsMatch(c, [vertice.x, vertice.y]));
+
+		if (value === "Exclusion") {
+			newExclusions.push([vertice.x, vertice.y]);
+		} else if (value === "Prioridad") {
+			newPriorities.push([vertice.x, vertice.y]);
 		}
-	}, [excludedVertices, priorityVertices, vertices]);
 
-	useEffect(() => {
-		const excluded = vertices
-			.filter((vertice) => selectedOptions[vertice.vertice] === "Exclusion")
-			.map((vertice) => [vertice.x, vertice.y]);
-
-		const isSame = lastExcludedRef.current && 
-			lastExcludedRef.current.length === excluded.length &&
-			lastExcludedRef.current.every(([x, y], idx) => coordsMatch([x, y], excluded[idx]));
-
-		if (!isSame) {
-			lastExcludedRef.current = excluded;
-			onExcludedChange && onExcludedChange(excluded);
-		}
-	}, [selectedOptions, vertices, onExcludedChange]);
-
-	useEffect(() => {
-		const priority = vertices
-			.filter((vertice) => selectedOptions[vertice.vertice] === "Prioridad")
-			.map((vertice) => [vertice.x, vertice.y]);
-
-		const isSame = lastPriorityRef.current && 
-			lastPriorityRef.current.length === priority.length &&
-			lastPriorityRef.current.every(([x, y], idx) => coordsMatch([x, y], priority[idx]));
-
-		if (!isSame) {
-			lastPriorityRef.current = priority;
-			onPriorityChange && onPriorityChange(priority);
-		}
-	}, [selectedOptions, vertices, onPriorityChange]);
-
-	const handleSelectChange = (id, value) => {
-		setSelectedOptions((prevOptions) => ({
-			...prevOptions,
-			[id]: value,
-		}));
+		onExcludedChange && onExcludedChange(newExclusions);
+		onPriorityChange && onPriorityChange(newPriorities);
 	};
 
 	const handleChangePage = (event, newPage) => {
@@ -212,7 +168,7 @@ const TerrainDataTable = ({
 											<select
 												value={selectedOptions[vertice.vertice] || ""}
 												onChange={(e) =>
-													handleSelectChange(vertice.vertice, e.target.value)
+													handleSelectChange(vertice, e.target.value)
 												}
 												style={{ padding: "4px", width: "100%" }}
 											>
