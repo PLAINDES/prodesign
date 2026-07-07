@@ -15,7 +15,7 @@ import {
 	TextField,
 	Box
 } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StraightenIcon from "@mui/icons-material/Straighten";
 
@@ -40,6 +40,11 @@ const TerrainDataTable = ({
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(4);
 	const [selectedOptions, setSelectedOptions] = useState({});
+
+	// [DOCUMENTACIÓN] Se utiliza useRef para recordar las últimas listas de exclusión y prioridad notificadas
+	// al padre, evitando bucles de renderizado infinitos si las funciones callback cambian de referencia.
+	const lastExcludedRef = useRef(null);
+	const lastPriorityRef = useRef(null);
 
 	useEffect(() => {
 		setSelectedOptions(
@@ -80,14 +85,30 @@ const TerrainDataTable = ({
 		const excluded = vertices
 			.filter((vertice) => selectedOptions[vertice.vertice] === "Exclusion")
 			.map((vertice) => [vertice.x, vertice.y]);
-		onExcludedChange && onExcludedChange(excluded);
+
+		const isSame = lastExcludedRef.current && 
+			lastExcludedRef.current.length === excluded.length &&
+			lastExcludedRef.current.every(([x, y], idx) => x === excluded[idx][0] && y === excluded[idx][1]);
+
+		if (!isSame) {
+			lastExcludedRef.current = excluded;
+			onExcludedChange && onExcludedChange(excluded);
+		}
 	}, [selectedOptions, vertices, onExcludedChange]);
 
 	useEffect(() => {
 		const priority = vertices
 			.filter((vertice) => selectedOptions[vertice.vertice] === "Prioridad")
 			.map((vertice) => [vertice.x, vertice.y]);
-		onPriorityChange && onPriorityChange(priority);
+
+		const isSame = lastPriorityRef.current && 
+			lastPriorityRef.current.length === priority.length &&
+			lastPriorityRef.current.every(([x, y], idx) => x === priority[idx][0] && y === priority[idx][1]);
+
+		if (!isSame) {
+			lastPriorityRef.current = priority;
+			onPriorityChange && onPriorityChange(priority);
+		}
 	}, [selectedOptions, vertices, onPriorityChange]);
 
 	const handleSelectChange = (id, value) => {

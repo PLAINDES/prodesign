@@ -719,10 +719,11 @@ const TerrainPreview = ({
 						fill={colors.totalFill}
 						stroke={colors.totalStroke}
 						strokeWidth={svgConfig.viewW * 0.003 || 1}
+						strokeDasharray={excludedVertices?.length > 0 ? `${svgConfig.viewW * 0.008}, ${svgConfig.viewW * 0.008}` : "none"}
 					/>
 
 					{/* Terreno Disponible */}
-					{availablePoints && (
+					{availableVertices.length >= 3 && availablePoints && (
 						<polygon
 							points={availablePoints}
 							fill={colors.availFill}
@@ -924,10 +925,11 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted, onToggleVertex }) => {
 					fill={colors.totalFill}
 					stroke={colors.totalStroke}
 					strokeWidth={svgConfig.viewW * 0.003 || 1}
+					strokeDasharray={verticesExcluted?.length > 0 ? `${svgConfig.viewW * 0.008}, ${svgConfig.viewW * 0.008}` : "none"}
 				/>
 
 				{/* Polígono de Área Disponible */}
-				{availablePoints && (
+				{availableVertices.length >= 3 && availablePoints && (
 					<polygon
 						points={availablePoints}
 						fill={colors.availFill}
