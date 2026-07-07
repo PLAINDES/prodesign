@@ -123,6 +123,33 @@ export const RenderProvider = ({ children }) => {
         ambientesParaEnviar = [];
       }
 
+      // [DOCUMENTACIÓN] Se extraen, parsean y validan los campos vertices_rectangle y excluded_vertices
+      let verticesRectangleParaEnviar = projectData.vertices_rectangle || [];
+      if (typeof verticesRectangleParaEnviar === 'string') {
+        try {
+          verticesRectangleParaEnviar = JSON.parse(verticesRectangleParaEnviar);
+        } catch (e) {
+          console.warn("⚠️ No se pudo parsear vertices_rectangle, enviando vacío", e);
+          verticesRectangleParaEnviar = [];
+        }
+      }
+      if (!Array.isArray(verticesRectangleParaEnviar)) {
+        verticesRectangleParaEnviar = [];
+      }
+
+      let excludedVerticesParaEnviar = projectData.excluded_vertices || [];
+      if (typeof excludedVerticesParaEnviar === 'string') {
+        try {
+          excludedVerticesParaEnviar = JSON.parse(excludedVerticesParaEnviar);
+        } catch (e) {
+          console.warn("⚠️ No se pudo parsear excluded_vertices, enviando vacío", e);
+          excludedVerticesParaEnviar = [];
+        }
+      }
+      if (!Array.isArray(excludedVerticesParaEnviar)) {
+        excludedVerticesParaEnviar = [];
+      }
+
       const payload = {
         // PUNTO 1 DE ANTIGRAVITY: Evitar el error min_length=2 de Pydantic
         name: projectData.name?.trim() || "Sin Nombre", 
@@ -147,7 +174,12 @@ export const RenderProvider = ({ children }) => {
 
         // [DOCUMENTACIÓN] Se agregan number_floors y ambientes al payload de generarPlano
         number_floors: parseInt(projectData.number_floors || 1, 10),
-        ambientes: ambientesParaEnviar
+        ambientes: ambientesParaEnviar,
+
+        // [DOCUMENTACIÓN] Se envían los campos de exclusión y rectángulo máximo seleccionados
+        vertices_rectangle: verticesRectangleParaEnviar,
+        angle: parseFloat(projectData.angle || 0),
+        excluded_vertices: excludedVerticesParaEnviar
       };
       // --- FIN DEL PAYLOAD ---
 

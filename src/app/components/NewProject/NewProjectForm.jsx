@@ -660,6 +660,7 @@ const NewProjectForm = forwardRef(
 				vertices: verticesArray,
 				vertices_rectangle: verticesMaximumRectangle,
 				angle: angleMaximumRectangle,
+				excluded_vertices: exclutedVertices,
 				user_id: id,
 				type_id: plantillas?.id,
 			};
@@ -788,6 +789,9 @@ const NewProjectForm = forwardRef(
 				cliente: dataComplete.cliente || "",
 				aforo: parseAforo(data.data.project.aforo || dataComplete.aforo || "[]"),
 				vertices: data.data.project.vertices || dataComplete.vertices || [],
+				vertices_rectangle: data.data.project.vertices_rectangle || dataComplete.vertices_rectangle || [],
+				angle: data.data.project.angle || dataComplete.angle || 0,
+				excluded_vertices: data.data.project.excluded_vertices || dataComplete.excluded_vertices || [],
 			};
 
 			console.log("📤 Enviando payload completo al API de cálculo:", request_data);
