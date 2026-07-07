@@ -12,7 +12,12 @@ const initialState = {
 	errorMessage: null,
 	successMessage: "",
 	authView: "login",
-	authModal: false
+	authModal: false,
+	// [DOCUMENTACIÓN] Campos en memoria para tokens Cognito OIDC
+	idToken: null,
+	accessToken: null,
+	refreshToken: null,
+	expiresAt: null
 }
 
 export const  authSlice = createSlice({
@@ -21,7 +26,7 @@ export const  authSlice = createSlice({
 
 	reducers: {
 		login: (state, { payload }) => {
-			state.status = "authenticated",
+			state.status = "authenticated";
 			state.uid_master = payload.uid_master;
 			state.uid = payload.uid;
 			state.name = payload.name;
@@ -32,19 +37,30 @@ export const  authSlice = createSlice({
 			state.errorMessage = null;
 			state.successMessage = "";
 			
+			// [DOCUMENTACIÓN] Guardar tokens en memoria
+			state.idToken = payload.idToken || null;
+			state.accessToken = payload.accessToken || null;
+			state.refreshToken = payload.refreshToken || state.refreshToken || null;
+			state.expiresAt = payload.expiresAt || null;
 		},
 
-		logout: (state,payload ) => {
-			state.status = "not-authenticate",
-			state.authModal = false,
-			state.uid_master = null,
-			state.uid = null,
-			state.name = null,
-			state.lastname = null,
-			state.email = null,
-			state.password = ""
-			state.photoUrl = null
-			state.errorMessage = payload?.errorMessage
+		logout: (state, { payload } ) => {
+			state.status = "not-authenticate";
+			state.authModal = false;
+			state.uid_master = null;
+			state.uid = null;
+			state.name = null;
+			state.lastname = null;
+			state.email = null;
+			state.password = "";
+			state.photoUrl = null;
+			state.errorMessage = payload?.errorMessage;
+
+			// [DOCUMENTACIÓN] Limpiar tokens en memoria al cerrar sesión
+			state.idToken = null;
+			state.accessToken = null;
+			state.refreshToken = null;
+			state.expiresAt = null;
 		},
 
 		updatePerfil: (state, { payload }) => {
@@ -56,8 +72,8 @@ export const  authSlice = createSlice({
 		},
 
 		loginFail: (state) => {
-			state.status = "not-authenticate",
-			state.authModal = false
+			state.status = "not-authenticate";
+			state.authModal = false;
 		},
 
 		setAuthView: (state, { payload }) => {
@@ -66,6 +82,13 @@ export const  authSlice = createSlice({
 
 		setAuthModal: (state, { payload }) => {
 			state.authModal = payload.authModal;
+		},
+
+		refreshTokens: (state, { payload }) => {
+			// [DOCUMENTACIÓN] Actualizar tokens en memoria tras renovación exitosa (refresh token o silent renew)
+			state.idToken = payload.idToken;
+			state.accessToken = payload.accessToken;
+			state.expiresAt = payload.expiresAt;
 		}
 	},
 })
@@ -77,4 +100,5 @@ export const {
 	setAuthView,
 	setAuthModal,
 	loginFail,
-	updatePerfil } = authSlice.actions;
+	updatePerfil,
+	refreshTokens } = authSlice.actions;

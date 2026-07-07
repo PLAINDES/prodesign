@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "amazon-cognito-identity-js": "^6.3.12",
     "@amcharts/amcharts5": "^5.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

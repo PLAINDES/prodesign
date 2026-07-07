@@ -8,6 +8,7 @@ import { distributionSlice } from "./distribution/distributionSlice";
 import { ambienceSlice } from "./distribution/ambienceSlice";
 import exportReducer from "./features/exportSlice";
 import view3DReducer from "./features/view3DSlice";
+import { tokenRefreshMiddleware } from "./auth/tokenRefreshMiddleware";
 
 export const store = configureStore({
 	reducer: {
@@ -22,4 +23,8 @@ export const store = configureStore({
 		export: exportReducer,
 		view3D: view3DReducer,
 	},
+	middleware: (getDefaultMiddleware) =>
+		getDefaultMiddleware({
+			serializableCheck: false,
+		}).concat(tokenRefreshMiddleware),
 });

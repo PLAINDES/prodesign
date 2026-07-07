@@ -1,7 +1,23 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTheme } from "@mui/material/styles";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
-import { Tooltip } from '@mui/material';
+import {
+	Tooltip,
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	Stack,
+	Card,
+	CardContent,
+	Paper,
+	Chip,
+	Fade,
+	CircularProgress,
+	Box,
+	Typography
+} from '@mui/material';
+import MaxRectangle from "../GridData/MaxRectangle";
 import axios from 'axios';
 import { lugares as dataLugares } from './ubigeo';
 import "@glideapps/glide-data-grid/dist/index.css";
@@ -66,6 +82,38 @@ function ProjectSchoolForm({ useForm }) {
     const [dataAforo, setdataAforo] = useState([])
     const [dataVertices, setdataVertices] = useState([])
 
+    // [DOCUMENTACIÓN] Se agregaron estados para soportar el cálculo del rectángulo máximo y la exclusión de vértices
+    const [maximumRectangle, setMaximumRectangle] = useState([]);
+    const [exclutedVertices, setexclutedVertices] = useState([]);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [openDialogMax, setOpenDialogMax] = useState(false);
+
+    const handleClickOpenDialog = () => setOpenDialog(true);
+    const handleCloseDialog = () => setOpenDialog(false);
+    const handleClickOpenDialogMax = () => setOpenDialogMax(true);
+    const handleCloseDialogMax = () => setOpenDialogMax(false);
+
+    useEffect(() => {
+        register("width");
+        register("height");
+        register("vertices_rectangle");
+        register("angle");
+    }, [register]);
+
+    useEffect(() => {
+        if (maximumRectangle && maximumRectangle.vertices) {
+            setValue("width", maximumRectangle.ancho);
+            setValue("height", maximumRectangle.alto);
+            setValue("vertices_rectangle", maximumRectangle.vertices);
+            setValue("angle", maximumRectangle.anguloGrados);
+        } else {
+            setValue("width", null);
+            setValue("height", null);
+            setValue("vertices_rectangle", null);
+            setValue("angle", null);
+        }
+    }, [maximumRectangle, setValue]);
+
     function selectedLugar(tipo_selected, value) {
         if ("departamento" == tipo_selected) {
             setdepartamentoSelected(value)
@@ -105,18 +153,27 @@ function ProjectSchoolForm({ useForm }) {
 
     }, [dataFileVertices])
 
+    // [DOCUMENTACIÓN] Se transforman los vértices del formulario al formato esperado por los visualizadores SVG [[x, y], ...]
+    const verticesGrafic = useMemo(() => {
+        return dataVertices.map(v => [Number(v.x), Number(v.y)]);
+    }, [dataVertices]);
+
     const handleDeleteVertex = (vertexId) => {
         const newVertices = dataVertices.filter(v => v.vertice !== vertexId);
         setdataVertices(newVertices);
         setValue("vertices", newVertices);
+        // [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
+        setMaximumRectangle([]);
     };
 
     const handleUpdateVertex = (vertexId, key, value) => {
         const newVertices = dataVertices.map(v => 
-            v.vertice === vertexId ? { ...v, [key]: value } : v
+            v.vertice === vertexId ? { ...v, [key]: Number(value) } : v
         );
         setdataVertices(newVertices);
         setValue("vertices", newVertices);
+        // [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
+        setMaximumRectangle([]);
     };
 
     const columns = [
@@ -307,14 +364,141 @@ function ProjectSchoolForm({ useForm }) {
                     </Tooltip>
                 </Grid>
                 {
-                    dataVertices.length > 1 && (
-                        <Grid item xs={12} style={{ width: "100%" }}>
-                            <TerrainDataTable 
-                                vertices={dataVertices}
-                                onDeleteVertex={handleDeleteVertex}
-                                onUpdateVertex={handleUpdateVertex}
-                            />
-                        </Grid>
+                    dataVertices.length > 0 && (
+                        <>
+                            <Grid item xs={12} style={{ width: "100%" }}>
+                                <TerrainDataTable 
+                                    vertices={dataVertices}
+                                    onDeleteVertex={handleDeleteVertex}
+                                    onUpdateVertex={handleUpdateVertex}
+                                />
+                            </Grid>
+
+                            {/* [DOCUMENTACIÓN] Se agregó la vista previa SVG en miniatura y la tarjeta informativa del cuadrante óptimo */}
+                            {dataVertices.length > 0 && (
+                                <Grid item xs={12} sx={{ mt: 3, mb: 2 }}>
+                                    <Paper elevation={2} sx={{ p: 3 }}>
+                                        <Grid container spacing={2} alignItems="center">
+                                            <Grid item xs={12} sm={8}>
+                                                <Typography variant="h6" gutterBottom>
+                                                    Vista Previa del Terreno
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12} sm={4} sx={{ textAlign: 'right' }}>
+                                                {maximumRectangle.vertices?.length > 0 && (
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        color="warning"
+                                                        onClick={handleClickOpenDialogMax}
+                                                    >
+                                                        Cambiar Cuadrante
+                                                    </Button>
+                                                )}
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TerrainPreview
+                                                    vertices={verticesGrafic}
+                                                    rectangleVertices={maximumRectangle.vertices || []}
+                                                    excludedVertices={exclutedVertices}
+                                                    onSelectMaxRectangle={handleClickOpenDialogMax}
+                                                    maxRectangleData={maximumRectangle}
+                                                />
+                                            </Grid>
+
+                                            {/* Card informativa con métricas del cuadrante seleccionado */}
+                                            {maximumRectangle.vertices?.length > 0 && (
+                                                <Grid item xs={12} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                                                    <Box sx={{
+                                                        p: 2,
+                                                        bgcolor: 'info.light',
+                                                        borderRadius: 1,
+                                                        border: '1px solid',
+                                                        borderColor: 'info.main'
+                                                    }}>
+                                                        <Grid container spacing={1}>
+                                                            <Grid item xs={12}>
+                                                                <Typography variant="subtitle2" color="info.dark" sx={{ fontWeight: 'bold' }}>
+                                                                    Cuadrante Máximo Seleccionado:
+                                                                </Typography>
+                                                                <Typography variant="body2" color="info.dark">
+                                                                    {maximumRectangle.ancho?.toFixed(2)}m × {maximumRectangle.alto?.toFixed(2)}m
+                                                                    = {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2 }).format(maximumRectangle.area)}m²
+                                                                    ({maximumRectangle.anguloGrados?.toFixed(1)}°)
+                                                                    {maximumRectangle.perimetro && ` | Perímetro: ${maximumRectangle.perimetro.toFixed(2)}m`}
+                                                                </Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Box>
+                                                </Grid>
+                                            )}
+                                        </Grid>
+                                    </Paper>
+                                </Grid>
+                            )}
+
+                            {/* [DOCUMENTACIÓN] Botones para abrir los modales SVG de terreno y cálculo de rectángulo máximo */}
+                            <Grid item xs={12}>
+                                <Grid
+                                    sx={{
+                                        pl: 3,
+                                        pt: 2,
+                                        display: "flex",
+                                        justifyContent: "space-around",
+                                        gap: 1
+                                    }}
+                                >
+                                    <Button
+                                        color="primary"
+                                        variant="contained"
+                                        onClick={handleClickOpenDialog}
+                                        sx={{ p: 1 }}
+                                    >
+                                        Generacion del terreno
+                                    </Button>
+                                    <Button
+                                        color="warning"
+                                        variant="contained"
+                                        onClick={handleClickOpenDialogMax}
+                                    >
+                                        Generacion del cuadrante maximo
+                                    </Button>
+                                </Grid>
+                            </Grid>
+
+                            {/* [DOCUMENTACIÓN] Diálogo para mostrar PoligonoChart (SVG de terreno con Dark Mode) */}
+                            <Dialog
+                                open={openDialog}
+                                onClose={handleCloseDialog}
+                                maxWidth="md"
+                                fullWidth
+                            >
+                                <DialogTitle>Datos del terreno</DialogTitle>
+                                <DialogContent>
+                                    <PoligonoChart
+                                        verticesTotal={verticesGrafic}
+                                        verticesExcluted={exclutedVertices}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+
+                            {/* [DOCUMENTACIÓN] Diálogo para mostrar RectangleChart (selección de rectángulo con pestañas) */}
+                            <Dialog
+                                open={openDialogMax}
+                                onClose={handleCloseDialogMax}
+                                maxWidth="md"
+                                fullWidth
+                            >
+                                <DialogContent>
+                                    <RectangleChart
+                                        verDispo={verticesGrafic}
+                                        verticesExcluted={exclutedVertices}
+                                        setMaximumRectangle={setMaximumRectangle}
+                                        close={handleCloseDialogMax}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        </>
                     )
                 }
                 <Grid item xs={12}>
@@ -414,4 +598,723 @@ export default ProjectSchoolForm;
 
 export const styleInput = {
     width: "100%",
+};
+
+// [DOCUMENTACIÓN] Se implementó el componente TerrainPreview usando SVG nativo para mostrar
+// una miniatura interactiva del terreno, con soporte completo para Light/Dark Mode y mejor performance.
+const TerrainPreview = ({
+	vertices,
+	rectangleVertices,
+	excludedVertices,
+	onSelectMaxRectangle,
+	maxRectangleData
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const availableVertices = useMemo(() => {
+		return vertices.filter(
+			([x, y]) => !excludedVertices?.some(([vx, vy]) => vx === x && vy === y)
+		);
+	}, [vertices, excludedVertices]);
+
+	// Calcular bounding box
+	const bbox = useMemo(() => {
+		if (!vertices.length) return { minX: 0, maxX: 100, minY: 0, maxY: 100, w: 100, h: 100 };
+		const xs = vertices.map(p => p[0]);
+		const ys = vertices.map(p => p[1]);
+		const minX = Math.min(...xs);
+		const maxX = Math.max(...xs);
+		const minY = Math.min(...ys);
+		const maxY = Math.max(...ys);
+		return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
+	}, [vertices]);
+
+	// Configuración de escala
+	const svgConfig = useMemo(() => {
+		const pad = Math.max(bbox.w, bbox.h) * 0.15 || 10;
+		const minX = bbox.minX - pad;
+		const minY = bbox.minY - pad;
+		const viewW = bbox.w + pad * 2;
+		const viewH = bbox.h + pad * 2;
+		const toSvg = ([x, y]) => ({ x: x, y: minY + viewH - (y - minY) });
+		return { minX, minY, viewW, viewH, toSvg };
+	}, [bbox]);
+
+	const totalPoints = useMemo(() => {
+		return vertices.map(p => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [vertices, svgConfig]);
+
+	const availablePoints = useMemo(() => {
+		return availableVertices.map(p => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [availableVertices, svgConfig]);
+
+	const rectPoints = useMemo(() => {
+		if (!rectangleVertices || rectangleVertices.length === 0) return null;
+		return rectangleVertices.map(p => {
+			const pt = p.east !== undefined ? [p.east, p.north] : p;
+			const s = svgConfig.toSvg(pt);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [rectangleVertices, svgConfig]);
+
+	if (!vertices || vertices.length === 0) {
+		return null;
+	}
+
+	const colors = {
+		totalStroke: isDark ? "#78909c" : "#9e9e9e",
+		totalFill: isDark ? "rgba(120, 144, 156, 0.1)" : "rgba(158, 158, 158, 0.15)",
+		availStroke: isDark ? "#81c784" : "#4caf50",
+		availFill: isDark ? "rgba(129, 199, 132, 0.15)" : "rgba(76, 175, 80, 0.15)",
+		rectStroke: isDark ? "#ffa726" : "#ff9800",
+		rectFill: isDark ? "rgba(255, 167, 38, 0.15)" : "rgba(255, 152, 0, 0.15)",
+		svgBg: isDark ? "#1e1e1e" : "#ffffff",
+	};
+
+	return (
+		<Box sx={{ position: 'relative', width: '100%', mb: 2 }}>
+			<Box
+				sx={{
+					width: "100%",
+					backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "grey.50",
+					p: 2,
+					borderRadius: 3,
+					border: "1px solid",
+					borderColor: "divider",
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center"
+				}}
+			>
+				<svg
+					viewBox={`${svgConfig.minX} ${svgConfig.minY} ${svgConfig.viewW} ${svgConfig.viewH}`}
+					width="100%"
+					style={{
+						maxHeight: "300px",
+						borderRadius: 8,
+						background: colors.svgBg
+					}}
+				>
+					{/* Terreno Total */}
+					<polygon
+						points={totalPoints}
+						fill={colors.totalFill}
+						stroke={colors.totalStroke}
+						strokeWidth={svgConfig.viewW * 0.003 || 1}
+					/>
+
+					{/* Terreno Disponible */}
+					{availablePoints && (
+						<polygon
+							points={availablePoints}
+							fill={colors.availFill}
+							stroke={colors.availStroke}
+							strokeWidth={svgConfig.viewW * 0.004 || 1.2}
+						/>
+					)}
+
+					{/* Vértices del Terreno */}
+					{vertices.map((p, i) => {
+						const s = svgConfig.toSvg(p);
+						const isExcluded = excludedVertices?.some(([vx, vy]) => vx === p[0] && vy === p[1]);
+						return (
+							<circle
+								key={i}
+								cx={s.x}
+								cy={s.y}
+								r={svgConfig.viewW * 0.008 || 2.5}
+								fill={isExcluded ? "#f44336" : colors.availStroke}
+							/>
+						);
+					})}
+
+					{/* Rectángulo Máximo (Overlay) */}
+					{rectPoints && (
+						<polygon
+							points={rectPoints}
+							fill={colors.rectFill}
+							stroke={colors.rectStroke}
+							strokeWidth={svgConfig.viewW * 0.006 || 1.8}
+							strokeDasharray={`${svgConfig.viewW * 0.01}, ${svgConfig.viewW * 0.01}`}
+						/>
+					)}
+				</svg>
+			</Box>
+
+			{rectangleVertices?.length > 0 && (
+				<Box sx={{
+					position: 'absolute',
+					bottom: 15,
+					right: 15,
+					bgcolor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.7)',
+					color: 'white',
+					px: 1.5,
+					py: 0.5,
+					borderRadius: 1,
+					fontSize: '0.75rem'
+				}}>
+					Cuadrante: {maxRectangleData?.ancho?.toFixed(1)}m × {maxRectangleData?.alto?.toFixed(1)}m
+				</Box>
+			)}
+
+			{!rectangleVertices?.length && vertices.length > 0 && (
+				<Box sx={{
+					position: 'absolute',
+					top: '50%',
+					left: '50%',
+					transform: 'translate(-50%, -50%)',
+					textAlign: 'center',
+					p: 2,
+					bgcolor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255,255,255,0.95)',
+					boxShadow: 3,
+					borderRadius: 2,
+					border: '2px dashed #ff9800',
+					maxWidth: '80%'
+				}}>
+					<Typography variant="body2" color="text.secondary" gutterBottom>
+						No hay cuadrante máximo calculado
+					</Typography>
+					<Button
+						size="small"
+						variant="contained"
+						color="warning"
+						onClick={onSelectMaxRectangle}
+					>
+						Calcular Cuadrante Máximo
+					</Button>
+				</Box>
+			)}
+		</Box>
+	);
+};
+
+// [DOCUMENTACIÓN] Se portó el componente PoligonoChart desde NewProjectForm para renderizar el terreno
+// en formato SVG nativo en el modal de creación de escuelas, con soporte de Dark Mode y numeración de vértices.
+const PoligonoChart = ({ verticesTotal, verticesExcluted }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const availableVertices = useMemo(() => {
+		return verticesTotal.filter(
+			([x, y]) => !verticesExcluted.some(([vx, vy]) => vx === x && vy === y)
+		);
+	}, [verticesTotal, verticesExcluted]);
+
+	// Calcular bounding box del terreno
+	const bbox = useMemo(() => {
+		if (!verticesTotal.length) return { minX: 0, maxX: 100, minY: 0, maxY: 100, w: 100, h: 100 };
+		const xs = verticesTotal.map(p => p[0]);
+		const ys = verticesTotal.map(p => p[1]);
+		const minX = Math.min(...xs);
+		const maxX = Math.max(...xs);
+		const minY = Math.min(...ys);
+		const maxY = Math.max(...ys);
+		return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
+	}, [verticesTotal]);
+
+	// Configuración SVG de escala y conversión
+	const svgConfig = useMemo(() => {
+		const pad = Math.max(bbox.w, bbox.h) * 0.15 || 10;
+		const minX = bbox.minX - pad;
+		const minY = bbox.minY - pad;
+		const viewW = bbox.w + pad * 2;
+		const viewH = bbox.h + pad * 2;
+		// Flip Y para que el eje vertical positivo suba
+		const toSvg = ([x, y]) => ({ x: x, y: minY + viewH - (y - minY) });
+		return { minX, minY, viewW, viewH, toSvg };
+	}, [bbox]);
+
+	if (!verticesTotal || verticesTotal.length === 0) {
+		return (
+			<Box sx={{ p: 4, textAlign: "center" }}>
+				<Typography color="text.secondary">
+					No hay vértices cargados para mostrar.
+				</Typography>
+			</Box>
+		);
+	}
+
+	const totalPoints = verticesTotal.map(p => {
+		const s = svgConfig.toSvg(p);
+		return `${s.x},${s.y}`;
+	}).join(" ");
+
+	const availablePoints = availableVertices.map(p => {
+		const s = svgConfig.toSvg(p);
+		return `${s.x},${s.y}`;
+	}).join(" ");
+
+	// Definir paleta de colores según tema (Dark Mode vs Light Mode)
+	const colors = {
+		totalFill: isDark ? "rgba(120, 144, 156, 0.15)" : "rgba(158, 158, 158, 0.2)",
+		totalStroke: isDark ? "#78909c" : "#9e9e9e",
+		availFill: isDark ? "rgba(129, 199, 132, 0.2)" : "rgba(124, 252, 0, 0.2)",
+		availStroke: isDark ? "#81c784" : "#4caf50",
+		textFill: isDark ? "#ffffff" : "#2e7d32",
+		textBg: isDark ? "#121212" : "#ffffff",
+	};
+
+	return (
+		<Box
+			sx={{
+				width: "100%",
+				backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "grey.50",
+				p: 2,
+				borderRadius: 3,
+				border: "1px solid",
+				borderColor: "divider",
+				display: "flex",
+				justifyContent: "center",
+				alignItems: "center"
+			}}
+		>
+			<svg
+				viewBox={`${svgConfig.minX} ${svgConfig.minY} ${svgConfig.viewW} ${svgConfig.viewH}`}
+				width="100%"
+				style={{
+					maxHeight: "380px",
+					borderRadius: 8,
+					background: isDark ? "#1e1e1e" : "#ffffff"
+				}}
+			>
+				{/* Polígono de Área Total */}
+				<polygon
+					points={totalPoints}
+					fill={colors.totalFill}
+					stroke={colors.totalStroke}
+					strokeWidth={svgConfig.viewW * 0.003 || 1}
+				/>
+
+				{/* Polígono de Área Disponible */}
+				{availablePoints && (
+					<polygon
+						points={availablePoints}
+						fill={colors.availFill}
+						stroke={colors.availStroke}
+						strokeWidth={svgConfig.viewW * 0.005 || 1.5}
+					/>
+				)}
+
+				{/* Vértices con Etiquetas */}
+				{verticesTotal.map((p, i) => {
+					const s = svgConfig.toSvg(p);
+					const isExcluded = verticesExcluted.some(([vx, vy]) => vx === p[0] && vy === p[1]);
+					return (
+						<g key={i}>
+							<circle
+								cx={s.x}
+								cy={s.y}
+								r={svgConfig.viewW * 0.008 || 2}
+								fill={isExcluded ? colors.totalStroke : colors.availStroke}
+							/>
+							<text
+								x={s.x + (svgConfig.viewW * 0.012 || 3)}
+								y={s.y - (svgConfig.viewW * 0.01 || 2)}
+								fontSize={svgConfig.viewW * 0.026 || 8}
+								fill={isExcluded ? colors.totalStroke : colors.textFill}
+								fontWeight="bold"
+							>
+								V{i + 1}
+							</text>
+						</g>
+					);
+				})}
+			</svg>
+		</Box>
+	);
+};
+
+// [DOCUMENTACIÓN] Se portó el componente RectangleChart desde NewProjectForm para renderizar el selector
+// de rectángulo máximo por pestañas en SVG en el modal de creación de escuelas, con memoización estricta,
+// Dark Mode, control de estados vacío/error, y formato regional 'es-PE'.
+const RectangleChart = ({
+	verDispo,
+	verticesExcluted,
+	setMaximumRectangle,
+	close,
+}) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const [selectedOption, setSelectedOption] = useState(0);
+	const [rectangulosData, setRectangulosData] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
+
+	// Formateador regional para áreas
+	const numberFormatter = useMemo(() => {
+		return new Intl.NumberFormat("es-PE", {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		});
+	}, []);
+
+	// Filtrar vértices excluidos
+	const availableVertices = useMemo(() => {
+		return verDispo.filter(
+			([x, y]) => !verticesExcluted.some(([vx, vy]) => vx === x && vy === y)
+		);
+	}, [verDispo, verticesExcluted]);
+
+	const calcularRectangulos = useCallback(async () => {
+		if (availableVertices.length === 0) {
+			setLoading(false);
+			return;
+		}
+		setLoading(true);
+		setError(null);
+		try {
+			const opciones = await MaxRectangle(availableVertices);
+			setRectangulosData(opciones);
+		} catch (err) {
+			console.error("Error al calcular rectángulos:", err);
+			setError("Ocurrió un error al calcular los rectángulos máximos inscritos. Por favor, valide que los vértices del terreno no formen autointersecciones.");
+		} finally {
+			setLoading(false);
+		}
+	}, [availableVertices]);
+
+	useEffect(() => {
+		calcularRectangulos();
+	}, [calcularRectangulos]);
+
+	// Coordenadas mundiales de los rectángulos
+	const rectangulos = useMemo(() => {
+		return rectangulosData.map((rectangulo) =>
+			rectangulo.vertices.map((vertex) => [vertex.east, vertex.north])
+		);
+	}, [rectangulosData]);
+
+	// Bounding Box memoizado
+	const bbox = useMemo(() => {
+		if (!availableVertices.length) {
+			return { minX: 0, maxX: 100, minY: 0, maxY: 100, w: 100, h: 100 };
+		}
+		const xs = availableVertices.map((p) => p[0]);
+		const ys = availableVertices.map((p) => p[1]);
+		const minX = Math.min(...xs);
+		const maxX = Math.max(...xs);
+		const minY = Math.min(...ys);
+		const maxY = Math.max(...ys);
+		return { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
+	}, [availableVertices]);
+
+	// Transformación a coordenadas SVG memoizada
+	const svgConfig = useMemo(() => {
+		const pad = Math.max(bbox.w, bbox.h) * 0.15 || 10;
+		const minX = bbox.minX - pad;
+		const minY = bbox.minY - pad;
+		const viewW = bbox.w + pad * 2;
+		const viewH = bbox.h + pad * 2;
+		const toSvg = ([x, y]) => ({ x: x, y: minY + viewH - (y - minY) });
+		return { minX, minY, viewW, viewH, toSvg };
+	}, [bbox]);
+
+	// Convertir polígono disponible a puntos de SVG
+	const polyPoints = useMemo(() => {
+		return availableVertices.map((p) => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [availableVertices, svgConfig]);
+
+	// Convertir el rectángulo activo a puntos de SVG
+	const rectPoints = useMemo(() => {
+		const activeRect = rectangulos[selectedOption];
+		if (!activeRect || !activeRect.length) return null;
+		return activeRect.map((p) => {
+			const s = svgConfig.toSvg(p);
+			return `${s.x},${s.y}`;
+		}).join(" ");
+	}, [rectangulos, selectedOption, svgConfig]);
+
+	const handleConfirm = () => {
+		if (rectangulosData.length === 0) return;
+		const { vertices, anguloGrados, alto, ancho, area, perimetro } =
+			rectangulosData[selectedOption];
+		setMaximumRectangle({
+			vertices,
+			anguloGrados,
+			alto,
+			ancho,
+			area,
+			perimetro,
+		});
+		close();
+	};
+
+	const handleOptionSelect = (index) => {
+		setSelectedOption(index);
+	};
+
+	// Manejo de Estado Vacío
+	if (availableVertices.length === 0) {
+		return (
+			<Box sx={{ p: 4, textAlign: "center" }}>
+				<Typography variant="h6" color="text.secondary" gutterBottom>
+					Terreno sin vértices
+				</Typography>
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+					Por favor, primero cargue un Excel válido de vértices del terreno antes de calcular el rectángulo máximo.
+				</Typography>
+				<Button variant="contained" onClick={close}>
+					Cerrar
+				</Button>
+			</Box>
+		);
+	}
+
+	// Manejo de Carga
+	if (loading) {
+		return (
+			<Fade in={loading}>
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						minHeight: "400px",
+						gap: 3,
+					}}
+				>
+					<CircularProgress size={60} thickness={4} />
+					<Typography variant="h6" color="text.secondary">
+						Calculando rectángulos óptimos...
+					</Typography>
+					<Typography variant="body2" color="text.secondary">
+						Analizando {availableVertices.length} vértices disponibles
+					</Typography>
+				</Box>
+			</Fade>
+		);
+	}
+
+	// Manejo de Error
+	if (error) {
+		return (
+			<Box sx={{ p: 4, textAlign: "center" }}>
+				<Typography variant="h6" color="error" gutterBottom>
+					Error de cálculo
+				</Typography>
+				<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+					{error}
+				</Typography>
+				<Stack direction="row" spacing={2} justifyContent="center">
+					<Button variant="outlined" onClick={close}>
+						Cancelar
+					</Button>
+					<Button variant="contained" onClick={calcularRectangulos}>
+						Reintentar
+					</Button>
+				</Stack>
+			</Box>
+		);
+	}
+
+	const activeInfo = rectangulosData[selectedOption] || {};
+
+	// Paleta de colores según Dark Mode
+	const colors = {
+		availFill: isDark ? "rgba(25, 118, 210, 0.15)" : "rgba(25, 118, 210, 0.05)",
+		availStroke: isDark ? "#90caf9" : "#1976d2",
+		rectFill: isDark ? "rgba(255, 183, 77, 0.25)" : "rgba(255, 167, 38, 0.25)",
+		rectStroke: isDark ? "#ffa726" : "#f57c00",
+		textFill: isDark ? "#ffffff" : "#0d47a1",
+		svgBg: isDark ? "#1e1e1e" : "#ffffff",
+	};
+
+	return (
+		<Box sx={{ p: 3 }}>
+			<Typography
+				variant="h5"
+				gutterBottom
+				align="center"
+				sx={{ mb: 4, fontWeight: 600 }}
+			>
+				Seleccione la mejor opción de rectángulo
+			</Typography>
+
+			{/* Tabs de Selección */}
+			<Stack
+				direction="row"
+				spacing={2}
+				justifyContent="center"
+				sx={{ mb: 4 }}
+			>
+				{rectangulos.map((_, index) => {
+					const area = rectangulosData[index]?.area || 0;
+					return (
+						<Button
+							key={index}
+							variant={selectedOption === index ? "contained" : "outlined"}
+							onClick={() => handleOptionSelect(index)}
+							sx={{
+								minWidth: 140,
+								py: 1.5,
+								transition: "all 0.3s ease",
+								"&:hover": {
+									transform: "translateY(-2px)",
+									boxShadow: 2,
+								},
+							}}
+						>
+							<Box
+								sx={{
+									display: "flex",
+									flexDirection: "column",
+									alignItems: "flex-start",
+								}}
+							>
+								<Typography variant="button">
+									Opción {index + 1}
+								</Typography>
+								<Typography variant="caption" sx={{ opacity: 0.8 }}>
+									{numberFormatter.format(area)} m²
+								</Typography>
+							</Box>
+						</Button>
+					);
+				})}
+			</Stack>
+
+			{/* Gráfico SVG Unificado */}
+			<Box
+				sx={{
+					width: "100%",
+					backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "grey.50",
+					p: 2,
+					borderRadius: 3,
+					border: "1px solid",
+					borderColor: "divider",
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					mb: 3
+				}}
+			>
+				<svg
+					viewBox={`${svgConfig.minX} ${svgConfig.minY} ${svgConfig.viewW} ${svgConfig.viewH}`}
+					width="100%"
+					style={{
+						maxHeight: "450px",
+						borderRadius: 8,
+						background: colors.svgBg
+					}}
+				>
+					{/* Polígono de Área Disponible */}
+					<polygon
+						points={polyPoints}
+						fill={colors.availFill}
+						stroke={colors.availStroke}
+						strokeWidth={svgConfig.viewW * 0.004 || 1}
+					/>
+					
+					{/* Vértices con Etiquetas */}
+					{availableVertices.map((p, i) => {
+						const s = svgConfig.toSvg(p);
+						return (
+							<g key={i}>
+								<circle
+									cx={s.x}
+									cy={s.y}
+									r={svgConfig.viewW * 0.008 || 2}
+									fill={colors.availStroke}
+								/>
+								<text
+									x={s.x + (svgConfig.viewW * 0.012 || 3)}
+									y={s.y - (svgConfig.viewW * 0.01 || 2)}
+									fontSize={svgConfig.viewW * 0.024 || 8}
+									fill={colors.textFill}
+									fontWeight="bold"
+								>
+									V{i + 1}
+								</text>
+							</g>
+						);
+					})}
+
+					{/* Rectángulo Máximo Inscrito (Overlay) */}
+					{rectPoints && (
+						<polygon
+							points={rectPoints}
+							fill={colors.rectFill}
+							stroke={colors.rectStroke}
+							strokeWidth={svgConfig.viewW * 0.005 || 1.2}
+						/>
+					)}
+				</svg>
+			</Box>
+
+			{/* Detalles de la opción seleccionada */}
+			{activeInfo.area && (
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "center",
+						gap: 2,
+						mb: 4,
+						flexWrap: "wrap"
+					}}
+				>
+					<Chip
+						label={`Área: ${numberFormatter.format(activeInfo.area)} m²`}
+						color="primary"
+						variant="filled"
+					/>
+					{activeInfo.alto && (
+						<Chip
+							label={`Alto: ${activeInfo.alto.toFixed(2)} m`}
+							variant="outlined"
+						/>
+					)}
+					{activeInfo.ancho && (
+						<Chip
+							label={`Ancho: ${activeInfo.ancho.toFixed(2)} m`}
+							variant="outlined"
+						/>
+					)}
+					{activeInfo.anguloGrados !== undefined && (
+						<Chip
+							label={`Rotación: ${activeInfo.anguloGrados.toFixed(1)}°`}
+							variant="outlined"
+						/>
+					)}
+				</Box>
+			)}
+
+			{/* Botones de acción */}
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "center",
+					gap: 2,
+				}}
+			>
+				<Button
+					variant="outlined"
+					onClick={close}
+					size="large"
+					sx={{ minWidth: 120 }}
+				>
+					Cancelar
+				</Button>
+				<Button
+					variant="contained"
+					onClick={handleConfirm}
+					size="large"
+					sx={{ minWidth: 120 }}
+				>
+					Confirmar Selección
+				</Button>
+			</Box>
+		</Box>
+	);
 };

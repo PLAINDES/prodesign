@@ -13,6 +13,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
+import { redirectToCognitoLogin } from "../../utils/oidc";
 
 // [DOCUMENTACIÓN] Refactorizado LoginPage para limpiar estilos hardcodeados y adaptarse al modo dinámico
 export const LoginPage = () => {
@@ -28,6 +29,16 @@ export const LoginPage = () => {
 		enqueueSnackbar(message, { variant });
 	};
 
+	const onCognitoLogin = async () => {
+		try {
+			// [DOCUMENTACIÓN] Inicia el flujo OIDC PKCE redirigiendo al Hosted UI de Cognito
+			await redirectToCognitoLogin();
+		} catch (error) {
+			console.error("Error redirecting to Cognito Hosted UI:", error);
+			enqueueSnackbar("Error al conectar con el servidor de autenticación SSO.", { variant: "error" });
+		}
+	};
+
 	const onSubmit = (evt) => {
 		evt.preventDefault();
 		var { email, password } = Object.fromEntries(new FormData(evt.target));
@@ -37,6 +48,40 @@ export const LoginPage = () => {
 	return (
 		<form onSubmit={onSubmit}>
 			<Grid container spacing={3} justifyContent="center">
+				{/* [DOCUMENTACIÓN] Botón de Inicio de sesión SSO con AWS Cognito (PKCE) */}
+				<Grid item xs={12}>
+					<Button
+						variant="outlined"
+						fullWidth
+						size="large"
+						onClick={onCognitoLogin}
+						sx={{
+							padding: "0.8rem",
+							borderRadius: "10px",
+							fontSize: "0.95rem",
+							fontWeight: "bold",
+							textTransform: "none",
+							borderWidth: "2px",
+							borderColor: theme.palette.primary.main,
+							color: theme.palette.primary.main,
+							"&:hover": {
+								borderWidth: "2px",
+								backgroundColor: theme.palette.primary.main + "0a",
+							},
+							mb: 1
+						}}
+					>
+						🔑 Iniciar sesión con ProBudgets SSO
+					</Button>
+					<div style={{ display: "flex", alignItems: "center", margin: "5px 0 15px 0" }}>
+						<hr style={{ flex: 1, border: "0", borderTop: "1px solid #ccc" }} />
+						<span style={{ padding: "0 10px", color: "#666", fontSize: "0.85rem", fontWeight: "500" }}>
+							o ingresar con tu cuenta local
+						</span>
+						<hr style={{ flex: 1, border: "0", borderTop: "1px solid #ccc" }} />
+					</div>
+				</Grid>
+
 				<Grid item xs={12}>
 					<TextField
 						label="Correo electrónico"

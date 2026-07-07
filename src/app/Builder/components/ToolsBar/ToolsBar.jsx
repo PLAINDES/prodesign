@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import axios from 'axios';
 import Swal from "sweetalert2";
+import { requestExchangeCode } from "../../../../utils/probudgetsExchange";
 import {
 	setPlayCamera,
 	setRoof,
@@ -186,12 +187,68 @@ export default function ToolsBar({
 		}
 	}
 
-	function getProbudgetsUrl() {
+	const { idToken, accessToken } = useSelector((state) => state.auth);
+	const [isSendingToProbudgets, setIsSendingToProbudgets] = useState(false);
+
+	// [DOCUMENTACIÓN] Manejador de redirección para "Enviar a ProBudgets".
+	// Obtiene el token Cognito (en memoria) o local, solicita un código de intercambio de un solo uso
+	// desde nuestro backend, y redirige al portal de ProBudgets con dicho código (?exchange_code=...)
+	// o con el token en hash (#token=...) como fallback seguro para evitar logs del lado del servidor.
+	const handleSendToProbudgets = async (e) => {
+		e.preventDefault();
 		const projectId = params.id;
 		const urlProbudgetsPortal = import.meta.env.VITE_URL_PROBUDGETS_PORTAL;
-		if (!projectId || !urlProbudgetsPortal) return "#";
-		return `${urlProbudgetsPortal}?proyecto_id=${projectId}`;
-	}
+
+		if (!projectId || !urlProbudgetsPortal) {
+			Swal.fire({
+				title: 'Configuración incompleta',
+				text: 'Falta configurar la URL del portal de ProBudgets o el ID del proyecto.',
+				icon: 'error',
+				confirmButtonText: 'Aceptar'
+			});
+			return;
+		}
+
+		// Obtenemos token en memoria (SSO) o fallback de localStorage
+		const token = idToken || accessToken || localStorage.getItem("token");
+
+		if (!token) {
+			Swal.fire({
+				title: 'Sesión Requerida',
+				text: 'No tienes una sesión activa para enviar este proyecto. Por favor, inicia sesión.',
+				icon: 'warning',
+				confirmButtonText: 'Aceptar'
+			});
+			return;
+		}
+
+		setIsSendingToProbudgets(true);
+
+		try {
+			const exchangeResult = await requestExchangeCode(token);
+			let finalUrl = "";
+
+			if (exchangeResult.useFallback) {
+				// Fallback seguro: pasar token en fragmento hash
+				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}#token=${encodeURIComponent(token)}`;
+			} else {
+				// Estándar seguro: canjear código temporal query string
+				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}&exchange_code=${encodeURIComponent(exchangeResult.exchangeCode)}`;
+			}
+
+			window.open(finalUrl, "_blank", "noopener,noreferrer");
+		} catch (err) {
+			console.error("Error al redirigir a ProBudgets:", err);
+			Swal.fire({
+				title: 'Error de Redirección',
+				text: 'No se pudo generar la sesión segura para ProBudgets. Reinténtalo.',
+				icon: 'error',
+				confirmButtonText: 'Aceptar'
+			});
+		} finally {
+			setIsSendingToProbudgets(false);
+		}
+	};
 
 	return (
 		<Box
@@ -274,18 +331,17 @@ export default function ToolsBar({
 							{isGeneratingPdf ? "Generando..." : "Enviar a proinvierte"}
 						</button>
 
-						<a
-							href={getProbudgetsUrl()}
-							target="_blank"
-							rel="noopener noreferrer"
+						<button
+							onClick={handleSendToProbudgets}
+							disabled={isSendingToProbudgets}
 							style={{
 								marginTop: "4px",
 								height:"38px",
 								padding: "0px 16px",
 								border: "1px solid #218838",
-								backgroundColor: "#28a745",
+								backgroundColor: isSendingToProbudgets ? "#6c757d" : "#28a745",
 								color: "#fff",
-								cursor: "pointer",
+								cursor: isSendingToProbudgets ? "default" : "pointer",
 								borderRadius: "5px",
 								fontWeight: "bold",
 								display: "inline-flex",
@@ -293,8 +349,8 @@ export default function ToolsBar({
 								textDecoration: "none"
 							}}
 						>
-							Enviar a ProBudgets
-						</a>
+							{isSendingToProbudgets ? "Conectando..." : "Enviar a ProBudgets"}
+						</button>
 
 						<Settings
 							//state={state}
