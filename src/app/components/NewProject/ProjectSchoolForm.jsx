@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useTheme } from "@mui/material/styles";
 import Grid from "@mui/material/Grid";
 import Button from "@mui/material/Button";
@@ -15,8 +15,12 @@ import {
 	Fade,
 	CircularProgress,
 	Box,
-	Typography
+	Typography,
+	IconButton,
 } from '@mui/material';
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import MaxRectangle from "../GridData/MaxRectangle";
 import axios from 'axios';
 import { lugares as dataLugares } from './ubigeo';
@@ -82,9 +86,10 @@ function ProjectSchoolForm({ useForm }) {
     const [dataAforo, setdataAforo] = useState([])
     const [dataVertices, setdataVertices] = useState([])
 
-    // [DOCUMENTACIÓN] Se agregaron estados para soportar el cálculo del rectángulo máximo y la exclusión de vértices
+    // [DOCUMENTACIÓN] Se agregaron estados para soportar el cálculo del rectángulo máximo, la exclusión y la prioridad de vértices
     const [maximumRectangle, setMaximumRectangle] = useState([]);
     const [exclutedVertices, setexclutedVertices] = useState([]);
+    const [priorityVertices, setPriorityVertices] = useState([]); // [DOCUMENTACIÓN] Estado para los vértices seleccionados con prioridad
     const [openDialog, setOpenDialog] = useState(false);
     const [openDialogMax, setOpenDialogMax] = useState(false);
 
@@ -92,6 +97,7 @@ function ProjectSchoolForm({ useForm }) {
     const handleCloseDialog = () => setOpenDialog(false);
     const handleClickOpenDialogMax = () => setOpenDialogMax(true);
     const handleCloseDialogMax = () => setOpenDialogMax(false);
+    const handlePriorityChange = (priority) => setPriorityVertices(priority); // [DOCUMENTACIÓN] Controlador para cambios de prioridad
 
     // [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
     // Usa una comparación robusta con tolerancia para evitar problemas de coma flotante y de tipos.
@@ -421,6 +427,8 @@ function ProjectSchoolForm({ useForm }) {
                                     onUpdateVertex={handleUpdateVertex}
                                     excludedVertices={exclutedVertices}
                                     onExcludedChange={setexclutedVertices}
+                                    priorityVertices={priorityVertices}
+                                    onPriorityChange={handlePriorityChange}
                                 />
                             </Grid>
 
@@ -487,35 +495,7 @@ function ProjectSchoolForm({ useForm }) {
                                     </Paper>
                                 </Grid>
                             )}
-
-                            {/* [DOCUMENTACIÓN] Botones para abrir los modales SVG de terreno y cálculo de rectángulo máximo */}
-                            <Grid item xs={12}>
-                                <Grid
-                                    sx={{
-                                        pl: 3,
-                                        pt: 2,
-                                        display: "flex",
-                                        justifyContent: "space-around",
-                                        gap: 1
-                                    }}
-                                >
-                                    <Button
-                                        color="primary"
-                                        variant="contained"
-                                        onClick={handleClickOpenDialog}
-                                        sx={{ p: 1 }}
-                                    >
-                                        Generacion del terreno
-                                    </Button>
-                                    <Button
-                                        color="warning"
-                                        variant="contained"
-                                        onClick={handleClickOpenDialogMax}
-                                    >
-                                        Generacion del cuadrante maximo
-                                    </Button>
-                                </Grid>
-                            </Grid>
+                            {/* [DOCUMENTACIÓN] Se eliminaron los botones redundantes 'Generación del terreno' y 'Generación del cuadrante máximo' al pie del formulario por solicitud del usuario */}
 
                             {/* [DOCUMENTACIÓN] Diálogo para mostrar PoligonoChart (SVG de terreno con Dark Mode) */}
                             <Dialog
@@ -547,6 +527,7 @@ function ProjectSchoolForm({ useForm }) {
                                         verticesExcluted={exclutedVertices}
                                         setMaximumRectangle={setMaximumRectangle}
                                         close={handleCloseDialogMax}
+                                        priorityVertices={priorityVertices}
                                     />
                                 </DialogContent>
                             </Dialog>
@@ -659,6 +640,7 @@ const TerrainPreview = ({
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
+	// [DOCUMENTACIÓN] Se reorganizaron los hooks para declarar svgConfig y bbox antes de cualquier hook/función que los referencie, evitando la Zona Muerta Temporal (TDZ)
 	const availableVertices = useMemo(() => {
 		return vertices.filter(
 			([x, y]) => !excludedVertices?.some(([vx, vy]) => vx === x && vy === y)
@@ -687,6 +669,115 @@ const TerrainPreview = ({
 		const toSvg = ([x, y]) => ({ x: x, y: minY + viewH - (y - minY) });
 		return { minX, minY, viewW, viewH, toSvg };
 	}, [bbox]);
+
+	// Estados de Zoom y Paneo
+	const svgRef = useRef(null);
+	const [zoom, setZoom] = useState(1);
+	const [pan, setPan] = useState({ x: 0, y: 0 });
+	const [isDragging, setIsDragging] = useState(false);
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+	const [hasMoved, setHasMoved] = useState(false);
+
+	const zoomRef = useRef(zoom);
+	useEffect(() => {
+		zoomRef.current = zoom;
+	}, [zoom]);
+
+	useEffect(() => {
+		const svgEl = svgRef.current;
+		if (!svgEl) return;
+
+		const handleWheelRaw = (e) => {
+			e.preventDefault();
+			const currentZoom = zoomRef.current;
+			const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+			const nextZoom = Math.min(Math.max(currentZoom * zoomFactor, 0.5), 10);
+			
+			const rect = svgEl.getBoundingClientRect();
+			const mouseX = (e.clientX - rect.left) / rect.width;
+			const mouseY = (e.clientY - rect.top) / rect.height;
+			
+			const currentW = svgConfig.viewW / currentZoom;
+			const currentH = svgConfig.viewH / currentZoom;
+			const nextW = svgConfig.viewW / nextZoom;
+			const nextH = svgConfig.viewH / nextZoom;
+			
+			setPan(prev => ({
+				x: prev.x + (currentW - nextW) * mouseX,
+				y: prev.y + (currentH - nextH) * mouseY,
+			}));
+			setZoom(nextZoom);
+		};
+
+		svgEl.addEventListener('wheel', handleWheelRaw, { passive: false });
+		return () => {
+			svgEl.removeEventListener('wheel', handleWheelRaw);
+		};
+	}, [svgConfig]);
+
+	const handleMouseDown = (e) => {
+		if (e.button !== 0) return;
+		setIsDragging(true);
+		setDragStart({ x: e.clientX, y: e.clientY });
+		setHasMoved(false);
+	};
+
+	const handleMouseMove = (e) => {
+		if (!isDragging || !svgRef.current) return;
+		
+		const dx = e.clientX - dragStart.x;
+		const dy = e.clientY - dragStart.y;
+		
+		if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+			setHasMoved(true);
+		}
+		
+		const rect = svgRef.current.getBoundingClientRect();
+		const scaleX = (svgConfig.viewW / zoom) / rect.width;
+		const scaleY = (svgConfig.viewH / zoom) / rect.height;
+		
+		setPan(prev => ({
+			x: prev.x - dx * scaleX,
+			y: prev.y - dy * scaleY,
+		}));
+		
+		setDragStart({ x: e.clientX, y: e.clientY });
+	};
+
+	const handleMouseUp = () => {
+		setIsDragging(false);
+	};
+
+	const handleZoomIn = () => {
+		const nextZoom = Math.min(zoom * 1.25, 10);
+		const currentW = svgConfig.viewW / zoom;
+		const currentH = svgConfig.viewH / zoom;
+		const nextW = svgConfig.viewW / nextZoom;
+		const nextH = svgConfig.viewH / nextZoom;
+		setPan(prev => ({
+			x: prev.x + (currentW - nextW) * 0.5,
+			y: prev.y + (currentH - nextH) * 0.5,
+		}));
+		setZoom(nextZoom);
+	};
+
+	const handleZoomOut = () => {
+		const nextZoom = Math.max(zoom / 1.25, 0.5);
+		const currentW = svgConfig.viewW / zoom;
+		const currentH = svgConfig.viewH / zoom;
+		const nextW = svgConfig.viewW / nextZoom;
+		const nextH = svgConfig.viewH / nextZoom;
+		setPan(prev => ({
+			x: prev.x + (currentW - nextW) * 0.5,
+			y: prev.y + (currentH - nextH) * 0.5,
+		}));
+		setZoom(nextZoom);
+	};
+
+	const handleZoomReset = () => {
+		setZoom(1);
+		setPan({ x: 0, y: 0 });
+	};
 
 	const totalPoints = useMemo(() => {
 		return vertices.map(p => {
@@ -725,10 +816,16 @@ const TerrainPreview = ({
 		svgBg: isDark ? "#1e1e1e" : "#ffffff",
 	};
 
+	const viewBoxX = svgConfig.minX + pan.x;
+	const viewBoxY = svgConfig.minY + pan.y;
+	const viewBoxW = svgConfig.viewW / zoom;
+	const viewBoxH = svgConfig.viewH / zoom;
+
 	return (
-		<Box sx={{ position: 'relative', width: '100%', mb: 2 }}>
+		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', mb: 2 }}>
 			<Box
 				sx={{
+					position: 'relative',
 					width: "100%",
 					backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "grey.50",
 					p: 2,
@@ -737,16 +834,56 @@ const TerrainPreview = ({
 					borderColor: "divider",
 					display: "flex",
 					justifyContent: "center",
-					alignItems: "center"
+					alignItems: "center",
+					overflow: 'hidden'
 				}}
 			>
+				{/* [DOCUMENTACIÓN] Caja de controles flotantes de zoom */}
+				<Box sx={{
+					position: 'absolute',
+					top: 10,
+					right: 10,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: 0.5,
+					bgcolor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)',
+					borderRadius: 2,
+					p: 0.5,
+					border: '1px solid',
+					borderColor: 'divider',
+					zIndex: 10
+				}}>
+					<Tooltip title="Acercar">
+						<IconButton size="small" onClick={handleZoomIn} color="primary">
+							<ZoomInIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Alejar">
+						<IconButton size="small" onClick={handleZoomOut} color="primary">
+							<ZoomOutIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Restablecer vista">
+						<IconButton size="small" onClick={handleZoomReset} color="primary">
+							<RestartAltIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+				</Box>
+
 				<svg
-					viewBox={`${svgConfig.minX} ${svgConfig.minY} ${svgConfig.viewW} ${svgConfig.viewH}`}
+					ref={svgRef}
+					viewBox={`${viewBoxX} ${viewBoxY} ${viewBoxW} ${viewBoxH}`}
 					width="100%"
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleMouseMove}
+					onMouseUp={handleMouseUp}
+					onMouseLeave={handleMouseUp}
 					style={{
 						maxHeight: "300px",
 						borderRadius: 8,
-						background: colors.svgBg
+						background: colors.svgBg,
+						cursor: isDragging ? 'grabbing' : 'grab',
+						userSelect: 'none'
 					}}
 				>
 					{/* Terreno Total */}
@@ -778,7 +915,12 @@ const TerrainPreview = ({
 						return (
 							<g
 								key={i}
-								onClick={() => onToggleVertex?.(p)}
+								onClick={(e) => {
+									// [DOCUMENTACIÓN] Solo alternar exclusión si no hubo movimiento de arrastre (pan)
+									if (!hasMoved) {
+										onToggleVertex?.(p);
+									}
+								}}
 								style={{ cursor: 'pointer' }}
 							>
 								{/* Hitbox invisible más grande para facilitar clic/toque */}
@@ -820,43 +962,42 @@ const TerrainPreview = ({
 						/>
 					)}
 				</svg>
-			</Box>
 
-			{rectangleVertices?.length > 0 && (
-				<Box sx={{
-					position: 'absolute',
-					bottom: 15,
-					right: 15,
-					bgcolor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.7)',
-					color: 'white',
-					px: 1.5,
-					py: 0.5,
-					borderRadius: 1,
-					fontSize: '0.75rem'
-				}}>
-					Cuadrante: {maxRectangleData?.ancho?.toFixed(1)}m × {maxRectangleData?.alto?.toFixed(1)}m
-				</Box>
-			)}
+				{rectangleVertices?.length > 0 && (
+					<Box sx={{
+						position: 'absolute',
+						bottom: 15,
+						right: 15,
+						bgcolor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.7)',
+						color: 'white',
+						px: 1.5,
+						py: 0.5,
+						borderRadius: 1,
+						fontSize: '0.75rem'
+					}}>
+						Cuadrante: {maxRectangleData?.ancho?.toFixed(1)}m × {maxRectangleData?.alto?.toFixed(1)}m
+					</Box>
+				)}
+			</Box>
 
 			{!rectangleVertices?.length && vertices.length > 0 && (
 				<Box sx={{
-					position: 'absolute',
-					top: '50%',
-					left: '50%',
-					transform: 'translate(-50%, -50%)',
 					textAlign: 'center',
 					p: 2,
-					bgcolor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255,255,255,0.95)',
-					boxShadow: 3,
+					bgcolor: isDark ? 'rgba(30, 30, 30, 0.5)' : 'rgba(255,255,255,0.8)',
+					border: '1px dashed #ff9800',
 					borderRadius: 2,
-					border: '2px dashed #ff9800',
-					maxWidth: '80%'
+					display: 'flex',
+					flexDirection: 'column',
+					alignItems: 'center',
+					gap: 1
 				}}>
-					<Typography variant="body2" color="text.secondary" gutterBottom>
+					{/* [DOCUMENTACIÓN] Se reubicó el botón de cálculo debajo del SVG para que no tape la visualización del terreno */}
+					<Typography variant="body2" color="text.secondary">
 						No hay cuadrante máximo calculado
 					</Typography>
 					<Button
-						size="small"
+						size="medium"
 						variant="contained"
 						color="warning"
 						onClick={onSelectMaxRectangle}
@@ -1030,6 +1171,7 @@ const RectangleChart = ({
 	verticesExcluted,
 	setMaximumRectangle,
 	close,
+	priorityVertices = [], // [DOCUMENTACIÓN] Se agregó la prop priorityVertices para pasar las coordenadas de prioridad seleccionadas
 }) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
@@ -1062,7 +1204,8 @@ const RectangleChart = ({
 		setLoading(true);
 		setError(null);
 		try {
-			const opciones = await MaxRectangle(availableVertices);
+			// [DOCUMENTACIÓN] Se envían las coordenadas de prioridad al cálculo del cuadrante
+			const opciones = await MaxRectangle(availableVertices, priorityVertices);
 			setRectangulosData(opciones);
 		} catch (err) {
 			console.error("Error al calcular rectángulos:", err);
@@ -1070,7 +1213,7 @@ const RectangleChart = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [availableVertices]);
+	}, [availableVertices, priorityVertices]);
 
 	useEffect(() => {
 		calcularRectangulos();

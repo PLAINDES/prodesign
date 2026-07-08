@@ -173,9 +173,9 @@ const TerrainDataTable = ({
 												style={{ padding: "4px", width: "100%" }}
 											>
 												<option value="">-- Seleccionar --</option>
+												{/* [DOCUMENTACIÓN] Se eliminó la opción 'Comentario' por solicitud del usuario */}
 												<option value="Prioridad">Prioridad</option>
 												<option value="Exclusion">Exclusión</option>
-												<option value="Comentario">Comentario</option>
 											</select>
 										</TableCell>
 										<TableCell align="center">
