@@ -8,6 +8,12 @@ import Grid from '@mui/material/Grid2';
 import { useRender } from './RenderContext';
 import CircularProgress from '@mui/material/CircularProgress';
 import Backdrop from '@mui/material/Backdrop'; // Nuevo: Para el fondo del loading
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 
 import { OpenIconSpeedDial } from "./components/OpenIconSpeedDial";
 import { getProjectByID } from "../../services/projectsService";
@@ -21,7 +27,7 @@ function PlanContent() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [view, setViewState] = useState({ view: "2D", roof: true });
 	const params = useParams();
-	const { dataProject, loading, setLoading, error, retryJob, renderSeleccionado, jobStatus } = useRender();
+	const { dataProject, loading, setLoading, error, setError, retryJob, renderSeleccionado, jobStatus } = useRender();
 	
 	// [DOCUMENTACIÓN] Se agregó la variable de estado 'progress' y un efecto 'useEffect' para simular y mostrar de forma dinámica
 	// el porcentaje de progreso (grado de generación) de los planos 2D y modelos 3D del proyecto.
@@ -162,21 +168,62 @@ function PlanContent() {
 					</div>
 				</Backdrop>
 
-				{/* --- INTERFAZ DE ERROR --- */}
-				{error && (
-					<div style={{
-						display: "flex", flexDirection: "column", alignItems: "center",
-						justifyContent: "center", height: "100%", color: "#d32f2f", gap: "15px", width: "100%"
-					}}>
-						<p style={{ fontSize: "18px", fontWeight: "bold" }}>⚠️ {error}</p>
-						<button
-							onClick={retryJob}
-							style={{ padding: "12px 24px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "bold" }}
+				{/* --- VENTANA EMERGENTE DE ERROR (DIALOG MODAL) --- */}
+				{/* [DOCUMENTACIÓN] Se reemplazó la interfaz de error de pantalla principal por un Dialog emergente (modal) con un botón de cerrar y opción de reintento, de acuerdo a la solicitud del usuario para no bloquear la pantalla principal. */}
+				<Dialog
+					open={!!error}
+					onClose={() => setError(null)}
+					PaperProps={{
+						sx: {
+							backgroundColor: "#1E293B",
+							color: "#F8FAFC",
+							borderRadius: "16px",
+							padding: "16px",
+							maxWidth: "500px",
+							width: "100%"
+						}
+					}}
+				>
+					<DialogTitle sx={{ display: "flex", alignItems: "center", gap: "10px", fontWeight: "bold", color: "#F43F5E", pb: 1 }}>
+						<span style={{ fontSize: "24px" }}>⚠️</span> Advertencia de Generación
+					</DialogTitle>
+					<DialogContent>
+						<DialogContentText sx={{ color: "#CBD5E1", fontSize: "16px", lineHeight: "1.6" }}>
+							{error}
+						</DialogContentText>
+					</DialogContent>
+					<DialogActions sx={{ justifyContent: "flex-end", gap: "12px", padding: "16px 24px" }}>
+						<Button 
+							onClick={() => setError(null)}
+							sx={{ 
+								color: "#94A3B8", 
+								textTransform: "none", 
+								fontWeight: "600",
+								"&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+							}}
+						>
+							Cerrar
+						</Button>
+						<Button 
+							onClick={() => {
+								setError(null);
+								retryJob();
+							}}
+							variant="contained"
+							sx={{ 
+								backgroundColor: "#3B82F6", 
+								color: "#FFFFFF",
+								textTransform: "none", 
+								fontWeight: "600",
+								borderRadius: "8px",
+								padding: "8px 16px",
+								"&:hover": { backgroundColor: "#2563EB" }
+							}}
 						>
 							🔄 Reintentar generación
-						</button>
-					</div>
-				)}
+						</Button>
+					</DialogActions>
+				</Dialog>
 
 				{/* --- IFRAME PARA RESULTADO EXITOSO --- */}
 				{dataProject?.status_job === "finished" && (

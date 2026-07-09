@@ -171,6 +171,9 @@ export const RenderProvider = ({ children }) => {
         aforo: aforoParaEnviar,       
         
         id_version: projectData.id_version,
+        // [DOCUMENTACIÓN] Se envían project_id y version_id correspondientes al proyecto cargado para evitar duplicar registros en base de datos al reintentar/regenerar.
+        project_id: projectData.parent_id ? parseInt(projectData.parent_id, 10) : parseInt(projectData.id, 10),
+        version_id: parseInt(projectData.id, 10),
 
         // [DOCUMENTACIÓN] Se agregan number_floors y ambientes al payload de generarPlano
         number_floors: parseInt(projectData.number_floors || 1, 10),
