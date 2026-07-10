@@ -244,15 +244,14 @@ export default function ToolsBar({
 			let finalUrl = "";
 
 			if (exchangeResult.useFallback) {
-				// Fallback seguro: pasar token en fragmento hash
 				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}#token=${encodeURIComponent(token)}`;
 			} else {
-				// Estándar seguro: canjear código temporal query string
 				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}&exchange_code=${encodeURIComponent(exchangeResult.exchangeCode)}`;
 			}
 
+			alert(`URL de redirección:\n${finalUrl}`);
 			Swal.close();
-			window.open(finalUrl, "_blank", "noopener,noreferrer");
+			window.location.href = finalUrl;
 		} catch (err) {
 			console.error("Error al enviar a ProBudgets:", err);
 			Swal.fire({
