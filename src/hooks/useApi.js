@@ -92,9 +92,7 @@ const normalizarAmbiente = (rawName) => {
 
 export const useApi = () => {
   const sendData = async (projectData) => {
-    const baseUrl = import.meta.env.VITE_URL_PROBUDGETS || "https://probudget.pro-invest.pe";
-    const endpoint = `${baseUrl}/v1/integracion/sync`;
-    const token = import.meta.env.VITE_PROBUDGETS_TOKEN || localStorage.getItem('token') || "TU_TOKEN_BEARER_AQUI";
+    const endpoint = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/probudgets/sync-proxy`;
 
     // 1. Parsing build_data for area totals
     let buildDataParsed = {};
