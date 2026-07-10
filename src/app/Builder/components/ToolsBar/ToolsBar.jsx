@@ -15,15 +15,7 @@ import styled from "@mui/material/styles/styled";
 import MuiButton from "@mui/material/Button";
 // import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
 import PlayIcon from "@mui/icons-material/PlayCircle";
-// import DeleteIcon from "@mui/icons-material/Delete";
-// import TextureIcon from "@mui/icons-material/Texture";
-// import CopyIcon from "@mui/icons-material/ContentCopy";
-// import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
-// import CameraIcon from "@mui/icons-material/Camera";
-// import DataObjectIcon from "@mui/icons-material/DataObject";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 // import AreasList from "../../Plan3D/components/AreasList";
 import Button3D from "./Buttons/Button3D";
 import Button2D from "./Buttons/Button2D";
@@ -52,10 +44,6 @@ export default function ToolsBar({
 	function baseFn(value) {
 		dispatch(setColorWall({ color: value }));
 	}
-
-	useEffect(() => {
-		x();
-	}, []);
 
 	const handleColorWall = debounce((value) => baseFn(value));
 	const params = useParams();
@@ -328,42 +316,52 @@ export default function ToolsBar({
 								style={{
 									marginTop: "4px",
 									height: "38px",
-									padding: "0px 18px",
-									border: "1px solid #5a6268",
-									background: "linear-gradient(135deg, #6c757d, #495057)",
+									padding: "0px 20px",
+									border: "none",
+									background: "linear-gradient(135deg, #6c757d 0%, #495057 100%)",
 									color: "#fff",
 									cursor: "pointer",
-									borderRadius: "6px",
+									borderRadius: "20px",
 									fontWeight: 600,
 									fontSize: "13px",
 									display: "inline-flex",
 									alignItems: "center",
 									gap: "8px",
-									textDecoration: "none",
-									letterSpacing: "0.3px",
-									transition: "all 0.2s ease",
-									boxShadow: "0 2px 6px rgba(108,117,125,0.3)"
+									letterSpacing: "0.5px",
+									transition: "all 0.25s ease",
+									boxShadow: "0 3px 10px rgba(108,117,125,0.35)"
 								}}
-								onMouseEnter={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #5a6268, #343a40)"}
-								onMouseLeave={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #6c757d, #495057)"}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.transform = "translateY(-1px)";
+									e.currentTarget.style.boxShadow = "0 5px 16px rgba(108,117,125,0.45)";
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.transform = "translateY(0)";
+									e.currentTarget.style.boxShadow = "0 3px 10px rgba(108,117,125,0.35)";
+								}}
 							>
-								Enviar a <span style={{ fontSize: "10px" }}>▾</span>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M22 2L11 13"/>
+									<path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+								</svg>
+								<span>Enviar</span>
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 0.25s", transform: dropdownOpen ? "rotate(180deg)" : "rotate(0)" }}>
+									<polyline points="6 9 12 15 18 9"/>
+								</svg>
 							</button>
 
 							{dropdownOpen && (
 								<div
 									style={{
 										position: "absolute",
-										top: "calc(100% + 6px)",
+										top: "calc(100% + 8px)",
 										left: 0,
 										backgroundColor: "#fff",
-										border: "1px solid #e0e0e0",
-										borderRadius: "8px",
-										boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+										borderRadius: "16px",
+										boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
 										zIndex: 2000,
-										minWidth: "200px",
-										overflow: "hidden",
-										padding: "6px"
+										minWidth: "210px",
+										padding: "8px"
 									}}
 								>
 									<button
@@ -371,35 +369,49 @@ export default function ToolsBar({
 										disabled={isGeneratingPdf}
 										style={{
 											width: "100%",
-											padding: "10px 14px",
+											padding: "12px 16px",
 											border: "none",
-											background: "none",
-											cursor: "pointer",
+											background: isGeneratingPdf ? "#f8f9fa" : "none",
+											cursor: isGeneratingPdf ? "default" : "pointer",
 											display: "flex",
 											alignItems: "center",
-											gap: "12px",
+											gap: "14px",
 											fontSize: "14px",
-											fontWeight: 500,
-											color: "#333",
-											borderRadius: "6px",
+											fontWeight: 600,
+											color: isGeneratingPdf ? "#adb5bd" : "#212529",
+											borderRadius: "12px",
 											textAlign: "left",
-											transition: "background 0.15s",
-											opacity: isGeneratingPdf ? 0.5 : 1
+											transition: "all 0.2s",
+											opacity: isGeneratingPdf ? 0.6 : 1
 										}}
-										onMouseEnter={(e) => e.currentTarget.style.background = "#f0f4ff"}
-										onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+										onMouseEnter={(e) => { if (!isGeneratingPdf) e.currentTarget.style.background = "#eef2ff"; }}
+										onMouseLeave={(e) => { if (!isGeneratingPdf) e.currentTarget.style.background = "none"; }}
 									>
 										<span style={{
-											width: 10,
-											height: 10,
-											borderRadius: "50%",
-											backgroundColor: "#007bff",
-											display: "inline-block",
-											flexShrink: 0,
-											boxShadow: "0 0 0 2px rgba(0,123,255,0.2)"
-										}} />
-										<span style={{ flex: 1 }}>ProInviert</span>
-										{isGeneratingPdf && <span style={{ fontSize: "12px", color: "#999" }}>Generando...</span>}
+											width: 36,
+											height: 36,
+											borderRadius: "10px",
+											backgroundColor: "#e8f0fe",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexShrink: 0
+										}}>
+											<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+												<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+												<polyline points="14 2 14 8 20 8"/>
+												<line x1="16" y1="13" x2="8" y2="13"/>
+												<line x1="16" y1="17" x2="8" y2="17"/>
+												<polyline points="10 9 9 9 8 9"/>
+											</svg>
+										</span>
+										<span style={{ flex: 1 }}>
+											<div style={{ fontWeight: 600, fontSize: "14px", color: "#212529" }}>ProInviert</div>
+											<div style={{ fontWeight: 400, fontSize: "11px", color: "#868e96", marginTop: "2px" }}>Generar PDF y enviar</div>
+										</span>
+										{isGeneratingPdf && (
+											<span style={{ width: 16, height: 16, border: "2px solid #dee2e6", borderTopColor: "#1a73e8", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+										)}
 									</button>
 
 									<div style={{ height: "1px", background: "#f0f0f0", margin: "4px 8px" }} />
@@ -409,35 +421,46 @@ export default function ToolsBar({
 										disabled={isSendingToProbudgets}
 										style={{
 											width: "100%",
-											padding: "10px 14px",
+											padding: "12px 16px",
 											border: "none",
-											background: "none",
-											cursor: "pointer",
+											background: isSendingToProbudgets ? "#f8f9fa" : "none",
+											cursor: isSendingToProbudgets ? "default" : "pointer",
 											display: "flex",
 											alignItems: "center",
-											gap: "12px",
+											gap: "14px",
 											fontSize: "14px",
-											fontWeight: 500,
-											color: "#333",
-											borderRadius: "6px",
+											fontWeight: 600,
+											color: isSendingToProbudgets ? "#adb5bd" : "#212529",
+											borderRadius: "12px",
 											textAlign: "left",
-											transition: "background 0.15s",
-											opacity: isSendingToProbudgets ? 0.5 : 1
+											transition: "all 0.2s",
+											opacity: isSendingToProbudgets ? 0.6 : 1
 										}}
-										onMouseEnter={(e) => e.currentTarget.style.background = "#f0fff4"}
-										onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+										onMouseEnter={(e) => { if (!isSendingToProbudgets) e.currentTarget.style.background = "#f0fdf4"; }}
+										onMouseLeave={(e) => { if (!isSendingToProbudgets) e.currentTarget.style.background = "none"; }}
 									>
 										<span style={{
-											width: 10,
-											height: 10,
-											borderRadius: "50%",
-											backgroundColor: "#28a745",
-											display: "inline-block",
-											flexShrink: 0,
-											boxShadow: "0 0 0 2px rgba(40,167,69,0.2)"
-										}} />
-										<span style={{ flex: 1 }}>ProBudgets</span>
-										{isSendingToProbudgets && <span style={{ fontSize: "12px", color: "#999" }}>Conectando...</span>}
+											width: 36,
+											height: 36,
+											borderRadius: "10px",
+											backgroundColor: "#e8fae9",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexShrink: 0
+										}}>
+											<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+												<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+												<path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+											</svg>
+										</span>
+										<span style={{ flex: 1 }}>
+											<div style={{ fontWeight: 600, fontSize: "14px", color: "#212529" }}>ProBudgets</div>
+											<div style={{ fontWeight: 400, fontSize: "11px", color: "#868e96", marginTop: "2px" }}>Enviar a presupuestos</div>
+										</span>
+										{isSendingToProbudgets && (
+											<span style={{ width: 16, height: 16, border: "2px solid #dee2e6", borderTopColor: "#16a34a", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+										)}
 									</button>
 								</div>
 							)}
@@ -529,10 +552,6 @@ export default function ToolsBar({
 						<label htmlFor="color" style={{font: ".7rem "Fira Sans", sans-serif", color: "black"}}>(prototype)</label>
 					</div> */}
 				</ul>
-				<IconButton className="btn-more" disableRipple>
-					<MoreHorizIcon />
-				</IconButton>
-				<ul className="hidden-links hidden"></ul>
 			</nav>
 		</Box>
 	);
@@ -564,63 +583,4 @@ function debounce(func, timeout = 300) {
 	};
 }
 
-function x() {
-	var $nav = $("nav.greedy");
-	var $btn = $("nav.greedy .btn-more");
-	var $vlinks = $("nav.greedy .links");
-	var $hlinks = $("nav.greedy .hidden-links");
 
-	var numOfItems = 0;
-	var totalSpace = 0;
-	var breakWidths = [];
-
-	// Get initial state
-	$vlinks.children().outerWidth(function (i, w) {
-		totalSpace += w;
-		numOfItems += 1;
-		breakWidths.push(totalSpace);
-	});
-
-	var availableSpace, numOfVisibleItems, requiredSpace;
-
-	function check() {
-		// Get instant state
-		availableSpace = $vlinks.width() - 10;
-		numOfVisibleItems = $vlinks.children().length;
-		requiredSpace = breakWidths[numOfVisibleItems - 1];
-
-		// There is not enought space
-		if (requiredSpace > availableSpace) {
-			$vlinks.children().last().prependTo($hlinks);
-			numOfVisibleItems -= 1;
-			check();
-			// There is more than enough space
-		} else if (availableSpace > breakWidths[numOfVisibleItems]) {
-			$hlinks.children().first().appendTo($vlinks);
-			numOfVisibleItems += 1;
-		}
-
-		// Update the button accordingly
-		$btn.attr("count", numOfItems - numOfVisibleItems);
-		if (numOfVisibleItems === numOfItems) {
-			$btn.addClass("hidden");
-		} else {
-			$btn.removeClass("hidden");
-		}
-	}
-
-	// Window listeners
-	// $(window).resize(function() {
-	// 	check();
-	// });
-
-	window.addEventListener("resize", function () {
-		check();
-	});
-
-	$btn.on("click", function () {
-		$hlinks.toggleClass("hidden");
-	});
-
-	check();
-}
