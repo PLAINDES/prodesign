@@ -124,7 +124,7 @@ export default function ToolsBar({
 
 		const projectId = params.id;
 		const url_api_generate = `${BASE_URL_CALC}/api/v3/project/generate-proinvierte/${projectId}`;
-		const url_proinvierte = `${import.meta.env.VITE_URL_PROINVIERTE}/prodesign-import?prodesign=${projectId}`;
+		const url_proinvierte = `https://proinvierte.pro-invest.pe/prodesign-import?prodesign=${projectId}`;
 
 		setIsGeneratingPdf(true);
 
