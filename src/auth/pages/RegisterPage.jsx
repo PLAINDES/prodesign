@@ -1,96 +1,182 @@
+import { useState } from "react";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import { Link as RouterLink } from "react-router-dom";
-// import { useForm } from "../../../hooks";
-// import { startCreateUserWitbEmailPassword } from "../../store/auth";
-import { useSnackbar } from "notistack"
-import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { startCreateUserWithEmailPassword } from "../../redux/auth";
-
-// const formData = {
-//   displayName: "",
-//   email: "",
-//   password: "",
-// };
-
-// const formValidations = {
-//   email: [(value) => value.includes("@"), "El correo no es correcto"],
-//   password: [
-//     (value) => value.length >= 6,
-//     "El password debe de tener mas de 6 caracteres",
-//   ],
-//   displayName: [(value) => value.length >= 1, "El nombre es obligatorio"],
-// };
+import { signUp, confirmSignUp } from "aws-amplify/auth";
 
 export const RegisterPage = () => {
-	// const { status, errorMessage } = useSelector((state) => state.auth);
-	
-	// const [formSubmitted, setFormSubmitted] = useState(false);
-	//const { status, errorMessage } = useSelector(state=>state.auth)
+	const [step, setStep] = useState("form");
+	const [email, setEmail] = useState("");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [message, setMessage] = useState("");
 
-	//  const isChekingAuthentication = useMemo( ()=> status === 'checking', [status])
+	const onSubmit = async (evt) => {
+		evt.preventDefault();
+		setError("");
+		setLoading(true);
 
-	//   const {
-	//     name,
-	//     email,
-	//     password,
-	//     onInputChange,
-	//     formState,
-	//     isFormValid,
-	//     displayNameValid,
-	//     emailValid,
-	//     passwordValid,
-	//   } = useForm(formData, formValidations);
-	
-	const { enqueueSnackbar } = useSnackbar();
-	const dispatch = useDispatch();
+		const data = Object.fromEntries(new FormData(evt.target));
+		const { name, lastname, email: mail, password } = data;
 
-	// const handleClick = {
-	// 	a: (variant) => {
-	// 		// variant could be success, error, warning, info, or default
-	// 		enqueueSnackbar('This is a success message!', { variant });
-	// 	}
-	// }
-	// console.log(123)
-	const handleBackdrop = ({ message, variant }) => {
-		// variant could be success, error, warning, info, or default
-		enqueueSnackbar(message, { variant });
+		try {
+			const result = await signUp({
+				username: mail,
+				password,
+				options: {
+					userAttributes: {
+						email: mail,
+						given_name: name,
+						family_name: lastname,
+					},
+				},
+			});
+
+			if (result.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
+				setEmail(mail);
+				setStep("confirm");
+				setMessage(`Se envió un código de verificación a ${mail}`);
+			}
+		} catch (err) {
+			console.error("Cognito signUp error:", err);
+			if (err.name === "UsernameExistsException") {
+				setError("El correo ya está registrado.");
+			} else if (err.name === "InvalidPasswordException") {
+				setError("La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y símbolos.");
+			} else if (err.name === "InvalidParameterException") {
+				setError(err.message || "Datos inválidos.");
+			} else {
+				setError(err.message || "Error al registrarse.");
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const onConfirm = async (evt) => {
+		evt.preventDefault();
+		setError("");
+		setLoading(true);
+
+		const { code } = Object.fromEntries(new FormData(evt.target));
+
+		try {
+			await confirmSignUp({
+				username: email,
+				confirmationCode: code,
+			});
+			setStep("done");
+		} catch (err) {
+			console.error("Cognito confirm error:", err);
+			if (err.name === "CodeMismatchException") {
+				setError("El código ingresado es incorrecto.");
+			} else if (err.name === "ExpiredCodeException") {
+				setError("El código ha expirado. Solicita uno nuevo.");
+			} else {
+				setError(err.message || "Error al confirmar el código.");
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	if (step === "confirm") {
+		return (
+			<Grid container spacing={{ xs: 3, sm: 5 }}>
+				<Grid item xs={12}>
+					<Typography variant="h3" sx={{ color: "#181C32", fontWeight: 600, fontSize: { xs: "1.25rem", lg: "1.75rem" } }}>
+						Verificar correo
+					</Typography>
+				</Grid>
+				{message && (
+					<Grid item xs={12}>
+						<Alert severity="info">{message}</Alert>
+					</Grid>
+				)}
+				<Grid item xs={12}>
+					<form onSubmit={onConfirm}>
+						<Grid container rowSpacing={3} columnSpacing={2}>
+							<Grid item xs={12}>
+								<TextField
+									label="Código de verificación"
+									type="text"
+									placeholder="000000"
+									variant="filled"
+									fullWidth
+									name="code"
+									required
+									InputLabelProps={{ required: false }}
+								/>
+							</Grid>
+							{error && (
+								<Grid item xs={12}>
+									<Alert severity="error">{error}</Alert>
+								</Grid>
+							)}
+							<Grid item xs={12}>
+								<Button
+									type="submit"
+									variant="contained"
+									fullWidth
+									disabled={loading}
+									sx={{
+										padding: ".85rem",
+										borderRadius: "0.42rem",
+										textTransform: "unset",
+										fontSize: "1rem",
+										fontWeight: "600",
+										letterSpacing: ".7px",
+									}}
+								>
+									{loading ? <CircularProgress size={24} color="inherit" /> : "Confirmar código"}
+								</Button>
+							</Grid>
+						</Grid>
+					</form>
+				</Grid>
+			</Grid>
+		);
 	}
 
-	const onSubmit = (evt) => {
-		evt.preventDefault();
-		var { name, email, lastname, password } = Object.fromEntries(new FormData(evt.target));
-		console.log(name, lastname, email, password);
-		dispatch(startCreateUserWithEmailPassword({ name, lastname, email, password, handleBackdrop }));
-
-	//  setFormSubmitted(true);
-
-	//  if (!isFormValid) return;
-
-		//dispatch(startCreateUserWithEmailPassword(formState));
-	};
+	if (step === "done") {
+		return (
+			<Grid container spacing={3} justifyContent="center">
+				<Grid item xs={12}>
+					<Alert severity="success">
+						Cuenta creada correctamente. Revisa tu correo para confirmar tu dirección de email.
+					</Alert>
+				</Grid>
+				<Grid item xs={"auto"}>
+					<RouterLink to="/auth/login" style={{ textDecoration: "none" }}>
+						<Button variant="contained" sx={{
+							padding: ".85rem",
+							borderRadius: "0.42rem",
+							textTransform: "unset",
+							fontSize: "1rem",
+							fontWeight: "600",
+						}}>
+							Iniciar sesión
+						</Button>
+					</RouterLink>
+				</Grid>
+			</Grid>
+		);
+	}
 
 	return (
 		<Grid container spacing={{ xs: 3, sm: 5 }}>
-			<Grid item xs={12}>{/* paddingTop: "0.75rem", paddingBottom: "2.5rem" */}
-				<Typography
-					variant="h3"
-					sx={{
-						color: "#181C32",
-						fontWeight: 600,
-						fontSize: {
-							xs: "1.25rem",
-							lg: "1.75rem"
-						}
-					}}
-				>
-					Registrate!
+			<Grid item xs={12}>
+				<Typography variant="h3" sx={{
+					color: "#181C32",
+					fontWeight: 600,
+					fontSize: { xs: "1.25rem", lg: "1.75rem" }
+				}}>
+					Registrate
 				</Typography>
-				{/* <h1>FormValid : {isFormValid ? "Valido" : "Incorrecto"} </h1> */}
 			</Grid>
 			<Grid item xs={12}>
 				<form onSubmit={onSubmit}>
@@ -105,11 +191,8 @@ export const RegisterPage = () => {
 								name="name"
 								required
 								InputLabelProps={{ required: false }}
-								// value={name}
-								// onChange={onInputChange}
 							/>
 						</Grid>
-
 						<Grid item xs={12}>
 							<TextField
 								label="Apellido"
@@ -120,11 +203,8 @@ export const RegisterPage = () => {
 								name="lastname"
 								required
 								InputLabelProps={{ required: false }}
-								// value={name}
-								// onChange={onInputChange}
 							/>
 						</Grid>
-						
 						<Grid item xs={12}>
 							<TextField
 								label="Correo electrónico"
@@ -135,9 +215,6 @@ export const RegisterPage = () => {
 								name="email"
 								required
 								InputLabelProps={{ required: false }}
-								// value={email}
-								// onChange={onInputChange}
-								
 							/>
 						</Grid>
 						<Grid item xs={12}>
@@ -150,68 +227,42 @@ export const RegisterPage = () => {
 								name="password"
 								required
 								InputLabelProps={{ required: false }}
-								// value={password}
-								// onChange={onInputChange}
-								
 							/>
 						</Grid>
-							{/* <Grid 
-							item xs={12}
-							>
-								<Alert
-									severity="error"
-								>{errorMessage}</Alert>
-							</Grid> */}
-						<Grid item xs={"auto"}>
-							<Button 
-								type="submit" 
+						{error && (
+							<Grid item xs={12}>
+								<Alert severity="error">{error}</Alert>
+							</Grid>
+						)}
+						<Grid item xs={12}>
+							<Button
+								type="submit"
 								variant="contained"
-								// fullWidth
+								fullWidth
+								disabled={loading}
 								sx={{
 									padding: ".85rem",
-									backgroundColor: "#1BC5BD",
 									borderRadius: "0.42rem",
 									textTransform: "unset",
 									fontSize: "1rem",
-									color: "#ffffff",
-									letterSpacing: ".7px",
 									fontWeight: "600",
-									"&:hover": {
-										backgroundColor: "#19b4ac"
-									},
+									letterSpacing: ".7px",
 								}}
 							>
-								Registrarme
+								{loading ? <CircularProgress size={24} color="inherit" /> : "Crear cuenta"}
 							</Button>
 						</Grid>
-						<Grid item xs={"auto"}>
-							<RouterLink to="/auth/login">
-								<Button 
-									type="submit" 
-									variant="contained"
-									// fullWidth
-									sx={{
-										padding: ".85rem",
-										borderRadius: "0.42rem",
-										backgroundColor: "#E1F0FF",
-										color: "#3699FF",
-										fontSize: "1rem",
-										textTransform: "unset",
-										letterSpacing: ".7px",
-										fontWeight: "600",
-										"&:hover": {
-											color: "#E1F0FF",
-											backgroundColor: "#3699FF"
-										}
-									}}
-								>
-									Cancelar
-								</Button>
-							</RouterLink>
+						<Grid item xs={12} sx={{ textAlign: "center" }}>
+							<Typography variant="body2" color="text.secondary">
+								¿Ya tienes cuenta?&nbsp;
+								<RouterLink to="/auth/login" style={{ textDecoration: "none", fontWeight: 600 }}>
+									Iniciar sesión
+								</RouterLink>
+							</Typography>
 						</Grid>
 					</Grid>
 				</form>
 			</Grid>
 		</Grid>
-	)
-}
+	);
+};

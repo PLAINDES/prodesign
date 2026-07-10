@@ -27,13 +27,11 @@ export const LoginPage = () => {
 		const { email, password } = Object.fromEntries(new FormData(evt.target));
 
 		try {
-			await signIn({
-				username: email,
-				password,
-			});
+			await signIn({ username: email, password });
 
 			const session = await fetchAuthSession();
 			const token = session.tokens?.idToken?.toString();
+
 			if (!token) {
 				setError("No se pudo obtener el token de sesión.");
 				setLoading(false);
@@ -144,49 +142,32 @@ export const LoginPage = () => {
 								<Alert severity="error">{error}</Alert>
 							</Grid>
 						)}
-						<Grid item xs={"auto"}>
+						<Grid item xs={12}>
 							<Button
 								type="submit"
 								variant="contained"
+								fullWidth
 								disabled={loading}
 								sx={{
 									padding: ".85rem",
-									backgroundColor: "#1BC5BD",
 									borderRadius: "0.42rem",
 									textTransform: "unset",
 									fontSize: "1rem",
-									color: "#ffffff",
-									letterSpacing: ".7px",
 									fontWeight: "600",
+									letterSpacing: ".7px",
 									minWidth: "160px",
-									"&:hover": { backgroundColor: "#19b4ac" },
 								}}
 							>
 								{loading ? <CircularProgress size={24} color="inherit" /> : "Iniciar sesión"}
 							</Button>
 						</Grid>
-						<Grid item xs={"auto"}>
-							<RouterLink to="/auth/register">
-								<Button
-									variant="contained"
-									sx={{
-										padding: ".85rem",
-										borderRadius: "0.42rem",
-										backgroundColor: "#E1F0FF",
-										color: "#3699FF",
-										fontSize: "1rem",
-										textTransform: "unset",
-										letterSpacing: ".7px",
-										fontWeight: "600",
-										"&:hover": {
-											color: "#E1F0FF",
-											backgroundColor: "#3699FF"
-										}
-									}}
-								>
+						<Grid item xs={12} sx={{ textAlign: "center" }}>
+							<Typography variant="body2" color="text.secondary">
+								¿No tienes cuenta?&nbsp;
+								<RouterLink to="/auth/register" style={{ textDecoration: "none", fontWeight: 600 }}>
 									Registrarme
-								</Button>
-							</RouterLink>
+								</RouterLink>
+							</Typography>
 						</Grid>
 					</Grid>
 				</form>
