@@ -92,7 +92,8 @@ const normalizarAmbiente = (rawName) => {
 
 export const useApi = () => {
   const sendData = async (projectData) => {
-    const endpoint = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/projects/probudgets/sync-proxy`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || window.__ENV__?.VITE_API_BASE_URL || "http://localhost:8000";
+    const endpoint = `${apiBase}/api/v1/projects/probudgets/sync-proxy`;
 
     // 1. Parsing build_data for area totals
     let buildDataParsed = {};

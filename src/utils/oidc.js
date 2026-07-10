@@ -36,15 +36,17 @@ export const generateCodeChallenge = async (verifier) => {
 /**
  * Obtiene la configuración de Cognito desde las variables de entorno.
  */
+const env = (key) => import.meta.env[key] || window.__ENV__?.[key] || '';
+
 export const getCognitoConfig = () => {
 	const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 	return {
-		domain: import.meta.env.VITE_COGNITO_DOMAIN || '',
-		clientId: import.meta.env.VITE_COGNITO_CLIENT_ID || '',
+		domain: env('VITE_COGNITO_DOMAIN'),
+		clientId: env('VITE_COGNITO_CLIENT_ID'),
 		redirectUri: isLocal
-			? (import.meta.env.VITE_COGNITO_REDIRECT_URI_LOCAL || import.meta.env.VITE_COGNITO_REDIRECT_URI || '')
-			: (import.meta.env.VITE_COGNITO_REDIRECT_URI || ''),
-		logoutUri: import.meta.env.VITE_COGNITO_LOGOUT_URI || '',
+			? (env('VITE_COGNITO_REDIRECT_URI_LOCAL') || env('VITE_COGNITO_REDIRECT_URI'))
+			: env('VITE_COGNITO_REDIRECT_URI'),
+		logoutUri: env('VITE_COGNITO_LOGOUT_URI'),
 		scope: 'openid email profile',
 	};
 };
