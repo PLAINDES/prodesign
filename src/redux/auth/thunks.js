@@ -4,6 +4,7 @@ import { checkingCredentials, login, logout, loginFail } from "./authSlice";
 import axios from "axios";
 import sha1 from "sha1";
 import { geolocationService } from "../../services/utilsService";
+import { loginSSO } from "../../services/authService";
 import { HOSTNAME } from "../../../constants";
 import { 
 	exchangeCodeForTokens, 
@@ -195,14 +196,34 @@ export const startCognitoLogin = (code, returnedState, handleBackdrop) => {
 			const calculatedExpiresAt = Date.now() + (expires_in * 1000);
 
 			// Extraer información del usuario según OIDC standard claims en Cognito
-			const uid = payload.sub || payload["cognito:username"];
+			const cognitoUid = payload.sub || payload["cognito:username"];
 			const email = payload.email || "";
 			const name = payload.given_name || payload.name || email.split("@")[0] || "Usuario";
 			const lastname = payload.family_name || "";
 
+			// Registrar/autenticar al usuario en el backend via SSO
+			let localIdMaster = cognitoUid;
+			try {
+				const ssoRes = await loginSSO({
+					userId: cognitoUid,
+					userEmail: email,
+					userName: name,
+					userLastname: lastname,
+					browserId: sha1(window.navigator.userAgent),
+					browserIp: sha1("0.0.0.0"),
+					browserAud: sha1("0.0.0.0" + window.navigator.userAgent + HOSTNAME),
+					productId: "pro-design",
+				});
+				if (ssoRes?.success && ssoRes?.user) {
+					localIdMaster = ssoRes.user.id_master || ssoRes.user.id;
+				}
+			} catch (e) {
+				console.warn("SSO: No se pudo registrar usuario en backend, usando fallback:", e);
+			}
+
 			dispatch(login({
-				uid_master: uid,
-				uid: uid,
+				uid_master: localIdMaster,
+				uid: localIdMaster,
 				email,
 				name,
 				lastname,

@@ -48,20 +48,15 @@ export const isCheckTokenService = async (token) => {
 // 	}
 // }
 
-// export const loginSSO = async (body) => {
-// 	const res = await request({
-// 		url: "/api/v1/auth/loginSSO",
-// 		method: "POST",
-// 		data: body
-// 	});
+export const loginSSO = async (body) => {
+	const res = await request({
+		url: "/api/v1/auth/loginSSO",
+		method: "POST",
+		data: body
+	});
 
-// 	console.log("loginSSO response:", res);
-
-// 	if (res.data.success) {
-// 		return console.log("El usuario se logeo correctamente (SSO)")
-// 	} else {
-// 		console.log(res.data.message);
-// 	}
+	return res.data;
+};
 
 // 	// return {
 // 	// 	user: res.data.user,
