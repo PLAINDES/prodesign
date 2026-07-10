@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from 'axios';
@@ -189,6 +189,18 @@ export default function ToolsBar({
 
 	const { idToken, accessToken } = useSelector((state) => state.auth);
 	const [isSendingToProbudgets, setIsSendingToProbudgets] = useState(false);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const dropdownRef = useRef(null);
+
+	useEffect(() => {
+		function handleClickOutside(e) {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+				setDropdownOpen(false);
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	// [DOCUMENTACIÓN] Manejador de redirección para "Enviar a ProBudgets".
 	// Obtiene el token Cognito (en memoria) o local, solicita un código de intercambio de un solo uso
@@ -310,47 +322,126 @@ export default function ToolsBar({
 							</button>
 						))}
 
-						<button
-							onClick={getProinvierteLink}
-							disabled={isGeneratingPdf}
-							style={{
-								marginTop: "4px",
-								height:"38px",
-								padding: "0px 16px",
-								border: "1px solid #007bff",
-								backgroundColor: "#007bff",
-								color: "#fff",
-								cursor: "pointer",
-								borderRadius: "5px",
-								fontWeight: "bold",
-								display: "inline-flex",
-								alignItems: "center",
-								textDecoration: "none"
-							}}
-						>
-							{isGeneratingPdf ? "Generando..." : "Enviar a proinvierte"}
-						</button>
+						<div ref={dropdownRef} style={{ position: "relative", display: "inline-block" }}>
+							<button
+								onClick={() => setDropdownOpen(!dropdownOpen)}
+								style={{
+									marginTop: "4px",
+									height: "38px",
+									padding: "0px 18px",
+									border: "1px solid #5a6268",
+									background: "linear-gradient(135deg, #6c757d, #495057)",
+									color: "#fff",
+									cursor: "pointer",
+									borderRadius: "6px",
+									fontWeight: 600,
+									fontSize: "13px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "8px",
+									textDecoration: "none",
+									letterSpacing: "0.3px",
+									transition: "all 0.2s ease",
+									boxShadow: "0 2px 6px rgba(108,117,125,0.3)"
+								}}
+								onMouseEnter={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #5a6268, #343a40)"}
+								onMouseLeave={(e) => e.currentTarget.style.background = "linear-gradient(135deg, #6c757d, #495057)"}
+							>
+								Enviar a <span style={{ fontSize: "10px" }}>▾</span>
+							</button>
 
-						<button
-							onClick={handleSendToProbudgets}
-							disabled={isSendingToProbudgets}
-							style={{
-								marginTop: "4px",
-								height:"38px",
-								padding: "0px 16px",
-								border: "1px solid #218838",
-								backgroundColor: isSendingToProbudgets ? "#6c757d" : "#28a745",
-								color: "#fff",
-								cursor: isSendingToProbudgets ? "default" : "pointer",
-								borderRadius: "5px",
-								fontWeight: "bold",
-								display: "inline-flex",
-								alignItems: "center",
-								textDecoration: "none"
-							}}
-						>
-							{isSendingToProbudgets ? "Conectando..." : "Enviar a ProBudgets"}
-						</button>
+							{dropdownOpen && (
+								<div
+									style={{
+										position: "absolute",
+										top: "calc(100% + 6px)",
+										left: 0,
+										backgroundColor: "#fff",
+										border: "1px solid #e0e0e0",
+										borderRadius: "8px",
+										boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+										zIndex: 2000,
+										minWidth: "200px",
+										overflow: "hidden",
+										padding: "6px"
+									}}
+								>
+									<button
+										onClick={() => { getProinvierteLink(); setDropdownOpen(false); }}
+										disabled={isGeneratingPdf}
+										style={{
+											width: "100%",
+											padding: "10px 14px",
+											border: "none",
+											background: "none",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											gap: "12px",
+											fontSize: "14px",
+											fontWeight: 500,
+											color: "#333",
+											borderRadius: "6px",
+											textAlign: "left",
+											transition: "background 0.15s",
+											opacity: isGeneratingPdf ? 0.5 : 1
+										}}
+										onMouseEnter={(e) => e.currentTarget.style.background = "#f0f4ff"}
+										onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+									>
+										<span style={{
+											width: 10,
+											height: 10,
+											borderRadius: "50%",
+											backgroundColor: "#007bff",
+											display: "inline-block",
+											flexShrink: 0,
+											boxShadow: "0 0 0 2px rgba(0,123,255,0.2)"
+										}} />
+										<span style={{ flex: 1 }}>ProInviert</span>
+										{isGeneratingPdf && <span style={{ fontSize: "12px", color: "#999" }}>Generando...</span>}
+									</button>
+
+									<div style={{ height: "1px", background: "#f0f0f0", margin: "4px 8px" }} />
+
+									<button
+										onClick={() => { handleSendToProbudgets(); setDropdownOpen(false); }}
+										disabled={isSendingToProbudgets}
+										style={{
+											width: "100%",
+											padding: "10px 14px",
+											border: "none",
+											background: "none",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											gap: "12px",
+											fontSize: "14px",
+											fontWeight: 500,
+											color: "#333",
+											borderRadius: "6px",
+											textAlign: "left",
+											transition: "background 0.15s",
+											opacity: isSendingToProbudgets ? 0.5 : 1
+										}}
+										onMouseEnter={(e) => e.currentTarget.style.background = "#f0fff4"}
+										onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+									>
+										<span style={{
+											width: 10,
+											height: 10,
+											borderRadius: "50%",
+											backgroundColor: "#28a745",
+											display: "inline-block",
+											flexShrink: 0,
+											boxShadow: "0 0 0 2px rgba(40,167,69,0.2)"
+										}} />
+										<span style={{ flex: 1 }}>ProBudgets</span>
+										{isSendingToProbudgets && <span style={{ fontSize: "12px", color: "#999" }}>Conectando...</span>}
+									</button>
+								</div>
+							)}
+						</div>
 
 						<Settings
 							//state={state}
