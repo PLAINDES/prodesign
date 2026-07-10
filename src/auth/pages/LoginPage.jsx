@@ -31,7 +31,18 @@ export const LoginPage = () => {
 
 	const onCognitoLogin = async () => {
 		try {
-			// [DOCUMENTACIÓN] Inicia el flujo OIDC PKCE redirigiendo al Hosted UI de Cognito
+			const config = (await import("../../utils/oidc")).getCognitoConfig();
+			alert(
+				`Cognito Config:\n` +
+				`Domain: ${config.domain}\n` +
+				`ClientId: ${config.clientId}\n` +
+				`RedirectUri: ${config.redirectUri}\n` +
+				`LogoutUri: ${config.logoutUri}`
+			);
+			if (!config.domain || !config.clientId || !config.redirectUri) {
+				alert("FALTAN variables de entorno de Cognito. Revisa el .env");
+				return;
+			}
 			await redirectToCognitoLogin();
 		} catch (error) {
 			console.error("Error redirecting to Cognito Hosted UI:", error);
