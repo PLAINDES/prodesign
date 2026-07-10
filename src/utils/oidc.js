@@ -56,7 +56,6 @@ export const getCognitoConfig = () => {
 export const redirectToCognitoLogin = async (promptNone = false) => {
 	const { domain, clientId, redirectUri, scope } = getCognitoConfig();
 	if (!domain || !clientId || !redirectUri) {
-		alert('OIDC: Configuración de Cognito incompleta. Revisa las variables de entorno.');
 		return;
 	}
 
@@ -178,7 +177,6 @@ export const logoutFromCognito = () => {
 	sessionStorage.removeItem('oidc_nonce');
 
 	if (!domain || !clientId || !logoutUri) {
-		alert('OIDC: Configuración de Cognito incompleta para logout. Revisa las variables de entorno.');
 		window.location.href = '/auth/login';
 		return;
 	}

@@ -249,7 +249,6 @@ export default function ToolsBar({
 				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}&exchange_code=${encodeURIComponent(exchangeResult.exchangeCode)}`;
 			}
 
-			alert(`URL de redirección:\n${finalUrl}`);
 			Swal.close();
 			window.location.href = finalUrl;
 		} catch (err) {
