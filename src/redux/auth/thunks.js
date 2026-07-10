@@ -137,11 +137,11 @@ export const startLoginWithEmailPassword = (
 };
 
 export const startLogoutAuth = () => {
-	return async (dispatch) => {
-		// [DOCUMENTACIÓN] Al cerrar sesión, también limpiamos sessionStorage y redirigimos a la desconexión de Cognito
+	return async (dispatch, getState) => {
+		const { idToken } = getState().auth;
 		sessionStorage.removeItem("silent_renew_attempted");
 		dispatch(logout());
-		logoutFromCognito();
+		logoutFromCognito(idToken);
 	};
 };
 

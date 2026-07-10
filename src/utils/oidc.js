@@ -84,6 +84,11 @@ export const redirectToCognitoLogin = async (promptNone = false) => {
 
 	if (promptNone) {
 		authUrl += '&prompt=none';
+	} else {
+		authUrl += '&prompt=login';
+	}
+
+	if (promptNone) {
 		// Para silent renew, se suele renderizar en un iframe oculto
 		return authUrl;
 	}
@@ -170,10 +175,9 @@ export const validateOidcNonce = (decodedIdTokenNonce) => {
 /**
  * Desconecta la sesión en el Hosted UI de Cognito y limpia tokens locales.
  */
-export const logoutFromCognito = () => {
+export const logoutFromCognito = (idToken) => {
 	const { domain, clientId, logoutUri } = getCognitoConfig();
 	
-	// Limpieza del sessionStorage
 	sessionStorage.removeItem('oidc_code_verifier');
 	sessionStorage.removeItem('oidc_state');
 	sessionStorage.removeItem('oidc_nonce');
@@ -183,8 +187,12 @@ export const logoutFromCognito = () => {
 		return;
 	}
 
-	// Redirección al endpoint de logout de Cognito
-	window.location.href = `${domain}/logout?client_id=${encodeURIComponent(clientId)}&logout_uri=${encodeURIComponent(logoutUri)}`;
+	let logoutUrl = `${domain}/logout?client_id=${encodeURIComponent(clientId)}&logout_uri=${encodeURIComponent(logoutUri)}`;
+	if (idToken) {
+		logoutUrl += `&id_token_hint=${encodeURIComponent(idToken)}`;
+	}
+
+	window.location.href = logoutUrl;
 };
 
 /**
