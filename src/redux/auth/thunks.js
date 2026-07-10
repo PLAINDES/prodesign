@@ -136,10 +136,15 @@ export const startLoginWithEmailPassword = (
 	};
 };
 
+import { removeSSOCookie } from "../../utils/cookieHelper";
+
 export const startLogoutAuth = () => {
 	return async (dispatch, getState) => {
 		const { idToken } = getState().auth;
+		removeSSOCookie("sso_id_token");
+		removeSSOCookie("sso_refresh_token");
 		sessionStorage.removeItem("silent_renew_attempted");
+		localStorage.removeItem("token");
 		dispatch(logout());
 		logoutFromCognito(idToken);
 	};

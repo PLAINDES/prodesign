@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "jest"
   },
   "dependencies": {
-    "amazon-cognito-identity-js": "^6.3.12",
     "@amcharts/amcharts5": "^5.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -21,6 +21,8 @@
     "@reduxjs/toolkit": "^2.11.2",
     "@tarikjabiri/dxf": "^2.8.9",
     "@turf/turf": "^7.2.0",
+    "amazon-cognito-identity-js": "^6.3.12",
+    "aws-amplify": "^6.18.0",
     "axios": "^1.7.9",
     "chart.js": "^4.4.7",
     "crypto-js": "^4.2.0",
@@ -51,9 +53,13 @@
     "yup": "^1.6.1"
   },
   "devDependencies": {
+    "@babel/preset-env": "^8.0.2",
+    "@babel/preset-react": "^8.0.1",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "babel-jest": "^30.4.1",
+    "jest": "^30.4.2",
     "vite": "^8.0.10"
   }
 }

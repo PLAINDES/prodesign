@@ -37,7 +37,7 @@ export const LoginPage = () => {
 						},
 					}}
 				>
-					🔑 Iniciar sesión con ProBudgets SSO
+					Iniciar sesión
 				</Button>
 			</Grid>
 		</Grid>
