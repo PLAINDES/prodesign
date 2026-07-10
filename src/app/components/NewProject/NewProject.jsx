@@ -1,6 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import styled from "@mui/material/styles/styled";
@@ -68,9 +69,11 @@ const NewProject = ({ onRow, data, school }) => {
 
 	// [DOCUMENTACIÓN] Se envolvió la petición Axios en un bloque try/catch para capturar los errores 422
 	// de validación de Pydantic, reportando el detalle en la consola y mostrando un modal informativo al usuario.
+	const { uid_master } = useSelector((state) => state.auth);
+
 	async function sendDataForm(data) {
 		try {
-			const response = await axios.post(BASE_URL_CALC + "/api/v3/generate-project", data);
+			const response = await axios.post(BASE_URL_CALC + "/api/v3/generate-project", { ...data, user_id: uid_master });
 			if (response.status == 200) {
 				navigate('/proyecto/colegios/' + response.data.project_id);
 			}
