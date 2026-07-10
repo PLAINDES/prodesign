@@ -195,7 +195,7 @@ export default function ToolsBar({
 	// desde nuestro backend, y redirige al portal de ProBudgets con dicho código (?exchange_code=...)
 	// o con el token en hash (#token=...) como fallback seguro para evitar logs del lado del servidor.
 	const handleSendToProbudgets = async (e) => {
-		e.preventDefault();
+		if (e) e.preventDefault();
 		const projectId = params.id;
 		const urlProbudgetsPortal = import.meta.env.VITE_URL_PROBUDGETS_PORTAL;
 
