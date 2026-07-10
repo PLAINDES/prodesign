@@ -92,7 +92,7 @@ const normalizarAmbiente = (rawName) => {
 
 export const useApi = () => {
   const sendData = async (projectData) => {
-    const endpoint = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/probudgets/sync-proxy`;
+    const endpoint = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/projects/probudgets/sync-proxy`;
 
     // 1. Parsing build_data for area totals
     let buildDataParsed = {};
@@ -375,6 +375,7 @@ export const useApi = () => {
     };
 
     console.log("📤 Sync payload to ProBudgets:", payload);
+    alert(`Enviando a: ${endpoint}\nPayload keys: ${Object.keys(payload).join(', ')}`);
 
     let response;
     try {
@@ -387,14 +388,18 @@ export const useApi = () => {
       });
     } catch (error) {
       console.error("Error de red al sincronizar con ProBudgets:", error);
+      alert(`Error de red al conectar con: ${endpoint}`);
       throw new Error("No se pudo establecer conexión con el servidor de ProBudgets. Por favor, verifica tu conexión a internet e inténtalo de nuevo.");
     }
+
+    alert(`Respuesta: status=${response.status} ${response.statusText}`);
 
     let responseBody;
     try {
       responseBody = await response.json();
     } catch (parseError) {
       const text = await response.text().catch(() => '');
+      alert(`Error parseando respuesta. Status=${response.status}. Texto: ${text.slice(0, 200)}`);
       throw new Error(
         `El servidor de ProBudgets respondió con un formato inesperado. ` +
         `Verifica que VITE_URL_PROBUDGETS apunte a la API correcta (https://apiprobudget.pro-invest.pe). ` +
@@ -403,6 +408,7 @@ export const useApi = () => {
     }
 
     if (!response.ok) {
+      alert(`Error ${response.status}: ${responseBody.message || response.statusText}`);
       throw new Error(responseBody.message || `Error ${response.status}: Error en la sincronización con ProBudgets`);
     }
 

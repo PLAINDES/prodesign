@@ -37,10 +37,13 @@ export const generateCodeChallenge = async (verifier) => {
  * Obtiene la configuración de Cognito desde las variables de entorno.
  */
 export const getCognitoConfig = () => {
+	const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 	return {
 		domain: import.meta.env.VITE_COGNITO_DOMAIN || '',
 		clientId: import.meta.env.VITE_COGNITO_CLIENT_ID || '',
-		redirectUri: import.meta.env.VITE_COGNITO_REDIRECT_URI || '',
+		redirectUri: isLocal
+			? (import.meta.env.VITE_COGNITO_REDIRECT_URI_LOCAL || import.meta.env.VITE_COGNITO_REDIRECT_URI || '')
+			: (import.meta.env.VITE_COGNITO_REDIRECT_URI || ''),
 		logoutUri: import.meta.env.VITE_COGNITO_LOGOUT_URI || '',
 		scope: 'openid email profile',
 	};
@@ -53,7 +56,7 @@ export const getCognitoConfig = () => {
 export const redirectToCognitoLogin = async (promptNone = false) => {
 	const { domain, clientId, redirectUri, scope } = getCognitoConfig();
 	if (!domain || !clientId || !redirectUri) {
-		console.warn('OIDC: Configuración de Cognito incompleta.');
+		alert('OIDC: Configuración de Cognito incompleta. Revisa las variables de entorno.');
 		return;
 	}
 
@@ -175,7 +178,7 @@ export const logoutFromCognito = () => {
 	sessionStorage.removeItem('oidc_nonce');
 
 	if (!domain || !clientId || !logoutUri) {
-		console.warn('OIDC: Configuración de Cognito incompleta para logout.');
+		alert('OIDC: Configuración de Cognito incompleta para logout. Revisa las variables de entorno.');
 		window.location.href = '/auth/login';
 		return;
 	}
