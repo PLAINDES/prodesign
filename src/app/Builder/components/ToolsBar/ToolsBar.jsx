@@ -26,6 +26,7 @@ import { requestExport } from "../../../../redux/features/exportSlice";
 import { useParams } from "react-router-dom";
 
 import { useRender } from '../../RenderContext';
+import { useApi } from '../../../../hooks/useApi';
 
 
 const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
@@ -40,6 +41,7 @@ export default function ToolsBar({
 	const dispatch = useDispatch();
 	// [DOCUMENTACIÓN] Estado local para prevenir doble clic / doble envío al generar el PDF para ProInvierte
 	const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+	const { sendData } = useApi();
 
 	function baseFn(value) {
 		dispatch(setColorWall({ color: value }));
@@ -191,7 +193,8 @@ export default function ToolsBar({
 	}, []);
 
 	// [DOCUMENTACIÓN] Manejador de redirección para "Enviar a ProBudgets".
-	// Obtiene el token Cognito (en memoria) o local, solicita un código de intercambio de un solo uso
+	// Primero sincroniza los datos del proyecto con la API de ProBudgets (POST /v1/integracion/sync),
+	// luego obtiene el token Cognito (en memoria) o local, solicita un código de intercambio de un solo uso
 	// desde nuestro backend, y redirige al portal de ProBudgets con dicho código (?exchange_code=...)
 	// o con el token en hash (#token=...) como fallback seguro para evitar logs del lado del servidor.
 	const handleSendToProbudgets = async (e) => {
@@ -225,6 +228,18 @@ export default function ToolsBar({
 		setIsSendingToProbudgets(true);
 
 		try {
+			// [DOCUMENTACIÓN] Sincronizar datos del proyecto con ProBudgets antes de redirigir
+			Swal.fire({
+				title: 'Sincronizando...',
+				text: 'Enviando datos del proyecto a ProBudgets',
+				allowOutsideClick: false,
+				allowEscapeKey: false,
+				didOpen: () => Swal.showLoading()
+			});
+
+			const projectData = { ...state, id: projectId };
+			await sendData(projectData);
+
 			const exchangeResult = await requestExchangeCode(token);
 			let finalUrl = "";
 
@@ -236,12 +251,13 @@ export default function ToolsBar({
 				finalUrl = `${urlProbudgetsPortal}?proyecto_id=${projectId}&exchange_code=${encodeURIComponent(exchangeResult.exchangeCode)}`;
 			}
 
+			Swal.close();
 			window.open(finalUrl, "_blank", "noopener,noreferrer");
 		} catch (err) {
-			console.error("Error al redirigir a ProBudgets:", err);
+			console.error("Error al enviar a ProBudgets:", err);
 			Swal.fire({
-				title: 'Error de Redirección',
-				text: 'No se pudo generar la sesión segura para ProBudgets. Reinténtalo.',
+				title: 'Error',
+				text: err.message || 'No se pudo completar el envío a ProBudgets.',
 				icon: 'error',
 				confirmButtonText: 'Aceptar'
 			});
