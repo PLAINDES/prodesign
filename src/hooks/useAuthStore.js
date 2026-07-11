@@ -1,10 +1,7 @@
-
-
 export const checkAuthToken = async () => {
-
     const token = localStorage.getItem('token');
-    if(!token) return dispatch(logout());
-
-  
-
+    if (!token) {
+        console.warn("checkAuthToken: No token found, redirecting to login.");
+        window.location.href = "/auth";
+    }
 }

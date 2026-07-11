@@ -6,7 +6,7 @@ import sha1 from "sha1";
 import { geolocationService } from "../../services/utilsService";
 import { loginSSO } from "../../services/authService";
 import { HOSTNAME } from "../../../constants";
-import { 
+import {
 	exchangeCodeForTokens, 
 	parseJwt, 
 	validateOidcState, 
@@ -14,6 +14,7 @@ import {
 	redirectToCognitoLogin, 
 	logoutFromCognito 
 } from "../../utils/oidc";
+import { removeSSOCookie } from "../../utils/cookieHelper";
 
 export const checkingAuthentication = (email, password) => {
 	return async (dispatch) => {
@@ -91,27 +92,12 @@ export const startLoginWithEmailPassword = (
 			
 			localStorage.setItem("token", token);
 			console.log("token...", token);
-			
-			localStorage.setItem("SESS_ID", id_master);
-
-			//const { clientIP } = await geolocationService();
-
-			// await loginSSO({
-			// 	userId: id_master,
-			// 	userEmail: email,
-			// 	browserId: sha1(window.navigator.userAgent),
-			// 	browserIp: sha1(clientIP),
-			// 	browserAud: sha1(
-			// 		clientIP + window.navigator.userAgent + HOSTNAME
-			// 	),
-			// 	productId: "pro-design",
-			// });
 
 			handleBackdrop({ message: message, variant: "success" });
 
 			dispatch(
 				login({
-					uid_master: data.id_master,
+					uid_master: id_master,
 					uid: id,
 					email,
 					name,
@@ -136,8 +122,6 @@ export const startLoginWithEmailPassword = (
 	};
 };
 
-import { removeSSOCookie } from "../../utils/cookieHelper";
-
 export const startLogoutAuth = () => {
 	return async (dispatch, getState) => {
 		const { idToken } = getState().auth;
@@ -155,12 +139,19 @@ export const startCognitoLogin = (code, returnedState, handleBackdrop) => {
 	return async (dispatch) => {
 		dispatch(checkingCredentials());
 
+		const cleanOidcParams = () => {
+			sessionStorage.removeItem("oidc_code_verifier");
+			sessionStorage.removeItem("oidc_state");
+			sessionStorage.removeItem("oidc_nonce");
+		};
+
 		// 1. Validar State (Anti-CSRF)
 		if (!validateOidcState(returnedState)) {
 			console.error("OIDC Callback Error: El parámetro state devuelto no coincide. Abortando flujo por seguridad.");
 			if (handleBackdrop) {
 				handleBackdrop({ message: "Error de seguridad: verificación de estado fallida (CSRF).", variant: "error" });
 			}
+			cleanOidcParams();
 			dispatch(logout({ errorMessage: "Falla de verificación de estado anti-CSRF." }));
 			return;
 		}
@@ -169,6 +160,7 @@ export const startCognitoLogin = (code, returnedState, handleBackdrop) => {
 		const codeVerifier = sessionStorage.getItem("oidc_code_verifier");
 		if (!codeVerifier) {
 			console.error("OIDC Callback Error: No se encontró el code_verifier en la sesión.");
+			cleanOidcParams();
 			dispatch(logout({ errorMessage: "Falta verifier de autenticación PKCE." }));
 			return;
 		}
@@ -186,14 +178,12 @@ export const startCognitoLogin = (code, returnedState, handleBackdrop) => {
 
 			if (!validateOidcNonce(payload.nonce)) {
 				console.error("OIDC Callback Error: El nonce en el id_token no coincide. Posible ataque Replay.");
+				cleanOidcParams();
 				dispatch(logout({ errorMessage: "Falla de verificación de token anti-replay." }));
 				return;
 			}
 
-			// Limpieza de parámetros de un solo uso
-			sessionStorage.removeItem("oidc_code_verifier");
-			sessionStorage.removeItem("oidc_state");
-			sessionStorage.removeItem("oidc_nonce");
+			cleanOidcParams();
 			
 			// Registrar que ya se intentó renovación para evitar bucles en recargas futuras
 			sessionStorage.setItem("silent_renew_attempted", "true");
@@ -243,6 +233,7 @@ export const startCognitoLogin = (code, returnedState, handleBackdrop) => {
 			}
 		} catch (error) {
 			console.error("Error al autenticar contra Cognito:", error);
+			cleanOidcParams();
 			dispatch(logout({ errorMessage: error.message || "Error al completar el login OIDC." }));
 			if (handleBackdrop) {
 				handleBackdrop({ message: error.message || "Falla en el inicio de sesión SSO.", variant: "error" });

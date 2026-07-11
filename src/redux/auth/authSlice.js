@@ -45,7 +45,7 @@ export const  authSlice = createSlice({
 		},
 
 		logout: (state, { payload } ) => {
-			state.status = "not-authenticate";
+			state.status = "not-authenticated";
 			state.authModal = false;
 			state.uid_master = null;
 			state.uid = null;
@@ -64,7 +64,12 @@ export const  authSlice = createSlice({
 		},
 
 		updatePerfil: (state, { payload }) => {
-			state.successMessage =  payload.successMessage
+			if (payload.uid !== undefined) state.uid = payload.uid;
+			if (payload.uid_master !== undefined) state.uid_master = payload.uid_master;
+			if (payload.name !== undefined) state.name = payload.name;
+			if (payload.lastname !== undefined) state.lastname = payload.lastname;
+			if (payload.email !== undefined) state.email = payload.email;
+			state.successMessage = payload.successMessage || "";
 		},
 
 		checkingCredentials: (state) => {
@@ -72,7 +77,7 @@ export const  authSlice = createSlice({
 		},
 
 		loginFail: (state) => {
-			state.status = "not-authenticate";
+			state.status = "not-authenticated";
 			state.authModal = false;
 		},
 

@@ -8,16 +8,17 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/auth";
-import { signIn, signOut, fetchAuthSession } from "aws-amplify/auth";
+import { loginWithCognito, respondNewPasswordRequired } from "../../utils/Auth";
 import { loginSSO } from "../../services/authService";
 import { parseJwt } from "../../utils/oidc";
-import { setSSOCookie } from "../../utils/cookieHelper";
 
 export const LoginPage = () => {
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [pendingChallenge, setPendingChallenge] = useState(null);
+	const [newPassword, setNewPassword] = useState("");
 
 	const onSubmit = async (evt) => {
 		evt.preventDefault();
@@ -27,22 +28,18 @@ export const LoginPage = () => {
 		const { email, password } = Object.fromEntries(new FormData(evt.target));
 
 		try {
-			try { await signOut({ global: false }); } catch {}
+			const result = await loginWithCognito(email, password);
 
-			await signIn({ username: email, password });
-
-			const session = await fetchAuthSession();
-			const token = session.tokens?.idToken?.toString();
-
-			if (!token) {
-				setError("No se pudo obtener el token de sesión.");
-				setLoading(false);
-				return;
+			if (result.challenge) {
+				if (result.challenge === "NEW_PASSWORD_REQUIRED") {
+					setPendingChallenge({ username: email, session: result.session });
+					setLoading(false);
+					return;
+				}
+				throw new Error(`Unsupported authentication challenge: ${result.challenge}`);
 			}
 
-			const payload = parseJwt(token);
-
-			setSSOCookie("sso_id_token", token);
+			const payload = parseJwt(result.IdToken);
 
 			try {
 				const ssoRes = await loginSSO({
@@ -52,35 +49,33 @@ export const LoginPage = () => {
 					userLastname: payload.family_name || "",
 				});
 				if (ssoRes?.success && ssoRes?.user) {
-					localStorage.setItem("token", token);
 					dispatch(login({
 						uid_master: ssoRes.user.id_master || ssoRes.user.id,
 						uid: ssoRes.user.id,
 						email: payload.email,
 						name: payload.given_name || payload.name || email,
 						lastname: payload.family_name || "",
-						idToken: token,
-						accessToken: token,
-						refreshToken: null,
+						idToken: result.IdToken,
+						accessToken: result.AccessToken,
+						refreshToken: result.RefreshToken,
 						expiresAt: payload.exp * 1000,
 					}));
-					navigate("/");
 				}
-			} catch {
-				localStorage.setItem("token", token);
+			} catch (ssoErr) {
+				console.warn("SSO login failed, proceeding with local fallback:", ssoErr);
 				dispatch(login({
 					uid_master: payload.sub,
 					uid: payload.sub,
 					email: payload.email,
 					name: payload.given_name || payload.name || email,
 					lastname: payload.family_name || "",
-					idToken: token,
-					accessToken: token,
-					refreshToken: null,
+					idToken: result.IdToken,
+					accessToken: result.AccessToken,
+					refreshToken: result.RefreshToken,
 					expiresAt: payload.exp * 1000,
 				}));
-				navigate("/");
 			}
+			navigate("/");
 		} catch (err) {
 			console.error("Cognito login error:", err);
 			if (err.name === "UserNotFoundException") {
@@ -96,6 +91,117 @@ export const LoginPage = () => {
 			setLoading(false);
 		}
 	};
+
+	const onSubmitNewPassword = async (evt) => {
+		evt.preventDefault();
+		setError("");
+		setLoading(true);
+
+		try {
+			const result = await respondNewPasswordRequired(
+				pendingChallenge.username,
+				newPassword,
+				pendingChallenge.session
+			);
+
+			const payload = parseJwt(result.IdToken);
+
+			try {
+				const ssoRes = await loginSSO({
+					userId: payload.sub,
+					userEmail: payload.email,
+					userName: payload.given_name || payload.name || pendingChallenge.username,
+					userLastname: payload.family_name || "",
+				});
+				if (ssoRes?.success && ssoRes?.user) {
+					dispatch(login({
+						uid_master: ssoRes.user.id_master || ssoRes.user.id,
+						uid: ssoRes.user.id,
+						email: payload.email,
+						name: payload.given_name || payload.name || pendingChallenge.username,
+						lastname: payload.family_name || "",
+						idToken: result.IdToken,
+						accessToken: result.AccessToken,
+						refreshToken: result.RefreshToken,
+						expiresAt: payload.exp * 1000,
+					}));
+				}
+			} catch (ssoErr) {
+				console.warn("SSO login failed after password change, proceeding with local fallback:", ssoErr);
+				dispatch(login({
+					uid_master: payload.sub,
+					uid: payload.sub,
+					email: payload.email,
+					name: payload.given_name || payload.name || pendingChallenge.username,
+					lastname: payload.family_name || "",
+					idToken: result.IdToken,
+					accessToken: result.AccessToken,
+					refreshToken: result.RefreshToken,
+					expiresAt: payload.exp * 1000,
+				}));
+			}
+			navigate("/");
+		} catch (err) {
+			console.error("Error al establecer nueva contraseña:", err);
+			setError(err.message || "Error al cambiar la contraseña.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	if (pendingChallenge) {
+		return (
+			<Grid container spacing={{ xs: 3, sm: 5 }}>
+				<Grid item xs={12}>
+					<Typography variant="h3" sx={{ color: "#181C32", fontWeight: 600, fontSize: { xs: "1.25rem", lg: "1.75rem" } }}>
+						Cambio de contraseña requerido
+					</Typography>
+				</Grid>
+				<Grid item xs={12}>
+					<form onSubmit={onSubmitNewPassword}>
+						<Grid container rowSpacing={3} columnSpacing={2}>
+							<Grid item xs={12}>
+								<TextField
+									label="Nueva contraseña"
+									type="password"
+									placeholder="Ingrese nueva contraseña"
+									variant="filled"
+									fullWidth
+									value={newPassword}
+									onChange={(e) => setNewPassword(e.target.value)}
+									required
+									InputLabelProps={{ required: false }}
+								/>
+							</Grid>
+							{error && (
+								<Grid item xs={12}>
+									<Alert severity="error">{error}</Alert>
+								</Grid>
+							)}
+							<Grid item xs={12}>
+								<Button
+									type="submit"
+									variant="contained"
+									fullWidth
+									disabled={loading}
+									sx={{
+										padding: ".85rem",
+										borderRadius: "0.42rem",
+										textTransform: "unset",
+										fontSize: "1rem",
+										fontWeight: "600",
+										letterSpacing: ".7px",
+									}}
+								>
+									{loading ? <CircularProgress size={24} color="inherit" /> : "Cambiar contraseña e iniciar sesión"}
+								</Button>
+							</Grid>
+						</Grid>
+					</form>
+				</Grid>
+			</Grid>
+		);
+	}
 
 	return (
 		<Grid container spacing={{ xs: 3, sm: 5 }}>

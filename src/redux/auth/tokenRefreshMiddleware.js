@@ -2,7 +2,8 @@
 // de AWS Cognito si está a punto de expirar (menos de 2 minutos restantes).
 // Esto garantiza que el token en memoria siempre sea válido durante la interacción del usuario.
 
-import { refreshCognitoTokens } from '../../utils/oidc';
+import { refreshCognitoSession } from '../../utils/Auth';
+import { parseJwt } from '../../utils/oidc';
 import { refreshTokens, logout } from './authSlice';
 
 let isRefreshing = false;
@@ -32,14 +33,14 @@ export const tokenRefreshMiddleware = store => next => action => {
 				isRefreshing = true;
 				console.log('tokenRefreshMiddleware: El token de acceso expira pronto. Renovando sesión en segundo plano...');
 				
-				refreshPromise = refreshCognitoTokens(refreshToken)
+				refreshPromise = refreshCognitoSession(refreshToken)
 					.then(data => {
-						const { id_token, access_token, expires_in } = data;
-						const calculatedExpiresAt = Date.now() + (expires_in * 1000);
-						
+						const payload = parseJwt(data.IdToken);
+						const calculatedExpiresAt = payload ? payload.exp * 1000 : Date.now() + (3600 * 1000);
+
 						store.dispatch(refreshTokens({
-							idToken: id_token,
-							accessToken: access_token,
+							idToken: data.IdToken,
+							accessToken: data.AccessToken,
 							expiresAt: calculatedExpiresAt
 						}));
 						
@@ -58,11 +59,10 @@ export const tokenRefreshMiddleware = store => next => action => {
 					});
 			}
 
-			// Pausar y esperar a que la renovación de tokens se complete antes de despachar la acción original
 			return refreshPromise
 				.then(() => next(action))
 				.catch(() => {
-					// Si falla, la sesión se limpia y no se procesa la acción original
+					console.warn("tokenRefreshMiddleware: No se pudo renovar el token. La acción no se procesó.");
 				});
 		}
 	}

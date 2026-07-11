@@ -10,16 +10,13 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from "../../redux/auth/authSlice";
-import { logoutSSO } from "../../services/authService";
+import { startLogoutAuth } from "../../redux/auth";
 
 export function UserPopover() {
-	const uid_master = useSelector(state => state.auth.uid_master);
-
 	const dispatch = useDispatch();
+	const navigate = useNavigate();
 	const [anchorEl, setAnchorEl] = useState(null);
 	const name = useSelector((state) => state.auth.name);
-	const navigate = useNavigate();
 
 	const handleClick = (event) => {
 		setAnchorEl(event.currentTarget);
@@ -33,11 +30,12 @@ export function UserPopover() {
 		navigate("/perfil");
 	}
 
-	const onLogout = () => {
-		localStorage.clear();
-		logoutSSO({ userId: uid_master });
-		dispatch(logout());
-		navigate("/auth");
+	const onLogout = async () => {
+		try {
+			await dispatch(startLogoutAuth());
+		} catch (err) {
+			console.error("Error al cerrar sesión:", err);
+		}
 	}
 
 	const open = Boolean(anchorEl);

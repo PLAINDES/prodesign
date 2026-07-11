@@ -13,18 +13,10 @@ export const arqPlataformAxios = axios.create({
  * @returns
  */
 export const request = async ({ ...options }) => {
-	//   arqPlataformAxios.defaults.headers.common.Authorization
-	//   = `Bearer ${localStorage.getItem(
-	//     "token"
-	//   )}`;
-
-	// arqPlataformAxios.interceptors.request.use((config) => {
-	// 	config.headers = {
-	// 		...config.headers,
-	// 		"x-token": `${localStorage.getItem("token")}`,
-	// 	};
-	// 	return config;
-	// });
+	const token = localStorage.getItem("token");
+	if (token) {
+		arqPlataformAxios.defaults.headers.common.Authorization = `Bearer ${token}`;
+	}
 
 	const onSuccess = (response) => response;
 	const onError = (error) => {
@@ -50,24 +42,30 @@ export const arqPlataformAxiosCalc = axios.create({
  * @returns
  */
 export const requestCalc = async (options) => {
-    // 1. Asegúrate de usar la misma instancia que invocas abajo (arqPlataformAxiosCalc)
     const token = localStorage.getItem("token");
-    
-    arqPlataformAxiosCalc.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+    const config = {
+        ...options,
+        headers: {
+            ...options?.headers,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+    };
 
     const onSuccess = (response) => response;
     const onError = (error) => {
-        // Es mejor loguear el error para debuguear el 401
         console.error("Error en la petición:", error.response || error);
         error.error = true;
         return error;
     };
 
     try {
-        // 2. Pasamos las options (method, url, data, etc.)
-        const response = await arqPlataformAxiosCalc(options);
+        const response = await arqPlataformAxiosCalc(config);
         return onSuccess(response);
     } catch (error) {
         return onError(error);
     }
+
+    // Nota: Se eliminó la mutación de arqPlataformAxiosCalc.defaults.headers.common
+    // para evitar condiciones de carrera con tokens caducados/renovados.
 };

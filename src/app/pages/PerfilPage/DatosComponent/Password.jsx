@@ -6,7 +6,6 @@ import FormControl from "@mui/material/FormControl";
 import TextField from "@mui/material/TextField";
 import Swal from "sweetalert2";
 import { useForm } from "../../../../hooks";
-import { login, updatePerfil } from "../../../../redux/auth";
 import { startSavePerfil } from "../../../../redux/planes/thunks";
 
 export const Password = ({ user }) => {
@@ -16,17 +15,13 @@ export const Password = ({ user }) => {
 	const isValidate = false;
 
 	useEffect(() => {
-		dispatch(login(formState))
-	}, [formState]);
-
-	useEffect(() => {
 		if (successMessage.length > 0) {
 			Swal.fire("Contraseña actualizada", user.successMessage, "success");
 		}
 	}, [successMessage]);
 
 	const onSavePerfil = () => {
-		dispatch(startSavePerfil(3,password));
+		dispatch(startSavePerfil(3, password, formState));
 	}
 
 	return (

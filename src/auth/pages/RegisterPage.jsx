@@ -6,7 +6,7 @@ import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Link as RouterLink } from "react-router-dom";
-import { signUp, confirmSignUp } from "aws-amplify/auth";
+import { signUpCognito, confirmSignUpCognito } from "../../utils/Auth";
 
 export const RegisterPage = () => {
 	const [step, setStep] = useState("form");
@@ -24,19 +24,9 @@ export const RegisterPage = () => {
 		const { name, lastname, email: mail, password } = data;
 
 		try {
-			const result = await signUp({
-				username: mail,
-				password,
-				options: {
-					userAttributes: {
-						email: mail,
-						given_name: name,
-						family_name: lastname,
-					},
-				},
-			});
+			const result = await signUpCognito(mail, password, name, lastname);
 
-			if (result.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
+			if (result.UserSub) {
 				setEmail(mail);
 				setStep("confirm");
 				setMessage(`Se envió un código de verificación a ${mail}`);
@@ -65,10 +55,7 @@ export const RegisterPage = () => {
 		const { code } = Object.fromEntries(new FormData(evt.target));
 
 		try {
-			await confirmSignUp({
-				username: email,
-				confirmationCode: code,
-			});
+			await confirmSignUpCognito(email, code);
 			setStep("done");
 		} catch (err) {
 			console.error("Cognito confirm error:", err);
@@ -147,7 +134,7 @@ export const RegisterPage = () => {
 			<Grid container spacing={3} justifyContent="center">
 				<Grid item xs={12}>
 					<Alert severity="success">
-						Cuenta creada correctamente. Revisa tu correo para confirmar tu dirección de email.
+						Cuenta creada y verificada correctamente. Ya puedes iniciar sesión.
 					</Alert>
 				</Grid>
 				<Grid item xs={"auto"}>

@@ -1,23 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch } from 'react-redux';
 import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import { useForm } from "../../../../hooks";
-import { login, updatePerfil } from "../../../../redux/auth";
 import { startSavePerfil } from "../../../../redux/planes/thunks";
 import Swal from "sweetalert2";
 
 export const Email = ({user}) => {
 	const { successMessage } = user
 	const isValidate = false;
-	const {  email,onInputChange,formState } = useForm(user);
+	const { email, onInputChange, formState } = useForm(user);
 	const dispatch = useDispatch()
-
-	useEffect(() => {
-		dispatch(login(formState))
-	}, [formState]);
 
 	useEffect(() => {
 		if (successMessage.length > 0) {
@@ -26,7 +21,7 @@ export const Email = ({user}) => {
 	}, [successMessage]);
 
 	const onSavePerfil = () => {
-		dispatch(startSavePerfil(2));
+		dispatch(startSavePerfil(2, '', formState));
 	}
 
 
