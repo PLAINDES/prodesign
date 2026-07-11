@@ -8,7 +8,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/auth";
-import { signIn, fetchAuthSession } from "aws-amplify/auth";
+import { signIn, signOut, fetchAuthSession } from "aws-amplify/auth";
 import { loginSSO } from "../../services/authService";
 import { parseJwt } from "../../utils/oidc";
 import { setSSOCookie } from "../../utils/cookieHelper";
@@ -27,6 +27,8 @@ export const LoginPage = () => {
 		const { email, password } = Object.fromEntries(new FormData(evt.target));
 
 		try {
+			try { await signOut({ global: false }); } catch {}
+
 			await signIn({ username: email, password });
 
 			const session = await fetchAuthSession();
@@ -41,7 +43,6 @@ export const LoginPage = () => {
 			const payload = parseJwt(token);
 
 			setSSOCookie("sso_id_token", token);
-			setSSOCookie("sso_refresh_token", token);
 
 			try {
 				const ssoRes = await loginSSO({
@@ -60,7 +61,7 @@ export const LoginPage = () => {
 						lastname: payload.family_name || "",
 						idToken: token,
 						accessToken: token,
-						refreshToken: token,
+						refreshToken: null,
 						expiresAt: payload.exp * 1000,
 					}));
 					navigate("/");
@@ -75,7 +76,7 @@ export const LoginPage = () => {
 					lastname: payload.family_name || "",
 					idToken: token,
 					accessToken: token,
-					refreshToken: token,
+					refreshToken: null,
 					expiresAt: payload.exp * 1000,
 				}));
 				navigate("/");

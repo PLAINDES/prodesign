@@ -1,7 +1,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import { login, logout, checkingCredentials } from "../redux/auth";
 import { getSSOCookie, setSSOCookie } from "../utils/cookieHelper";
-import { parseJwt, refreshCognitoTokens } from "../utils/oidc";
+import { parseJwt } from "../utils/oidc";
+import { fetchAuthSession, getCurrentUser, signOut } from "aws-amplify/auth";
 import axios from "axios";
 
 export const useAuthStore = () => {
@@ -11,59 +12,73 @@ export const useAuthStore = () => {
 	const checkAuth = async () => {
 		dispatch(checkingCredentials());
 
-		let idToken = getSSOCookie("sso_id_token");
-		let refreshToken = getSSOCookie("sso_refresh_token");
-
-		if (!idToken) {
-			const localToken = localStorage.getItem("token");
-			if (!localToken) {
-				return dispatch(logout());
-			}
-			idToken = localToken;
-		}
-
 		try {
-			const payload = parseJwt(idToken);
-			if (!payload) throw new Error("ID Token inválido");
+			let token = null;
+			try {
+				const session = await fetchAuthSession();
+				token = session.tokens?.idToken?.toString();
+			} catch {}
 
-			const isExpired = payload.exp * 1000 < Date.now();
+			if (token) {
+				const payload = parseJwt(token);
 
-			if (isExpired && refreshToken) {
-				console.log("SSO Token expirado. Intentando renovación...");
-				const refreshed = await refreshCognitoTokens(refreshToken);
-				idToken = refreshed.id_token;
-				setSSOCookie("sso_id_token", refreshed.id_token);
-				if (refreshed.refresh_token) {
-					setSSOCookie("sso_refresh_token", refreshed.refresh_token);
-				}
-			} else if (isExpired && !refreshToken) {
-				throw new Error("Sesión expirada y sin Refresh Token disponible.");
+				setSSOCookie("sso_id_token", token);
+
+				const user = await getCurrentUser();
+
+				localStorage.setItem("token", token);
+
+				const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/loginSSO`, {
+					userId: user.userId || payload.sub,
+					userEmail: payload.email,
+					userName: payload.given_name || payload.name,
+					userLastname: payload.family_name || "",
+				});
+
+				const { user: localUser } = response.data;
+
+				dispatch(login({
+					uid_master: payload.sub,
+					uid: localUser?.id || payload.sub,
+					email: payload.email,
+					name: payload.given_name || payload.name || "Usuario",
+					lastname: payload.family_name || "",
+					idToken: token,
+					accessToken: token,
+					refreshToken: null,
+					expiresAt: payload.exp * 1000,
+				}));
+				return;
 			}
 
-			const userPayload = parseJwt(idToken);
-			const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/loginSSO`, {
-				userId: userPayload.sub,
-				userEmail: userPayload.email,
-				userName: userPayload.given_name || userPayload.name,
-				userLastname: userPayload.family_name || "",
-			});
+			const localToken = getSSOCookie("sso_id_token") || localStorage.getItem("token");
+			if (localToken) {
+				const payload = parseJwt(localToken);
+				if (payload && payload.exp * 1000 > Date.now()) {
+					localStorage.setItem("token", localToken);
+					const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/loginSSO`, {
+						userId: payload.sub,
+						userEmail: payload.email,
+						userName: payload.given_name || payload.name,
+						userLastname: payload.family_name || "",
+					});
+					const { user: localUser } = response.data;
+					dispatch(login({
+						uid_master: payload.sub,
+						uid: localUser?.id || payload.sub,
+						email: payload.email,
+						name: payload.given_name || payload.name || "Usuario",
+						lastname: payload.family_name || "",
+						idToken: localToken,
+						accessToken: localToken,
+						refreshToken: null,
+						expiresAt: payload.exp * 1000,
+					}));
+					return;
+				}
+			}
 
-			const { user, data } = response.data;
-
-			localStorage.setItem("token", idToken);
-
-			dispatch(login({
-				uid_master: userPayload.sub,
-				uid: user?.id || userPayload.sub,
-				email: userPayload.email,
-				name: userPayload.given_name || userPayload.name || "Usuario",
-				lastname: userPayload.family_name || "",
-				idToken,
-				accessToken: idToken,
-				refreshToken,
-				expiresAt: userPayload.exp * 1000
-			}));
-
+			dispatch(logout());
 		} catch (error) {
 			console.error("Error en validación SSO:", error);
 			localStorage.removeItem("token");
