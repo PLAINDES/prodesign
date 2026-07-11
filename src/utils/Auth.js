@@ -7,14 +7,15 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { setSSOCookie } from "./cookieHelper";
 
-const client = new CognitoIdentityProviderClient({
-  region: import.meta.env.VITE_COGNITO_REGION,
-});
+const REGION = import.meta.env.VITE_COGNITO_REGION || "us-east-2";
+const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID || "2dicm2fsk9li5cc7o73mo5kj2s";
+
+const client = new CognitoIdentityProviderClient({ region: REGION });
 
 export async function loginWithCognito(username, password) {
   const command = new InitiateAuthCommand({
     AuthFlow: "USER_PASSWORD_AUTH",
-    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    ClientId: CLIENT_ID,
     AuthParameters: { USERNAME: username, PASSWORD: password },
   });
 
@@ -33,7 +34,7 @@ export async function loginWithCognito(username, password) {
 export async function respondNewPasswordRequired(username, newPassword, session) {
   const command = new RespondToAuthChallengeCommand({
     ChallengeName: "NEW_PASSWORD_REQUIRED",
-    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    ClientId: CLIENT_ID,
     Session: session,
     ChallengeResponses: { USERNAME: username, NEW_PASSWORD: newPassword },
   });
@@ -48,7 +49,7 @@ export async function respondNewPasswordRequired(username, newPassword, session)
 export async function refreshCognitoSession(refreshToken) {
   const command = new InitiateAuthCommand({
     AuthFlow: "REFRESH_TOKEN_AUTH",
-    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    ClientId: CLIENT_ID,
     AuthParameters: { REFRESH_TOKEN: refreshToken },
   });
 
@@ -63,7 +64,7 @@ export async function refreshCognitoSession(refreshToken) {
 
 export async function signUpCognito(username, password, name, lastname) {
   const command = new SignUpCommand({
-    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    ClientId: CLIENT_ID,
     Username: username,
     Password: password,
     UserAttributes: [
@@ -78,7 +79,7 @@ export async function signUpCognito(username, password, name, lastname) {
 
 export async function confirmSignUpCognito(username, code) {
   const command = new ConfirmSignUpCommand({
-    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    ClientId: CLIENT_ID,
     Username: username,
     ConfirmationCode: code,
   });
