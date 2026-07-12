@@ -71,6 +71,9 @@ jobs:
             echo "Limpiando imágenes residuales..."
             docker image prune -f
 
+            echo "Limpiando caché de construcción acumulada por el --no-cache..." 
+            docker builder prune -f
+
             echo "========================================="
             echo "Estado final:"
             docker compose -p prodesign-react ps
