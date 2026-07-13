@@ -364,11 +364,11 @@ const findMaxRectangleAtAngle = (polygon, angle, priorityVertices = []) => {
 			}
 		}
 
-		// Si el cuadrante toca o está a menos de 2 metros del vértice de prioridad, obtiene bono
+		// Si el cuadrante toca o está a menos de 2 metros del vértice de prioridad, obtiene bono moderado
 		if (minDistanceToPriority < 2.0) {
-			priorityBonus = 5.0 - (minDistanceToPriority / 2.0) * 4.0; // Rango [1.0, 5.0]
+			priorityBonus = 2.0 - (minDistanceToPriority / 2.0); // Rango [1.0, 2.0] (antes 5.0)
 		} else {
-			priorityBonus = 0.1; // Penalización por ignorar prioridades del usuario
+			priorityBonus = 0.5; // Penalización suave por ignorar prioridades (antes 0.1)
 		}
 	}
 
