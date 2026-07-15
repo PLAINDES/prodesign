@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import "./styles.css";
 import {
 	Accordion,
 	AccordionDetails,
@@ -7,49 +5,54 @@ import {
 	Box,
 	Typography,
 } from "@mui/material";
-import { ChevronDown, Home } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRender } from '../../RenderContext';
+import "./styles.css";
 
 // [DOCUMENTACIÓN]
 // Funciones auxiliares para calcular datos geométricos soportando tanto formato objeto como array.
 const getCoord = (v) => {
-    if (Array.isArray(v)) {
-        return { x: Number(v[0]) || 0, y: Number(v[1]) || 0 };
-    } else if (v && typeof v === 'object') {
-        return { x: Number(v.x) || Number(v.X) || 0, y: Number(v.y) || Number(v.Y) || 0 };
-    }
-    return { x: 0, y: 0 };
+	if (Array.isArray(v)) {
+		return { x: Number(v[0]) || 0, y: Number(v[1]) || 0 };
+	} else if (v && typeof v === 'object') {
+		return { x: Number(v.x) || Number(v.X) || 0, y: Number(v.y) || Number(v.Y) || 0 };
+	}
+	return { x: 0, y: 0 };
 };
 
 const calculatePolygonArea = (vertices) => {
-    if (!vertices || vertices.length < 3) return 0;
-    let area = 0;
-    for (let i = 0; i < vertices.length; i++) {
-        let j = (i + 1) % vertices.length;
-        const vi = getCoord(vertices[i]);
-        const vj = getCoord(vertices[j]);
-        area += vi.x * vj.y;
-        area -= vj.x * vi.y;
-    }
-    return Math.abs(area / 2).toFixed(2);
+	if (!vertices || vertices.length < 3) return 0;
+	let area = 0;
+	for (let i = 0; i < vertices.length; i++) {
+		let j = (i + 1) % vertices.length;
+		const vi = getCoord(vertices[i]);
+		const vj = getCoord(vertices[j]);
+		area += vi.x * vj.y;
+		area -= vj.x * vi.y;
+	}
+	return Math.abs(area / 2).toFixed(2);
 };
 
 const calculatePerimeter = (vertices) => {
-    if (!vertices || vertices.length < 2) return 0;
-    let perimeter = 0;
-    for (let i = 0; i < vertices.length; i++) {
-        let j = (i + 1) % vertices.length;
-        const vi = getCoord(vertices[i]);
-        const vj = getCoord(vertices[j]);
-        const dx = vj.x - vi.x;
-        const dy = vj.y - vi.y;
-        perimeter += Math.sqrt(dx * dx + dy * dy);
-    }
-    return perimeter.toFixed(2);
+	if (!vertices || vertices.length < 2) return 0;
+	let perimeter = 0;
+	for (let i = 0; i < vertices.length; i++) {
+		let j = (i + 1) % vertices.length;
+		const vi = getCoord(vertices[i]);
+		const vj = getCoord(vertices[j]);
+		const dx = vj.x - vi.x;
+		const dy = vj.y - vi.y;
+		perimeter += Math.sqrt(dx * dx + dy * dy);
+	}
+	return perimeter.toFixed(2);
 };
 
-export default function Sidebar({ state, school, ...props}) {
+export default function Sidebar({ state, school, ...props }) {
 	const { dataProject } = useRender();
+
+	console.log("Sidebar", dataProject);
+
 
 	// [DOCUMENTACIÓN]
 	// Se parsean los vértices priorizando vertices_terreno_utm (coordenadas 2D reales)
@@ -57,8 +60,8 @@ export default function Sidebar({ state, school, ...props}) {
 	let parsedVertices = [];
 	try {
 		const rawVertices = dataProject?.vertices_terreno_utm || dataProject?.vertices || [];
-		parsedVertices = typeof rawVertices === 'string' 
-			? JSON.parse(rawVertices) 
+		parsedVertices = typeof rawVertices === 'string'
+			? JSON.parse(rawVertices)
 			: rawVertices;
 		if (!Array.isArray(parsedVertices)) parsedVertices = [];
 	} catch (e) { parsedVertices = []; }
@@ -82,15 +85,15 @@ export default function Sidebar({ state, school, ...props}) {
 	} catch (e) { parsedResumenAmbientes = []; }
 
 	const medidasTerreno = parsedResumenAmbientes.find(item => item && item.medidas_terreno)?.medidas_terreno || {};
-	
+
 	// Cálculos
 	const totalArea = calculatePolygonArea(parsedVertices);
 	const totalPerimeter = calculatePerimeter(parsedVertices);
-	
+
 	const areaDisponible = medidasTerreno.area_disponible || totalArea;
 	const anchoDisponible = medidasTerreno.ancho_disponible || "Calculando...";
 	const largoDisponible = medidasTerreno.largo_disponible || "Calculando...";
-	
+
 	const totalCapacity = parsedAforo.reduce((sum, item) => sum + (Number(item.aforo_por_grado) || 0), 0);
 	const totalClassrooms = parsedAforo.reduce((sum, item) => sum + (Number(item.cantidad_aulas) || 0), 0);
 
@@ -105,6 +108,18 @@ export default function Sidebar({ state, school, ...props}) {
 			}
 		);
 	}, []);
+
+	const [ambientesComplementarios, setambientesComplementario] = useState([])
+
+	useEffect(() => {
+		if (dataProject?.ambientes) {
+			// Asegúrate de que sea un array
+			const ambientes = Array.isArray(dataProject.ambientes)
+				? dataProject.ambientes
+				: [];
+			setambientesComplementario(ambientes);
+		}
+	}, [dataProject]);
 
 	return (
 		<div className="sidebar" {...props}>
@@ -214,30 +229,58 @@ export default function Sidebar({ state, school, ...props}) {
 							backgroundColor: "transparent",
 						}}
 					>
-						<AccordionSummary
-							expandIcon={<ChevronDown />}
+						<Accordion
 							sx={{
-								padding: 0,
-								minHeight: "auto",
-								"& .MuiAccordionSummary-content": {
-									margin: "4px 0",
-									display: "flex",
-									alignItems: "center",
-									gap: 1,
-								},
+								boxShadow: "none",
+								"&:before": { display: "none" },
+								backgroundColor: "transparent",
 							}}
 						>
-							{/* <SchoolIcon
-								sx={{ fontSize: 20, color: "primary.main" }}
-							/> */}
-							<Typography
-								variant="body3"
-								sx={{ fontWeight: 600 }}
+							<AccordionSummary
+								expandIcon={<ChevronDown size={24} />}
+								sx={{
+									padding: 0,
+									minHeight: "40px",
+									"& .MuiAccordionSummary-content": {
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+									},
+								}}
 							>
-								Ambientes :{" "}
-								{school?.complementaryEnvironment.length}
-							</Typography>
-						</AccordionSummary>
+								<Typography variant="body3" sx={{ fontWeight: 600, color: 'text.primary' }}>
+									Ambientes complementarios
+								</Typography>
+
+								<Typography
+									variant="caption"
+									sx={{
+										backgroundColor: 'rgba(0,0,0,0.08)',
+										padding: '2px 8px',
+										borderRadius: '12px',
+										fontWeight: 'bold'
+									}}
+								>
+									{ambientesComplementarios.length > 0
+										? ambientesComplementarios.length
+										: (school?.complementaryEnvironment?.length || 0)}
+								</Typography>
+							</AccordionSummary>
+
+							<AccordionDetails sx={{ padding: "0 8px 8px 8px" }}>
+								{ambientesComplementarios.length > 0 ? (
+									ambientesComplementarios.map((item, index) => (
+										<Typography key={index} variant="body2" sx={{ display: 'block', py: 0.5 }}>
+											{item?.ambienteComplementario}
+										</Typography>
+									))
+								) : (
+									<Typography variant="body2" sx={{ color: 'text.secondary' }}>
+										Sin ambientes adicionales.
+									</Typography>
+								)}
+							</AccordionDetails>
+						</Accordion>
 
 						<AccordionDetails sx={{ padding: "0 0 0 5px" }}>
 							{school?.complementaryEnvironment.map((ambiente) => (
