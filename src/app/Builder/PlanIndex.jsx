@@ -47,17 +47,22 @@ function ThreeDViewer({ onLoad, projectId }) {
         controls.enableDamping = true;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2.5);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(5, 10, 7.5);
         scene.add(directionalLight);
 
         // GLTF Loader
         const loader = new GLTFLoader();
-        const modelUrl = `https://plaindes.s3.us-east-2.amazonaws.com/prodesign/test/plane_${projectId - 1}.glb`;
-        
+
+        const isDev = import.meta.env.VITE_DEV === 'true';
+        const basePath = isDev
+            ? 'https://plaindes.s3.us-east-2.amazonaws.com/prodesign/test'
+            : 'https://plaindes.s3.us-east-2.amazonaws.com/prodesign/prod';
+        const modelUrl = `${basePath}/plane_${projectId - 1}.glb`;
+
         loader.load(modelUrl, (gltf) => {
             const box = new THREE.Box3().setFromObject(gltf.scene);
             const center = box.getCenter(new THREE.Vector3());
@@ -233,7 +238,7 @@ function PlanContent() {
 						left: 0,
 						width: "100%",
 						height: "100%",
-						backgroundColor: "rgba(0, 0, 0, 0.7)",
+						backgroundColor: "rgba(0, 0, 0, 0.2)",
 						display: "flex",
 						flexDirection: "column",
 						alignItems: "center",
