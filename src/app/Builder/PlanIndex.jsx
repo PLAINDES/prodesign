@@ -1,25 +1,134 @@
-import { useState, useEffect } from "react";
+// React and Hooks
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar/Sidebar";
-import Plan3D from "./Plan3D/Plan3D";
+
+// Third-party Libraries
+import Backdrop from '@mui/material/Backdrop';
 import Box from "@mui/material/Box";
-import Grid from '@mui/material/Grid2';
-import { useRender } from './RenderContext';
+import Button from "@mui/material/Button";
 import CircularProgress from '@mui/material/CircularProgress';
-import Backdrop from '@mui/material/Backdrop'; // Nuevo: Para el fondo del loading
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
+import DialogTitle from "@mui/material/DialogTitle";
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader';
 
-import { OpenIconSpeedDial } from "./components/OpenIconSpeedDial";
-import { getProjectByID } from "../../services/projectsService";
-import { RenderProvider } from './RenderContext';
-import zIndex from "@mui/material/styles/zIndex";
-import axios from "axios";
+// Local Application Imports
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar/Sidebar";
+import { RenderProvider, useRender } from './RenderContext';
+
+function ThreeDViewer({ onLoad, projectId }) {
+    const mountRef = useRef(null);
+
+    useEffect(() => {
+        const currentMount = mountRef.current;
+        if (!currentMount) return;
+
+        // Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0F172A); // Match the background color from parent div
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
+        camera.position.set(10, 10, 10);
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        currentMount.appendChild(renderer.domElement);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7.5);
+        scene.add(directionalLight);
+
+        // GLTF Loader
+        const loader = new GLTFLoader();
+        const modelUrl = `https://plaindes.s3.us-east-2.amazonaws.com/prodesign/test/plane_${projectId - 1}.glb`;
+        
+        loader.load(modelUrl, (gltf) => {
+            const box = new THREE.Box3().setFromObject(gltf.scene);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            // Center the model
+            gltf.scene.position.sub(center);
+            scene.add(gltf.scene);
+
+            // Adjust camera to fit model
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 1.5; // zoom out a bit
+            
+            camera.position.set(cameraZ, cameraZ, cameraZ);
+            controls.target.set(0, 0, 0); // look at origin, since model is centered
+            controls.update();
+
+            if (onLoad) {
+                onLoad();
+            }
+        }, undefined, (error) => {
+            console.error('An error happened while loading the model:', error);
+        });
+
+        // Handle resize
+        const handleResize = () => {
+            if (mountRef.current) {
+                const width = mountRef.current.clientWidth;
+                const height = mountRef.current.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
+        // Animation loop
+        const animate = () => {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (currentMount && renderer.domElement) {
+                currentMount.removeChild(renderer.domElement);
+            }
+            // Dispose Three.js objects to free memory
+            scene.traverse(object => {
+                if (object.isMesh) {
+                    if (object.geometry) object.geometry.dispose();
+                    if (object.material) {
+                        if (Array.isArray(object.material)) {
+                            object.material.forEach(material => material.dispose());
+                        } else {
+                            object.material.dispose();
+                        }
+                    }
+                }
+            });
+            renderer.dispose();
+        };
+    }, [onLoad, projectId]);
+
+    return <div ref={mountRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }} />;
+}
 
 // --- SEPARACIÓN DEL COMPONENTE PARA ARREGLAR EL ERROR DEL CONTEXT ---
 function PlanContent() {
@@ -237,18 +346,22 @@ function PlanContent() {
 						overflow: "hidden",
 						padding: "0" /* [DOCUMENTACIÓN] Edge-to-edge (Eliminado el padding para inmersión 3D completa) */
 					}}>
-						<iframe
-							title={`Project Viewer ${tipo_render[renderSeleccionado]}`}
-							src={`${url_calc}/api/v3/project-render/${params.id}?render=${encodeURIComponent(tipo_render[renderSeleccionado])}`}
-							style={{
-								border: "none", /* Eliminamos borde */
-								height: "100%",
-								width: "100%",
-								overflow: "hidden",
-								backgroundColor: "transparent"
-							}}
-							onLoad={handleLoad}
-						/>
+						{renderSeleccionado === 1 ? (
+							<ThreeDViewer onLoad={handleLoad} projectId={params.id} />
+						) : (
+							<iframe
+								title={`Project Viewer ${tipo_render[renderSeleccionado]}`}
+								src={`${url_calc}/api/v3/project-render/${params.id}?render=${encodeURIComponent(tipo_render[renderSeleccionado])}`}
+								style={{
+									border: "none", /* Eliminamos borde */
+									height: "100%",
+									width: "100%",
+									overflow: "hidden",
+									backgroundColor: "transparent"
+								}}
+								onLoad={handleLoad}
+							/>
+						)}
 					</div>
 				)}
 

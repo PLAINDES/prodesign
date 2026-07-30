@@ -48,6 +48,7 @@
     "recharts": "^2.15.1",
     "sha1": "^1.1.1",
     "sweetalert2": "^11.15.10",
+    "three": "^0.185.1",
     "uuid": "^14.0.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yup": "^1.6.1"
