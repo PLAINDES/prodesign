@@ -146,7 +146,7 @@ export default function Sidebar({ state, school, ...props }) {
 					</p>
 					<p>Perimetro: {totalPerimeter}m</p>
 				</li>
-				<li className="sidebar-item">
+				{/* <li className="sidebar-item">
 					<span className="sidebar-anchor">Area Disponible</span>
 					<p style={{ marginTop: "10px" }}>
 						Area : {areaDisponible}m<span style={{ fontSize: "1.5rem" }}>²</span>
@@ -154,7 +154,7 @@ export default function Sidebar({ state, school, ...props }) {
 					<p>Perimetro : {totalPerimeter}m</p>
 					<p>Ancho: {anchoDisponible}{typeof anchoDisponible === 'number' ? 'm' : ''}</p>
 					<p>Largo: {largoDisponible}{typeof largoDisponible === 'number' ? 'm' : ''}</p>
-				</li>
+				</li> */}
 				<li className="sidebar-item">
 					{/* <a href="#" className="sidebar-anchor">Cantidad: </a> */}
 					<span className="sidebar-anchor">Cantidad</span>

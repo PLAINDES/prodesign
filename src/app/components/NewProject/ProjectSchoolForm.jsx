@@ -1,629 +1,654 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useTheme } from "@mui/material/styles";
-import Grid from "@mui/material/Grid";
-import Button from "@mui/material/Button";
+import { DataEditor } from "@glideapps/glide-data-grid";
+import "@glideapps/glide-data-grid/dist/index.css";
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import {
-	Tooltip,
+	Box,
+	Chip,
+	CircularProgress,
 	Dialog,
 	DialogContent,
 	DialogTitle,
-	Stack,
-	Card,
-	CardContent,
-	Paper,
-	Chip,
 	Fade,
-	CircularProgress,
-	Box,
-	Typography,
 	IconButton,
+	Paper,
+	Stack,
+	Tooltip,
+	Typography
 } from '@mui/material';
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import Button from "@mui/material/Button";
+import FormControl from '@mui/material/FormControl';
+import Grid from "@mui/material/Grid";
+import InputLabel from '@mui/material/InputLabel';
+import ListItemText from '@mui/material/ListItemText';
+import MenuItem from '@mui/material/MenuItem';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Select from '@mui/material/Select';
+import { useTheme } from "@mui/material/styles";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ButtonUploadFile from "../../../components/ButtonUploadFile";
 import MaxRectangle from "../GridData/MaxRectangle";
-import axios from 'axios';
-import { lugares as dataLugares } from './ubigeo';
-import "@glideapps/glide-data-grid/dist/index.css";
-import { DataEditor } from "@glideapps/glide-data-grid";
-import ButtonUploadFile from "../../../components/ButtonUploadFile"
 import { extraerResumenAforo } from './extractFiles/extractAforo';
 import { extraerVerticesTerreno } from './extractFiles/extractVertices';
 import TerrainDataTable from "./TerrainDataTable";
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import MenuItem from '@mui/material/MenuItem';
-import ListItemText from '@mui/material/ListItemText';
+import { lugares as dataLugares } from './ubigeo';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
-    slotProps: {
-        paper: {
-            style: {
-                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-                width: 250,
-            },
-        },
-    },
+	slotProps: {
+		paper: {
+			style: {
+				maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+				width: 250,
+			},
+		},
+	},
 };
 
 function ProjectSchoolForm({ useForm }) {
 
-    const { register, handleSubmit, setValue, formState: { errors } } = useForm
+	const { register, handleSubmit, setValue, formState: { errors } } = useForm
 
-    const onSubmit = (data) => {};
-    const options_ambientes_complementarios = [
-        "Sala de Usos Múltiples (SUM)",
-        "Cocina escolar",
-        "Comedor",
-        "Dirección administrativa",
-        "Patio Inicial",
-        "Auditorio multiusos",
-        "Sala de reuniones",
-        "Lactario",
-        "Topico",
-        "Sala de Psicomotricidad",
-        "Sala de maestros"
-    ];
+	const onSubmit = (data) => { };
+	const options_ambientes_complementarios = [
+		"Sala de Usos Múltiples (SUM)",
+		// "Comedor",
+		"Dirección administrativa",
+		"Patio Inicial",
+		"Auditorio multiusos",
+		"Sala de reuniones",
+		"Lactario",
+		"Topico",
+		"Sala de Psicomotricidad",
+		"Sala de maestros",
+		"Biblioteca",
+		"Taller creativo",
+		"Area de espera",
+		// Nuevos ambientes agregados
+		"Aula de Innovacion Sec",
+		"Taller creativo Sec",
+		"Laboratorio",
+		"Escalera Sec",
+		"SSHH Sec - Hombres",
+		"SSHH Sec - Mujeres",
+		"Aula de Innovacion Prim",
+		"Taller creativo Prim",
+		"Escalera Prim",
+		"SSHH Prim - Hombres",
+		"SSHH Prim - Mujeres",
+		"SSHH Inicial - Hombres",
+		"SSHH Inicial - Mujeres",
+		"Cocina Inicial",
+		"Direccion Adm.",
+		"Área de espera",
+		"Sala de Reuniones",
+		"Area de ingreso",
+		"Sala de Profesores",
+		"SSHH Adm. - Hombres",
+		"SSHH Adm. - Mujeres",
+		"Losa Deportiva",
+		"Taller EPT",
+		"SUM",
+		"Cocina Prim - Sec"
+	];
 
-    const [departamentoSelected, setdepartamentoSelected] = useState("");
-    const [provinciaSelected, setprovinciaSelected] = useState("");
-    const [distritoSelected, setdistritoSelected] = useState("");
+	const [departamentoSelected, setdepartamentoSelected] = useState("");
+	const [provinciaSelected, setprovinciaSelected] = useState("");
+	const [distritoSelected, setdistritoSelected] = useState("");
 
-    const [optionsProvincias, setoptionsProvincias] = useState([]);
-    const [optionsDistritos, setoptionsDistritos] = useState([]);
+	const [optionsProvincias, setoptionsProvincias] = useState([]);
+	const [optionsDistritos, setoptionsDistritos] = useState([]);
 
-    // files
-    const [dataFileAforo, setdataFileAforo] = useState(null);
-    const [dataFileVertices, setdataFileVertices] = useState(null);
+	// files
+	const [dataFileAforo, setdataFileAforo] = useState(null);
+	const [dataFileVertices, setdataFileVertices] = useState(null);
 
-    // data
-    const [dataAforo, setdataAforo] = useState([])
-    const [dataVertices, setdataVertices] = useState([])
+	// data
+	const [dataAforo, setdataAforo] = useState([])
+	const [dataVertices, setdataVertices] = useState([])
 
-    // [DOCUMENTACIÓN] Se agregaron estados para soportar el cálculo del rectángulo máximo, la exclusión y la prioridad de vértices
-    const [maximumRectangle, setMaximumRectangle] = useState([]);
-    const [exclutedVertices, setexclutedVertices] = useState([]);
-    const [priorityVertices, setPriorityVertices] = useState([]); // [DOCUMENTACIÓN] Estado para los vértices seleccionados con prioridad
-    const [openDialog, setOpenDialog] = useState(false);
-    const [openDialogMax, setOpenDialogMax] = useState(false);
+	// [DOCUMENTACIÓN] Se agregaron estados para soportar el cálculo del rectángulo máximo, la exclusión y la prioridad de vértices
+	const [maximumRectangle, setMaximumRectangle] = useState([]);
+	const [exclutedVertices, setexclutedVertices] = useState([]);
+	const [priorityVertices, setPriorityVertices] = useState([]); // [DOCUMENTACIÓN] Estado para los vértices seleccionados con prioridad
+	const [openDialog, setOpenDialog] = useState(false);
+	const [openDialogMax, setOpenDialogMax] = useState(false);
 
-    const handleClickOpenDialog = () => setOpenDialog(true);
-    const handleCloseDialog = () => setOpenDialog(false);
-    const handleClickOpenDialogMax = () => setOpenDialogMax(true);
-    const handleCloseDialogMax = () => setOpenDialogMax(false);
-    const handlePriorityChange = (priority) => setPriorityVertices(priority); // [DOCUMENTACIÓN] Controlador para cambios de prioridad
+	const handleClickOpenDialog = () => setOpenDialog(true);
+	const handleCloseDialog = () => setOpenDialog(false);
+	const handleClickOpenDialogMax = () => setOpenDialogMax(true);
+	const handleCloseDialogMax = () => setOpenDialogMax(false);
+	const handlePriorityChange = (priority) => setPriorityVertices(priority); // [DOCUMENTACIÓN] Controlador para cambios de prioridad
 
-    // [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
-    // Usa una comparación robusta con tolerancia para evitar problemas de coma flotante y de tipos.
-    const handleToggleExcludedVertex = (vertexCoords) => {
-        const exists = exclutedVertices.some(([vx, vy]) => 
-            Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 && 
-            Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001
-        );
-        let newExclusions;
-        if (exists) {
-            newExclusions = exclutedVertices.filter(([vx, vy]) => 
-                !(Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 && 
-                  Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001)
-            );
-        } else {
-            newExclusions = [...exclutedVertices, vertexCoords];
-        }
-        setexclutedVertices(newExclusions);
-    };
+	// [DOCUMENTACIÓN] Alterna el estado de exclusión de un vértice al tocarlo en el gráfico o vista previa.
+	// Usa una comparación robusta con tolerancia para evitar problemas de coma flotante y de tipos.
+	const handleToggleExcludedVertex = (vertexCoords) => {
+		const exists = exclutedVertices.some(([vx, vy]) =>
+			Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 &&
+			Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001
+		);
+		let newExclusions;
+		if (exists) {
+			newExclusions = exclutedVertices.filter(([vx, vy]) =>
+				!(Math.abs(Number(vx) - Number(vertexCoords[0])) < 0.001 &&
+					Math.abs(Number(vy) - Number(vertexCoords[1])) < 0.001)
+			);
+		} else {
+			newExclusions = [...exclutedVertices, vertexCoords];
+		}
+		setexclutedVertices(newExclusions);
+	};
 
-    // [DOCUMENTACIÓN] Se registraron los campos virtuales y extra (aforo, vertices, excluded_vertices, ambientes)
-    // para que sean rastreados correctamente por React Hook Form y enviados al backend, evitando errores 422.
-    useEffect(() => {
-        register("width");
-        register("height");
-        register("vertices_rectangle");
-        register("angle");
-        register("excluded_vertices");
-        register("aforo");
-        register("vertices");
-        register("ambientes");
-    }, [register]);
+	// [DOCUMENTACIÓN] Se registraron los campos virtuales y extra (aforo, vertices, excluded_vertices, ambientes)
+	// para que sean rastreados correctamente por React Hook Form y enviados al backend, evitando errores 422.
+	useEffect(() => {
+		register("width");
+		register("height");
+		register("vertices_rectangle");
+		register("angle");
+		register("excluded_vertices");
+		register("aforo");
+		register("vertices");
+		register("ambientes");
+	}, [register]);
 
-    // [DOCUMENTACIÓN] Sincroniza el estado local de exclusiones de vértices al campo del formulario excluded_vertices
-    useEffect(() => {
-        setValue("excluded_vertices", exclutedVertices);
-    }, [exclutedVertices, setValue]);
+	// [DOCUMENTACIÓN] Sincroniza el estado local de exclusiones de vértices al campo del formulario excluded_vertices
+	useEffect(() => {
+		setValue("excluded_vertices", exclutedVertices);
+	}, [exclutedVertices, setValue]);
 
 
-    // [DOCUMENTACIÓN] Sincroniza el estado local del cuadrante máximo al formulario.
-    // Mapea los vértices del cuadrante (objetos con formato { east, north }) a una lista de listas [[east, north], ...]
-    // para cumplir con la validación de Pydantic en el backend (List[List[float]]).
-    useEffect(() => {
-        if (maximumRectangle && maximumRectangle.vertices) {
-            setValue("width", maximumRectangle.ancho);
-            setValue("height", maximumRectangle.alto);
-            
-            const formattedVertices = maximumRectangle.vertices.map(v => [v.east, v.north]);
-            setValue("vertices_rectangle", formattedVertices);
-            
-            setValue("angle", maximumRectangle.anguloGrados);
-        } else {
-            setValue("width", null);
-            setValue("height", null);
-            setValue("vertices_rectangle", null);
-            setValue("angle", null);
-        }
-    }, [maximumRectangle, setValue]);
+	// [DOCUMENTACIÓN] Sincroniza el estado local del cuadrante máximo al formulario.
+	// Mapea los vértices del cuadrante (objetos con formato { east, north }) a una lista de listas [[east, north], ...]
+	// para cumplir con la validación de Pydantic en el backend (List[List[float]]).
+	useEffect(() => {
+		if (maximumRectangle && maximumRectangle.vertices) {
+			setValue("width", maximumRectangle.ancho);
+			setValue("height", maximumRectangle.alto);
 
-    function selectedLugar(tipo_selected, value) {
-        if ("departamento" == tipo_selected) {
-            setdepartamentoSelected(value)
-            setoptionsProvincias(Object.keys(dataLugares[value]))
-        }
-        else if ("provincia" == tipo_selected) {
+			const formattedVertices = maximumRectangle.vertices.map(v => [v.east, v.north]);
+			setValue("vertices_rectangle", formattedVertices);
 
-            setprovinciaSelected(value)
-            setoptionsDistritos(Object.keys(dataLugares[departamentoSelected][value]))
+			setValue("angle", maximumRectangle.anguloGrados);
+		} else {
+			setValue("width", null);
+			setValue("height", null);
+			setValue("vertices_rectangle", null);
+			setValue("angle", null);
+		}
+	}, [maximumRectangle, setValue]);
 
-        }
-        else if ("distrito" == tipo_selected) {
-            setdistritoSelected(value)
-        }
-    }
+	function selectedLugar(tipo_selected, value) {
+		if ("departamento" == tipo_selected) {
+			setdepartamentoSelected(value)
+			setoptionsProvincias(Object.keys(dataLugares[value]))
+		}
+		else if ("provincia" == tipo_selected) {
 
-    useEffect(() => {
-        if (dataFileAforo) {
-            console.log(dataFileAforo);
-            const data_aforo_extracted = extraerResumenAforo(dataFileAforo)
-            setdataAforo(data_aforo_extracted)
-            console.log(data_aforo_extracted);
-            setValue("aforo", data_aforo_extracted);
-        }
+			setprovinciaSelected(value)
+			setoptionsDistritos(Object.keys(dataLugares[departamentoSelected][value]))
 
-    }, [dataFileAforo])
+		}
+		else if ("distrito" == tipo_selected) {
+			setdistritoSelected(value)
+		}
+	}
 
-    useEffect(() => {
-        if (dataFileVertices) {
-            console.log(dataFileVertices);
-            const data_v_extracted = extraerVerticesTerreno(dataFileVertices)
-            setdataVertices(data_v_extracted)
-            console.log(data_v_extracted);
-            setValue("vertices", data_v_extracted);
-        }
+	useEffect(() => {
+		if (dataFileAforo) {
+			console.log(dataFileAforo);
+			const data_aforo_extracted = extraerResumenAforo(dataFileAforo)
+			setdataAforo(data_aforo_extracted)
+			console.log(data_aforo_extracted);
+			setValue("aforo", data_aforo_extracted);
+		}
 
-    }, [dataFileVertices])
+	}, [dataFileAforo])
 
-    // [DOCUMENTACIÓN] Se transforman los vértices del formulario al formato esperado por los visualizadores SVG [[x, y], ...]
-    const verticesGrafic = useMemo(() => {
-        return dataVertices.map(v => [Number(v.x), Number(v.y)]);
-    }, [dataVertices]);
+	useEffect(() => {
+		if (dataFileVertices) {
+			console.log(dataFileVertices);
+			const data_v_extracted = extraerVerticesTerreno(dataFileVertices)
+			setdataVertices(data_v_extracted)
+			console.log(data_v_extracted);
+			setValue("vertices", data_v_extracted);
+		}
 
-    const handleDeleteVertex = (vertexId) => {
-        const newVertices = dataVertices.filter(v => v.vertice !== vertexId);
-        setdataVertices(newVertices);
-        setValue("vertices", newVertices);
-        // [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
-        setMaximumRectangle([]);
-    };
+	}, [dataFileVertices])
 
-    const handleUpdateVertex = (vertexId, key, value) => {
-        const newVertices = dataVertices.map(v => 
-            v.vertice === vertexId ? { ...v, [key]: Number(value) } : v
-        );
-        setdataVertices(newVertices);
-        setValue("vertices", newVertices);
-        // [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
-        setMaximumRectangle([]);
-    };
+	// [DOCUMENTACIÓN] Se transforman los vértices del formulario al formato esperado por los visualizadores SVG [[x, y], ...]
+	const verticesGrafic = useMemo(() => {
+		return dataVertices.map(v => [Number(v.x), Number(v.y)]);
+	}, [dataVertices]);
 
-    const columns = [
-        {
-            title: "GRADO",
-            id: "grado",
-            grow: 1,
-        },
-        {
-            title: "AFORO POR GRADO",
-            id: "aforo_por_grado",
-            grow: 1,
-        },
-        {
-            title: "CANTIDAD DE AULAS",
-            id: "cantidad_aulas",
-            grow: 1,
-        },
-    ]
+	const handleDeleteVertex = (vertexId) => {
+		const newVertices = dataVertices.filter(v => v.vertice !== vertexId);
+		setdataVertices(newVertices);
+		setValue("vertices", newVertices);
+		// [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
+		setMaximumRectangle([]);
+	};
 
-    const columnsVertices = [
-        {
-            title: "Vertice",
-            id: "vertice",
-            grow: 1,
-        },
-        {
-            title: "X",
-            id: "x",
-            grow: 1,
-        },
-        {
-            title: "y",
-            id: "y",
-            grow: 1,
-        },
-    ]
+	const handleUpdateVertex = (vertexId, key, value) => {
+		const newVertices = dataVertices.map(v =>
+			v.vertice === vertexId ? { ...v, [key]: Number(value) } : v
+		);
+		setdataVertices(newVertices);
+		setValue("vertices", newVertices);
+		// [DOCUMENTACIÓN] Al modificar el terreno, se invalida el cuadrante máximo anterior para evitar inconsistencias geométricas
+		setMaximumRectangle([]);
+	};
 
-    const obtenerCeldaVertices = useCallback(([columna, fila]) => {
-        if (!dataVertices || !dataVertices[fila]) {
-            return {
-                kind: "text",
-                allowOverlay: false,
-                displayData: "",
-                data: "",
-            };
-        }
+	const columns = [
+		{
+			title: "GRADO",
+			id: "grado",
+			grow: 1,
+		},
+		{
+			title: "AFORO POR GRADO",
+			id: "aforo_por_grado",
+			grow: 1,
+		},
+		{
+			title: "CANTIDAD DE AULAS",
+			id: "cantidad_aulas",
+			grow: 1,
+		},
+	]
 
-        const vertice = dataVertices[fila];
+	const columnsVertices = [
+		{
+			title: "Vertice",
+			id: "vertice",
+			grow: 1,
+		},
+		{
+			title: "X",
+			id: "x",
+			grow: 1,
+		},
+		{
+			title: "y",
+			id: "y",
+			grow: 1,
+		},
+	]
 
-        let valor = "";
-        if (columna === 0) valor = vertice.vertice;
-        if (columna === 1) valor = vertice.x;
-        if (columna === 2) valor = vertice.y;
+	const obtenerCeldaVertices = useCallback(([columna, fila]) => {
+		if (!dataVertices || !dataVertices[fila]) {
+			return {
+				kind: "text",
+				allowOverlay: false,
+				displayData: "",
+				data: "",
+			};
+		}
 
-        return {
-            kind: "text",
-            allowOverlay: false,
-            displayData: String(valor ?? ""),
-            data: valor
-        };
-    }, [dataVertices]);
+		const vertice = dataVertices[fila];
 
-    const obtenerCelda = useCallback(([columna, fila]) => {
-        if (!dataAforo || !dataAforo[fila]) {
-            return {
-                kind: "text",
-                allowOverlay: false,
-                displayData: "",
-                data: "",
-            };
-        }
+		let valor = "";
+		if (columna === 0) valor = vertice.vertice;
+		if (columna === 1) valor = vertice.x;
+		if (columna === 2) valor = vertice.y;
 
-        const aforo = dataAforo[fila];
+		return {
+			kind: "text",
+			allowOverlay: false,
+			displayData: String(valor ?? ""),
+			data: valor
+		};
+	}, [dataVertices]);
 
-        let valor = "";
-        if (columna === 0) valor = aforo.grado;
-        if (columna === 1) valor = aforo.aforo_por_grado;
-        if (columna === 2) valor = aforo.cantidad_aulas;
+	const obtenerCelda = useCallback(([columna, fila]) => {
+		if (!dataAforo || !dataAforo[fila]) {
+			return {
+				kind: "text",
+				allowOverlay: false,
+				displayData: "",
+				data: "",
+			};
+		}
 
-        return {
-            kind: "text",
-            allowOverlay: false,
-            displayData: String(valor ?? ""),
-            data: valor
-        };
-    }, [dataAforo]);
+		const aforo = dataAforo[fila];
 
-    const [personName, setPersonName] = useState([]);
+		let valor = "";
+		if (columna === 0) valor = aforo.grado;
+		if (columna === 1) valor = aforo.aforo_por_grado;
+		if (columna === 2) valor = aforo.cantidad_aulas;
 
-    const handleChange = (event) => {
-        const {
-            target: { value },
-        } = event;
-        setPersonName(
-            typeof value === 'string' ? value.split(',') : value,
-        );
-    };
+		return {
+			kind: "text",
+			allowOverlay: false,
+			displayData: String(valor ?? ""),
+			data: valor
+		};
+	}, [dataAforo]);
 
-    // [DOCUMENTACIÓN] Sincroniza el estado local de ambientes complementarios al campo del formulario ambientes,
-    // estructurando cada ambiente como un objeto { ambienteComplementario, capacidad: 0 } tal como lo espera el backend.
-    // Se colocó esta declaración después de la inicialización de personName para evitar el error de referencia léxica.
-    useEffect(() => {
-        const listAmbientes = personName.map((name) => ({
-            ambienteComplementario: name,
-            capacidad: 0,
-        }));
-        setValue("ambientes", listAmbientes);
-    }, [personName, setValue]);
+	const [personName, setPersonName] = useState([]);
 
-    return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <Grid container spacing={{ xs: 2, sm: 3 }}>
-                <Grid item xs={12}>
-                    <span>NOMBRE:</span>
-                    <input
-                        type="text"
-                        {...register("name", { required: true })}
-                        autoComplete="off"
-                        placeholder='Ingrese nombre del proyecto'
-                    />
-                    {errors.name && <span style={{ color: 'red' }}>This field is required</span>}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>TIPOLOGIA:</span>
-                    <select {...register("tipologia")} style={{ ...styleInput }}>
-                        <option value="Educación">Educación</option>
-                        <option value="Salud">Salud</option>
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>ZONA:</span>
-                    <select {...register("zone")} style={{ ...styleInput }}>
-                        <option value="Urbano">Urbano</option>
-                        <option value="Rural">Rural</option>
-                        <option value="Aislada">Aislada</option>
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>TIPO:</span>
-                    <select {...register("tipo")} style={{ ...styleInput }}>
-                        <option value="UNIDOCENTE">UNIDOCENTE</option>
-                        <option value="POLIDOCENTE MULTIGRADO">POLIDOCENTE MULTIGRADO</option>
-                        <option value="POLIDOCENTE COMPLETO">POLIDOCENTE COMPLETO</option>
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>N° PISOS:</span>
-                    {/* [DOCUMENTACIÓN] Se cambió el registro de pisos a number_floors para alinearse con el nombre esperado por la API backend */}
-                    <select {...register("number_floors")} style={{ ...styleInput }}>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                    </select>
-                </Grid>
-                <Grid item xs={12}>
-                    <span>AFORO:</span><br />
-                    <p style={{ fontSize: "11px", marginBottom: "3px" }}>
-                        Descargue e ingrese la informacion de su aforo
-                    </p>
-                    <ButtonUploadFile setDataFile={setdataFileAforo}>INGRESO DE AFORO</ButtonUploadFile>
-                    <Tooltip describeChild title="Descargar Plantilla" placement="top">
-                        <a href="/templates/PLANTILLA_AFORO.xlsx" download="PLANTILLA_AFORO.xlsx" style={{ textDecoration: 'none' }}>
-                            <Button>Plantilla</Button>
-                        </a>
-                    </Tooltip>
-                </Grid>
-                {
-                    dataAforo.length > 1 && (
-                        <Grid item xs={12} style={{ width: "100%", height: "170px" }}>
-                            <DataEditor
-                                width="100%"
-                                height="100%"
-                                columns={columns}
-                                rows={dataAforo.length}
-                                getCellContent={obtenerCelda}
-                                rowMarkers="none"
-                                onCellEdited={undefined}
-                                isDraggable={false}
-                                fillWidth={true}
-                                freezeColumns={0}
-                                getCellsForSelection={true}
-                                showTrailingBlankRow={false}
-                                preventScrollY={true}
-                                preventScrollX={true}
-                            />
-                        </Grid>
-                    )
-                }
-                <Grid item xs={12}>
-                    <span>TERRENO:</span><br />
-                    <p style={{ fontSize: "11px", marginBottom: "3px" }}>
-                        Descargue e ingrese la informacion de su terreno
-                    </p>
-                    <ButtonUploadFile setDataFile={setdataFileVertices}>VERTICES DEL TERRENO</ButtonUploadFile>
-                    <Tooltip describeChild title="Descargar Plantilla" placement="top">
-                        <a href="/templates/PLANTILLA_TERRENO.xlsx" download="PLANTILLA_TERRENO.xlsx" style={{ textDecoration: 'none' }}>
-                            <Button>Plantilla</Button>
-                        </a>
-                    </Tooltip>
-                </Grid>
-                {
-                    dataVertices.length > 0 && (
-                        <>
-                            <Grid item xs={12} style={{ width: "100%" }}>
-                                <TerrainDataTable 
-                                    vertices={dataVertices}
-                                    onDeleteVertex={handleDeleteVertex}
-                                    onUpdateVertex={handleUpdateVertex}
-                                    excludedVertices={exclutedVertices}
-                                    onExcludedChange={setexclutedVertices}
-                                    priorityVertices={priorityVertices}
-                                    onPriorityChange={handlePriorityChange}
-                                />
-                            </Grid>
+	const handleChange = (event) => {
+		const {
+			target: { value },
+		} = event;
+		setPersonName(
+			typeof value === 'string' ? value.split(',') : value,
+		);
+	};
 
-                            {/* [DOCUMENTACIÓN] Se agregó la vista previa SVG en miniatura y la tarjeta informativa del cuadrante óptimo */}
-                            {dataVertices.length > 0 && (
-                                <Grid item xs={12} sx={{ mt: 3, mb: 2 }}>
-                                    <Paper elevation={2} sx={{ p: 3 }}>
-                                        <Grid container spacing={2} alignItems="center">
-                                            <Grid item xs={12} sm={8}>
-                                                <Typography variant="h6" gutterBottom>
-                                                    Vista Previa del Terreno
-                                                </Typography>
-                                            </Grid>
-                                            <Grid item xs={12} sm={4} sx={{ textAlign: 'right' }}>
-                                                {maximumRectangle.vertices?.length > 0 && (
-                                                    <Button
-                                                        size="small"
-                                                        variant="outlined"
-                                                        color="warning"
-                                                        onClick={handleClickOpenDialogMax}
-                                                    >
-                                                        Cambiar Cuadrante
-                                                    </Button>
-                                                )}
-                                            </Grid>
-                                            <Grid item xs={12}>
-                                                <TerrainPreview
-                                                    vertices={verticesGrafic}
-                                                    rectangleVertices={maximumRectangle.vertices || []}
-                                                    excludedVertices={exclutedVertices}
-                                                    onSelectMaxRectangle={handleClickOpenDialogMax}
-                                                    maxRectangleData={maximumRectangle}
-                                                    onToggleVertex={handleToggleExcludedVertex}
-                                                />
-                                            </Grid>
+	// [DOCUMENTACIÓN] Sincroniza el estado local de ambientes complementarios al campo del formulario ambientes,
+	// estructurando cada ambiente como un objeto { ambienteComplementario, capacidad: 0 } tal como lo espera el backend.
+	// Se colocó esta declaración después de la inicialización de personName para evitar el error de referencia léxica.
+	useEffect(() => {
+		const listAmbientes = personName.map((name) => ({
+			ambienteComplementario: name,
+			capacidad: 0,
+		}));
+		setValue("ambientes", listAmbientes);
+	}, [personName, setValue]);
 
-                                            {/* Card informativa con métricas del cuadrante seleccionado */}
-                                            {maximumRectangle.vertices?.length > 0 && (
-                                                <Grid item xs={12} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                                                    <Box sx={{
-                                                        p: 2,
-                                                        bgcolor: 'info.light',
-                                                        borderRadius: 1,
-                                                        border: '1px solid',
-                                                        borderColor: 'info.main'
-                                                    }}>
-                                                        <Grid container spacing={1}>
-                                                            <Grid item xs={12}>
-                                                                <Typography variant="subtitle2" color="info.dark" sx={{ fontWeight: 'bold' }}>
-                                                                    Cuadrante Máximo Seleccionado:
-                                                                </Typography>
-                                                                <Typography variant="body2" color="info.dark">
-                                                                    {maximumRectangle.ancho?.toFixed(2)}m × {maximumRectangle.alto?.toFixed(2)}m
-                                                                    = {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2 }).format(maximumRectangle.area)}m²
-                                                                    ({maximumRectangle.anguloGrados?.toFixed(1)}°)
-                                                                    {maximumRectangle.perimetro && ` | Perímetro: ${maximumRectangle.perimetro.toFixed(2)}m`}
-                                                                </Typography>
-                                                            </Grid>
-                                                        </Grid>
-                                                    </Box>
-                                                </Grid>
-                                            )}
-                                        </Grid>
-                                    </Paper>
-                                </Grid>
-                            )}
-                            {/* [DOCUMENTACIÓN] Se eliminaron los botones redundantes 'Generación del terreno' y 'Generación del cuadrante máximo' al pie del formulario por solicitud del usuario */}
+	return (
+		<form onSubmit={handleSubmit(onSubmit)}>
+			<Grid container spacing={{ xs: 2, sm: 3 }}>
+				<Grid item xs={12}>
+					<span>NOMBRE:</span>
+					<input
+						type="text"
+						{...register("name", { required: true })}
+						autoComplete="off"
+						placeholder='Ingrese nombre del proyecto'
+					/>
+					{errors.name && <span style={{ color: 'red' }}>This field is required</span>}
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>TIPOLOGIA:</span>
+					<select {...register("tipologia")} style={{ ...styleInput }}>
+						<option value="Educación">Educación</option>
+						<option value="Salud">Salud</option>
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>ZONA:</span>
+					<select {...register("zone")} style={{ ...styleInput }}>
+						<option value="Urbano">Urbano</option>
+						<option value="Rural">Rural</option>
+						<option value="Aislada">Aislada</option>
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>TIPO:</span>
+					<select {...register("tipo")} style={{ ...styleInput }}>
+						<option value="UNIDOCENTE">UNIDOCENTE</option>
+						<option value="POLIDOCENTE MULTIGRADO">POLIDOCENTE MULTIGRADO</option>
+						<option value="POLIDOCENTE COMPLETO">POLIDOCENTE COMPLETO</option>
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>N° PISOS:</span>
+					{/* [DOCUMENTACIÓN] Se cambió el registro de pisos a number_floors para alinearse con el nombre esperado por la API backend */}
+					<select {...register("number_floors")} style={{ ...styleInput }}>
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+					</select>
+				</Grid>
+				<Grid item xs={12}>
+					<span>AFORO:</span><br />
+					<p style={{ fontSize: "11px", marginBottom: "3px" }}>
+						Descargue e ingrese la informacion de su aforo
+					</p>
+					<ButtonUploadFile setDataFile={setdataFileAforo}>INGRESO DE AFORO</ButtonUploadFile>
+					<Tooltip describeChild title="Descargar Plantilla" placement="top">
+						<a href="/templates/PLANTILLA_AFORO.xlsx" download="PLANTILLA_AFORO.xlsx" style={{ textDecoration: 'none' }}>
+							<Button>Plantilla</Button>
+						</a>
+					</Tooltip>
+				</Grid>
+				{
+					dataAforo.length > 1 && (
+						<Grid item xs={12} style={{ width: "100%", height: "170px" }}>
+							<DataEditor
+								width="100%"
+								height="100%"
+								columns={columns}
+								rows={dataAforo.length}
+								getCellContent={obtenerCelda}
+								rowMarkers="none"
+								onCellEdited={undefined}
+								isDraggable={false}
+								fillWidth={true}
+								freezeColumns={0}
+								getCellsForSelection={true}
+								showTrailingBlankRow={false}
+								preventScrollY={true}
+								preventScrollX={true}
+							/>
+						</Grid>
+					)
+				}
+				<Grid item xs={12}>
+					<span>TERRENO:</span><br />
+					<p style={{ fontSize: "11px", marginBottom: "3px" }}>
+						Descargue e ingrese la informacion de su terreno
+					</p>
+					<ButtonUploadFile setDataFile={setdataFileVertices}>VERTICES DEL TERRENO</ButtonUploadFile>
+					<Tooltip describeChild title="Descargar Plantilla" placement="top">
+						<a href="/templates/PLANTILLA_TERRENO.xlsx" download="PLANTILLA_TERRENO.xlsx" style={{ textDecoration: 'none' }}>
+							<Button>Plantilla</Button>
+						</a>
+					</Tooltip>
+				</Grid>
+				{
+					dataVertices.length > 0 && (
+						<>
+							<Grid item xs={12} style={{ width: "100%" }}>
+								<TerrainDataTable
+									vertices={dataVertices}
+									onDeleteVertex={handleDeleteVertex}
+									onUpdateVertex={handleUpdateVertex}
+									excludedVertices={exclutedVertices}
+									onExcludedChange={setexclutedVertices}
+									priorityVertices={priorityVertices}
+									onPriorityChange={handlePriorityChange}
+								/>
+							</Grid>
 
-                            {/* [DOCUMENTACIÓN] Diálogo para mostrar PoligonoChart (SVG de terreno con Dark Mode) */}
-                            <Dialog
-                                open={openDialog}
-                                onClose={handleCloseDialog}
-                                maxWidth="md"
-                                fullWidth
-                            >
-                                <DialogTitle>Datos del terreno</DialogTitle>
-                                <DialogContent>
-                                    <PoligonoChart
-                                        verticesTotal={verticesGrafic}
-                                        verticesExcluted={exclutedVertices}
-                                        onToggleVertex={handleToggleExcludedVertex}
-                                    />
-                                </DialogContent>
-                            </Dialog>
+							{/* [DOCUMENTACIÓN] Se agregó la vista previa SVG en miniatura y la tarjeta informativa del cuadrante óptimo */}
+							{dataVertices.length > 0 && (
+								<Grid item xs={12} sx={{ mt: 3, mb: 2 }}>
+									<Paper elevation={2} sx={{ p: 3 }}>
+										<Grid container spacing={2} alignItems="center">
+											<Grid item xs={12} sm={8}>
+												<Typography variant="h6" gutterBottom>
+													Vista Previa del Terreno
+												</Typography>
+											</Grid>
+											<Grid item xs={12} sm={4} sx={{ textAlign: 'right' }}>
+												{maximumRectangle.vertices?.length > 0 && (
+													<Button
+														size="small"
+														variant="outlined"
+														color="warning"
+														onClick={handleClickOpenDialogMax}
+													>
+														Cambiar Cuadrante
+													</Button>
+												)}
+											</Grid>
+											<Grid item xs={12}>
+												<TerrainPreview
+													vertices={verticesGrafic}
+													rectangleVertices={maximumRectangle.vertices || []}
+													excludedVertices={exclutedVertices}
+													onSelectMaxRectangle={handleClickOpenDialogMax}
+													maxRectangleData={maximumRectangle}
+													onToggleVertex={handleToggleExcludedVertex}
+												/>
+											</Grid>
 
-                            {/* [DOCUMENTACIÓN] Diálogo para mostrar RectangleChart (selección de rectángulo con pestañas) */}
-                            <Dialog
-                                open={openDialogMax}
-                                onClose={handleCloseDialogMax}
-                                maxWidth="md"
-                                fullWidth
-                            >
-                                <DialogContent>
-                                    <RectangleChart
-                                        verDispo={verticesGrafic}
-                                        verticesExcluted={exclutedVertices}
-                                        setMaximumRectangle={setMaximumRectangle}
-                                        close={handleCloseDialogMax}
-                                        priorityVertices={priorityVertices}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        </>
-                    )
-                }
-                <Grid item xs={12}>
-                    <span>Ambientes Complementarios:</span>
-                    <br />
-                    <FormControl sx={{ m: 1, width: "100%" }}>
-                        <InputLabel id="demo-multiple-checkbox-label">Seleccione</InputLabel>
-                        <Select
-                            labelId="demo-multiple-checkbox-label"
-                            id="demo-multiple-checkbox"
-                            multiple
-                            value={personName}
-                            onChange={handleChange}
-                            input={<OutlinedInput label="Tag" />}
-                            renderValue={(selected) => selected.join(', ')}
-                            MenuProps={MenuProps}
-                            variant='outlined'
-                        >
-                            {options_ambientes_complementarios.map((name) => {
-                                const selected = personName.includes(name);
-                                const SelectionIcon = selected ? CheckBoxIcon : CheckBoxOutlineBlankIcon;
+											{/* Card informativa con métricas del cuadrante seleccionado */}
+											{maximumRectangle.vertices?.length > 0 && (
+												<Grid item xs={12} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+													<Box sx={{
+														p: 2,
+														bgcolor: 'info.light',
+														borderRadius: 1,
+														border: '1px solid',
+														borderColor: 'info.main'
+													}}>
+														<Grid container spacing={1}>
+															<Grid item xs={12}>
+																<Typography variant="subtitle2" color="info.dark" sx={{ fontWeight: 'bold' }}>
+																	Cuadrante Máximo Seleccionado:
+																</Typography>
+																<Typography variant="body2" color="info.dark">
+																	{maximumRectangle.ancho?.toFixed(2)}m × {maximumRectangle.alto?.toFixed(2)}m
+																	= {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2 }).format(maximumRectangle.area)}m²
+																	({maximumRectangle.anguloGrados?.toFixed(1)}°)
+																	{maximumRectangle.perimetro && ` | Perímetro: ${maximumRectangle.perimetro.toFixed(2)}m`}
+																</Typography>
+															</Grid>
+														</Grid>
+													</Box>
+												</Grid>
+											)}
+										</Grid>
+									</Paper>
+								</Grid>
+							)}
+							{/* [DOCUMENTACIÓN] Se eliminaron los botones redundantes 'Generación del terreno' y 'Generación del cuadrante máximo' al pie del formulario por solicitud del usuario */}
 
-                                return (
-                                    <MenuItem key={name} value={name}>
-                                        <SelectionIcon
-                                            fontSize="small"
-                                            style={{ marginRight: 8, padding: 9, boxSizing: 'content-box' }}
-                                        />
-                                        <ListItemText primary={name} />
-                                    </MenuItem>
-                                );
-                            })}
-                        </Select>
-                    </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>DEPARTAMENTO:</span>
-                    <select {...register("departamento")} style={{ ...styleInput }} onChange={(e) => selectedLugar("departamento", e.target.value)}>
-                        {
-                            Object.keys(dataLugares).map((item, i) => (
-                                <option value={item} key={i} >{item}</option>
-                            ))
-                        }
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>PROVINCIA:</span>
-                    <select {...register("provincia")} style={{ ...styleInput }} onClick={(e) => selectedLugar("provincia", e.target.value)}>
-                        {
-                            optionsProvincias.map((item, i) => (
-                                <option value={item} key={i} >{item}</option>
-                            ))
-                        }
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>DISTRITO:</span>
-                    <select {...register("distrito")} style={{ ...styleInput }} onClick={(e) => selectedLugar("distrito", e.target.value)}>
-                        {
-                            optionsDistritos.map((item, i) => (
-                                <option value={item} key={i}>{item}</option>
-                            ))
-                        }
-                    </select>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <span>RESPONSABLE:</span>
-                    <input
-                        type="text"
-                        {...register("responsable", { required: true })}
-                        autoComplete="off"
-                    />
-                    {errors.responsable && <span style={{ color: 'red' }}>This field is required</span>}
-                </Grid>
-                <Grid item xs={12}>
-                    <span>CLIENTE:</span>
-                    <input
-                        type="text"
-                        {...register("cliente", { required: true })}
-                        autoComplete="off"
-                    />
-                    {errors.cliente && <span style={{ color: 'red' }}>This field is required</span>}
-                </Grid>
-            </Grid>
-        </form>
-    );
+							{/* [DOCUMENTACIÓN] Diálogo para mostrar PoligonoChart (SVG de terreno con Dark Mode) */}
+							<Dialog
+								open={openDialog}
+								onClose={handleCloseDialog}
+								maxWidth="md"
+								fullWidth
+							>
+								<DialogTitle>Datos del terreno</DialogTitle>
+								<DialogContent>
+									<PoligonoChart
+										verticesTotal={verticesGrafic}
+										verticesExcluted={exclutedVertices}
+										onToggleVertex={handleToggleExcludedVertex}
+									/>
+								</DialogContent>
+							</Dialog>
+
+							{/* [DOCUMENTACIÓN] Diálogo para mostrar RectangleChart (selección de rectángulo con pestañas) */}
+							<Dialog
+								open={openDialogMax}
+								onClose={handleCloseDialogMax}
+								maxWidth="md"
+								fullWidth
+							>
+								<DialogContent>
+									<RectangleChart
+										verDispo={verticesGrafic}
+										verticesExcluted={exclutedVertices}
+										setMaximumRectangle={setMaximumRectangle}
+										close={handleCloseDialogMax}
+										priorityVertices={priorityVertices}
+									/>
+								</DialogContent>
+							</Dialog>
+						</>
+					)
+				}
+				<Grid item xs={12}>
+					<span>Ambientes Complementarios:</span>
+					<br />
+					<FormControl sx={{ m: 1, width: "100%" }}>
+						<InputLabel id="demo-multiple-checkbox-label">Seleccione</InputLabel>
+						<Select
+							labelId="demo-multiple-checkbox-label"
+							id="demo-multiple-checkbox"
+							multiple
+							value={personName}
+							onChange={handleChange}
+							input={<OutlinedInput label="Tag" />}
+							renderValue={(selected) => selected.join(', ')}
+							MenuProps={MenuProps}
+							variant='outlined'
+						>
+							{options_ambientes_complementarios.map((name) => {
+								const selected = personName.includes(name);
+								const SelectionIcon = selected ? CheckBoxIcon : CheckBoxOutlineBlankIcon;
+
+								return (
+									<MenuItem key={name} value={name}>
+										<SelectionIcon
+											fontSize="small"
+											style={{ marginRight: 8, padding: 9, boxSizing: 'content-box' }}
+										/>
+										<ListItemText primary={name} />
+									</MenuItem>
+								);
+							})}
+						</Select>
+					</FormControl>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>DEPARTAMENTO:</span>
+					<select {...register("departamento")} style={{ ...styleInput }} onChange={(e) => selectedLugar("departamento", e.target.value)}>
+						{
+							Object.keys(dataLugares).map((item, i) => (
+								<option value={item} key={i} >{item}</option>
+							))
+						}
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>PROVINCIA:</span>
+					<select {...register("provincia")} style={{ ...styleInput }} onClick={(e) => selectedLugar("provincia", e.target.value)}>
+						{
+							optionsProvincias.map((item, i) => (
+								<option value={item} key={i} >{item}</option>
+							))
+						}
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>DISTRITO:</span>
+					<select {...register("distrito")} style={{ ...styleInput }} onClick={(e) => selectedLugar("distrito", e.target.value)}>
+						{
+							optionsDistritos.map((item, i) => (
+								<option value={item} key={i}>{item}</option>
+							))
+						}
+					</select>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<span>RESPONSABLE:</span>
+					<input
+						type="text"
+						{...register("responsable", { required: true })}
+						autoComplete="off"
+					/>
+					{errors.responsable && <span style={{ color: 'red' }}>This field is required</span>}
+				</Grid>
+				<Grid item xs={12}>
+					<span>CLIENTE:</span>
+					<input
+						type="text"
+						{...register("cliente", { required: true })}
+						autoComplete="off"
+					/>
+					{errors.cliente && <span style={{ color: 'red' }}>This field is required</span>}
+				</Grid>
+			</Grid>
+		</form>
+	);
 }
 
 export default ProjectSchoolForm;
 
 export const styleInput = {
-    width: "100%",
+	width: "100%",
 };
 
 // [DOCUMENTACIÓN] Se implementó el componente TerrainPreview usando SVG nativo para mostrar
@@ -692,16 +717,16 @@ const TerrainPreview = ({
 			const currentZoom = zoomRef.current;
 			const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
 			const nextZoom = Math.min(Math.max(currentZoom * zoomFactor, 0.5), 10);
-			
+
 			const rect = svgEl.getBoundingClientRect();
 			const mouseX = (e.clientX - rect.left) / rect.width;
 			const mouseY = (e.clientY - rect.top) / rect.height;
-			
+
 			const currentW = svgConfig.viewW / currentZoom;
 			const currentH = svgConfig.viewH / currentZoom;
 			const nextW = svgConfig.viewW / nextZoom;
 			const nextH = svgConfig.viewH / nextZoom;
-			
+
 			setPan(prev => ({
 				x: prev.x + (currentW - nextW) * mouseX,
 				y: prev.y + (currentH - nextH) * mouseY,
@@ -724,23 +749,23 @@ const TerrainPreview = ({
 
 	const handleMouseMove = (e) => {
 		if (!isDragging || !svgRef.current) return;
-		
+
 		const dx = e.clientX - dragStart.x;
 		const dy = e.clientY - dragStart.y;
-		
+
 		if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
 			setHasMoved(true);
 		}
-		
+
 		const rect = svgRef.current.getBoundingClientRect();
 		const scaleX = (svgConfig.viewW / zoom) / rect.width;
 		const scaleY = (svgConfig.viewH / zoom) / rect.height;
-		
+
 		setPan(prev => ({
 			x: prev.x - dx * scaleX,
 			y: prev.y - dy * scaleY,
 		}));
-		
+
 		setDragStart({ x: e.clientX, y: e.clientY });
 	};
 
@@ -908,8 +933,8 @@ const TerrainPreview = ({
 					{/* Vértices del Terreno */}
 					{vertices.map((p, i) => {
 						const s = svgConfig.toSvg(p);
-						const isExcluded = excludedVertices?.some(([vx, vy]) => 
-							Math.abs(Number(vx) - Number(p[0])) < 0.001 && 
+						const isExcluded = excludedVertices?.some(([vx, vy]) =>
+							Math.abs(Number(vx) - Number(p[0])) < 0.001 &&
 							Math.abs(Number(vy) - Number(p[1])) < 0.001
 						);
 						return (
@@ -1121,12 +1146,12 @@ const PoligonoChart = ({ verticesTotal, verticesExcluted, onToggleVertex }) => {
 				{/* Vértices con Etiquetas */}
 				{verticesTotal.map((p, i) => {
 					const s = svgConfig.toSvg(p);
-					const isExcluded = verticesExcluted.some(([vx, vy]) => 
-						Math.abs(Number(vx) - Number(p[0])) < 0.001 && 
+					const isExcluded = verticesExcluted.some(([vx, vy]) =>
+						Math.abs(Number(vx) - Number(p[0])) < 0.001 &&
 						Math.abs(Number(vy) - Number(p[1])) < 0.001
 					);
 					return (
-						<g 
+						<g
 							key={i}
 							onClick={() => onToggleVertex?.(p)}
 							style={{ cursor: "pointer" }}
@@ -1450,7 +1475,7 @@ const RectangleChart = ({
 						stroke={colors.availStroke}
 						strokeWidth={svgConfig.viewW * 0.004 || 1}
 					/>
-					
+
 					{/* Vértices con Etiquetas */}
 					{availableVertices.map((p, i) => {
 						const s = svgConfig.toSvg(p);
