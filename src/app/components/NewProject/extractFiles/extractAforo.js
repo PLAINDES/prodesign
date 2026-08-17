@@ -30,11 +30,11 @@ export function extraerResumenAforo(data) {
             if (ambienteUpper.includes("AULA DE CICLO")) {
                 resumen["INICIAL"].aforo = valorNumeric;
                 resumen["INICIAL"].cantidad += 1;
-            } 
+            }
             else if (ambienteUpper.includes("PRIM")) {
                 resumen["PRIMARIA"].aforo = valorNumeric;
                 resumen["PRIMARIA"].cantidad += 1;
-            } 
+            }
             else if (ambienteUpper.includes("SEC")) {
                 resumen["SECUNDARIA"].aforo = valorNumeric;
                 resumen["SECUNDARIA"].cantidad += 1;
@@ -81,30 +81,55 @@ export function extraerResumenAforoPorPosicion(data) {
     const e6 = obtenerValor(data[4], COL_E);
 
     // --- Celdas B ---
-    const b4  = obtenerValor(data[2], COL_B);  // Fila 4
-    const b5  = obtenerValor(data[3], COL_B);  // Fila 5
+    // --- Celdas B (Filas 1 a 19) ---
+    const b4 = obtenerValor(data[2], COL_B); // Fila 4
+    const b5 = obtenerValor(data[3], COL_B); // Fila 5
+    const b6 = obtenerValor(data[4], COL_B); // Fila 6
 
-    const b7  = obtenerValor(data[5], COL_B);  // Fila 7
-    const b8  = obtenerValor(data[6], COL_B);  // Fila 8
-
+    const b7 = obtenerValor(data[5], COL_B); // Fila 7
+    const b8 = obtenerValor(data[6], COL_B); // Fila 8
+    const b9 = obtenerValor(data[7], COL_B); // Fila 9
+    const b10 = obtenerValor(data[8], COL_B); // Fila 10
+    const b11 = obtenerValor(data[9], COL_B); // Fila 11
+    const b12 = obtenerValor(data[10], COL_B); // Fila 12
+    const b13 = obtenerValor(data[11], COL_B); // Fila 13
     const b14 = obtenerValor(data[12], COL_B); // Fila 14
     const b15 = obtenerValor(data[13], COL_B); // Fila 15
+    const b16 = obtenerValor(data[14], COL_B); // Fila 16
+    const b17 = obtenerValor(data[15], COL_B); // Fila 17
+    const b18 = obtenerValor(data[16], COL_B); // Fila 18
+    const b19 = obtenerValor(data[17], COL_B); // Fila 19
+
+    const cantidad_inicial = calcularCantidadAulas(b5, e4) + calcularCantidadAulas(b6, e4)
+    const cantidad_primaria = calcularCantidadAulas(b8, e5) +
+        calcularCantidadAulas(b9, e5) +
+        calcularCantidadAulas(b10, e5) +
+        calcularCantidadAulas(b11, e5) +
+        calcularCantidadAulas(b12, e5) +
+        calcularCantidadAulas(b13, e5);
+
+
+    const cantidad_sec = calcularCantidadAulas(b15, e6) +
+        calcularCantidadAulas(b16, e6) +
+        calcularCantidadAulas(b17, e6) +
+        calcularCantidadAulas(b18, e6) +
+        calcularCantidadAulas(b19, e6);
 
     return [
         {
             "grado": "INICIAL",
             "aforo_por_grado": b5,
-            "cantidad_aulas": calcularCantidadAulas(b4, e4)
+            "cantidad_aulas": cantidad_inicial
         },
         {
             "grado": "PRIMARIA",
             "aforo_por_grado": b8,
-            "cantidad_aulas": calcularCantidadAulas(b7, e5)
+            "cantidad_aulas": cantidad_primaria
         },
         {
             "grado": "SECUNDARIA",
             "aforo_por_grado": b15,
-            "cantidad_aulas": calcularCantidadAulas(b14, e6)
+            "cantidad_aulas": cantidad_sec
         }
     ];
 }
