@@ -1,77 +1,71 @@
-import { useState, useEffect, forwardRef, useRef, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Field, Form, Formik, useField } from "formik";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Formik, Form, Field, useField } from "formik";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
 	Chart,
-	ScatterController,
+	Filler,
+	Legend,
 	LineController,
+	LineElement,
 	LinearScale,
 	PointElement,
-	LineElement,
+	ScatterController,
 	Title,
 	Tooltip,
-	Legend,
-	Filler,
 } from "chart.js";
 
-import React from "react";
-import { useTheme } from "@mui/material/styles";
 import Button from "@mui/material/Button";
-import Box from "@mui/system/Box";
-import Fade from "@mui/material/Fade";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
+import Fade from "@mui/material/Fade";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import LinearProgress from "@mui/material/LinearProgress";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
+import LinearProgress from "@mui/material/LinearProgress";
 import Modal from "@mui/material/Modal";
+import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/system/Box";
 
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { UpperLowerCase } from "../../../utils/utils";
 
 import * as yup from "yup";
-import { RowFormAC } from "./RowFormAC";
-import { request } from "../../../utils/arqPlataformAxios";
 import {
-	readMatrizExcel,
-	updateProjectExcelService,
+	readMatrizExcel
 } from "../../../services/spreadsheetService";
+import { request } from "../../../utils/arqPlataformAxios";
+import { RowFormAC } from "./RowFormAC";
 
+import { addProject } from "../../../redux/projects/projectSlice";
 import {
-	createProjectService,
-	updateProjectService,
+	createProjectService
 } from "../../../services/projectsService";
-import { addProject, setProjects } from "../../../redux/projects/projectSlice";
 // import { createThumbnail } from "./createThumbnail";
 
 import * as XLSX from "xlsx";
 import TerrainDataTable from "./TerrainDataTable";
 
-import MaxRectangle from "../GridData/MaxRectangle";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import {
+	Chip,
 	Dialog,
 	DialogContent,
 	DialogTitle,
-	Stack,
-	Card,
-	CardContent,
-	Paper,
-	Chip,
 	IconButton,
 	Tooltip as MuiTooltip,
+	Paper,
+	Stack
 } from "@mui/material";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import ZoomOutIcon from "@mui/icons-material/ZoomOut";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import MaxRectangle from "../GridData/MaxRectangle";
 
-import { mapFormDataToExcel } from "../../../utils/excelMapping";
-import { setAmbienceData } from "../../../redux/distribution/ambienceSlice";
-import { height, width } from "@mui/system";
 import axios from "axios";
+import { setAmbienceData } from "../../../redux/distribution/ambienceSlice";
+import { mapFormDataToExcel } from "../../../utils/excelMapping";
 Chart.register(
 	ScatterController,
 	LineController,
@@ -84,9 +78,8 @@ Chart.register(
 	Filler
 );
 
-import { useParams } from "react-router-dom";
 
-import { read, utils } from "xlsx";
+import { read } from "xlsx";
 const BASE_URL_CALC = import.meta.env.VITE_API_BASE_URL_CALCULATE;
 
 const NewProjectForm = forwardRef(
@@ -2024,7 +2017,7 @@ const FileButtonModal = ({ onImportExcel }) => {
 								{" "}
 								{/* DESCARGA DE PLANTILLA */}
 								<a
-									href="/descargas/template_aforo_v2.xlsx"
+									href="/descargas/template_aforo_v3.xlsx"
 									download="Plantilla del Proyecto.xlsx"
 								>
 									<Button

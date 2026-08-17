@@ -48,3 +48,58 @@ export function extraerResumenAforo(data) {
         "cantidad_aulas": resumen[grado].cantidad
     }));
 }
+
+export function extraerResumenAforoPorPosicion(data) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return [
+            { "grado": "INICIAL", "aforo_por_grado": 0, "cantidad_aulas": 0 },
+            { "grado": "PRIMARIA", "aforo_por_grado": 0, "cantidad_aulas": 0 },
+            { "grado": "SECUNDARIA", "aforo_por_grado": 0, "cantidad_aulas": 0 }
+        ];
+    }
+
+    // Helper para extraer un valor numérico seguro indicando la clave/columna
+    const obtenerValor = (row, colKey) => {
+        if (!row) return 0;
+        const val = Number(row[colKey]);
+        return isNaN(val) ? 0 : val;
+    };
+
+    // Helper con redondeo de enteros
+    const calcularCantidadAulas = (aforo, divisor) => {
+        if (!divisor || divisor === 0) return 0;
+        return Math.round(aforo / divisor); // Redondea al entero más cercano (ej: 3.2 -> 3, 3.6 -> 4)
+    };
+
+    // Claves del objeto según la parseación de SheetJS
+    const COL_E = "__EMPTY_3"; // Columna E
+    const COL_B = "__EMPTY";   // Columna B
+
+    // --- Celdas E ---
+    const e4 = obtenerValor(data[2], COL_E);
+    const e5 = obtenerValor(data[3], COL_E);
+    const e6 = obtenerValor(data[4], COL_E);
+
+    // --- Celdas B ---
+    const b5  = obtenerValor(data[3], COL_B);  // Fila 5
+    const b8  = obtenerValor(data[6], COL_B);  // Fila 8
+    const b15 = obtenerValor(data[13], COL_B); // Fila 15
+
+    return [
+        {
+            "grado": "INICIAL",
+            "aforo_por_grado": b5,
+            "cantidad_aulas": calcularCantidadAulas(b5, e4)
+        },
+        {
+            "grado": "PRIMARIA",
+            "aforo_por_grado": b8,
+            "cantidad_aulas": calcularCantidadAulas(b8, e5)
+        },
+        {
+            "grado": "SECUNDARIA",
+            "aforo_por_grado": b15,
+            "cantidad_aulas": calcularCantidadAulas(b15, e6)
+        }
+    ];
+}

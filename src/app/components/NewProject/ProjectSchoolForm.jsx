@@ -31,7 +31,7 @@ import { useTheme } from "@mui/material/styles";
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ButtonUploadFile from "../../../components/ButtonUploadFile";
 import MaxRectangle from "../GridData/MaxRectangle";
-import { extraerResumenAforo } from './extractFiles/extractAforo';
+import { extraerResumenAforoPorPosicion } from './extractFiles/extractAforo';
 import { extraerVerticesTerreno } from './extractFiles/extractVertices';
 import TerrainDataTable from "./TerrainDataTable";
 import { lugares as dataLugares } from './ubigeo';
@@ -201,7 +201,7 @@ function ProjectSchoolForm({ useForm }) {
 	useEffect(() => {
 		if (dataFileAforo) {
 			console.log(dataFileAforo);
-			const data_aforo_extracted = extraerResumenAforo(dataFileAforo)
+			const data_aforo_extracted = extraerResumenAforoPorPosicion(dataFileAforo)
 			setdataAforo(data_aforo_extracted)
 			console.log(data_aforo_extracted);
 			setValue("aforo", data_aforo_extracted);
