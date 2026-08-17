@@ -81,25 +81,30 @@ export function extraerResumenAforoPorPosicion(data) {
     const e6 = obtenerValor(data[4], COL_E);
 
     // --- Celdas B ---
+    const b4  = obtenerValor(data[2], COL_B);  // Fila 4
     const b5  = obtenerValor(data[3], COL_B);  // Fila 5
+
+    const b7  = obtenerValor(data[5], COL_B);  // Fila 7
     const b8  = obtenerValor(data[6], COL_B);  // Fila 8
+
+    const b14 = obtenerValor(data[12], COL_B); // Fila 14
     const b15 = obtenerValor(data[13], COL_B); // Fila 15
 
     return [
         {
             "grado": "INICIAL",
             "aforo_por_grado": b5,
-            "cantidad_aulas": calcularCantidadAulas(b5, e4)
+            "cantidad_aulas": calcularCantidadAulas(b4, e4)
         },
         {
             "grado": "PRIMARIA",
             "aforo_por_grado": b8,
-            "cantidad_aulas": calcularCantidadAulas(b8, e5)
+            "cantidad_aulas": calcularCantidadAulas(b7, e5)
         },
         {
             "grado": "SECUNDARIA",
             "aforo_por_grado": b15,
-            "cantidad_aulas": calcularCantidadAulas(b15, e6)
+            "cantidad_aulas": calcularCantidadAulas(b14, e6)
         }
     ];
 }
