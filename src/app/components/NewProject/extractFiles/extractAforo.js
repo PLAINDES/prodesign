@@ -120,6 +120,7 @@ export function extraerResumenAforoPorPosicion(data) {
             "grado": "INICIAL",
             "aforo_por_grado": b5,
             "cantidad_aulas": cantidad_inicial,
+            "capacidad_x_aula": e4,
             "aulas":{
                 "aula_ciclo_i" : b5,
                 "aula_ciclo_ii" : b6
@@ -129,6 +130,7 @@ export function extraerResumenAforoPorPosicion(data) {
             "grado": "PRIMARIA",
             "aforo_por_grado": b8,
             "cantidad_aulas": cantidad_primaria,
+            "capacidad_x_aula": e5,
             "aulas":{
                 "aula_1_prim" : b8,
                 "aula_2_prim" : b9,
@@ -142,6 +144,7 @@ export function extraerResumenAforoPorPosicion(data) {
             "grado": "SECUNDARIA",
             "aforo_por_grado": b15,
             "cantidad_aulas": cantidad_sec,
+            "capacidad_x_aula": e6,
             "aulas":{
                 "aula_1_sec" : b15,
                 "aula_2_sec" : b16,
