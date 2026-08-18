@@ -119,17 +119,36 @@ export function extraerResumenAforoPorPosicion(data) {
         {
             "grado": "INICIAL",
             "aforo_por_grado": b5,
-            "cantidad_aulas": cantidad_inicial
+            "cantidad_aulas": cantidad_inicial,
+            "aulas":{
+                "aula_ciclo_i" : b5,
+                "aula_ciclo_ii" : b6
+            }
         },
         {
             "grado": "PRIMARIA",
             "aforo_por_grado": b8,
-            "cantidad_aulas": cantidad_primaria
+            "cantidad_aulas": cantidad_primaria,
+            "aulas":{
+                "aula_1_prim" : b8,
+                "aula_2_prim" : b9,
+                "aula_3_prim" : b10,
+                "aula_4_prim" : b11,
+                "aula_5_prim" : b12,
+                "aula_6_prim" : b13,
+            }
         },
         {
             "grado": "SECUNDARIA",
             "aforo_por_grado": b15,
-            "cantidad_aulas": cantidad_sec
+            "cantidad_aulas": cantidad_sec,
+            "aulas":{
+                "aula_1_sec" : b15,
+                "aula_2_sec" : b16,
+                "aula_3_sec" : b17,
+                "aula_4_sec" : b18,
+                "aula_5_sec" : b19,
+            }
         }
     ];
 }
